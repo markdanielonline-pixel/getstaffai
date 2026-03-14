@@ -13,6 +13,7 @@ export default function Header() {
           <Link href="/pricing">Pricing</Link>
           <Link href="/why-staffai">Why StaffAi</Link>
           <Link href="/qa">Q&A</Link>
+          <Link href="/roadmap">Roadmap</Link>
         </nav>
         <div className="nav-actions">
           <Link href="/portal/login" className="login-link hover:text-white transition">Login</Link>
