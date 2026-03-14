@@ -42,11 +42,12 @@ export default function AIChatWidget() {
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(`Server error ${res.status}`);
+        throw new Error(data.error || `Server error ${res.status}`);
       }
 
-      const data = await res.json();
       const aiText = data.content || '';
 
       setMessages(prev =>
@@ -55,7 +56,7 @@ export default function AIChatWidget() {
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error('[StaffAI]', err);
-      setError('Something went wrong. Please try again.');
+      setError(err.message || 'Something went wrong. Please try again.');
       setMessages(prev => prev.filter(m => m.id !== aiId));
     } finally {
       setIsLoading(false);
