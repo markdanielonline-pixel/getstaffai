@@ -8,12 +8,12 @@ const PHASES = [
     status: 'done',
     color: '#10b981',
     items: [
-      { title: 'AI Chat Widget', desc: 'Live on-site agents for Lead Gen, Appointment Setting, and Closing — powered by Gemini 2.5 Flash.' },
+      { title: 'AI Chat Widget', desc: 'Live on-site agents for Lead Gen, Appointment Setting, and Closing.' },
       { title: 'Stripe Subscriptions', desc: '5 tiers (Launch → Dominance) with monthly & annual billing, 2 months free on annual plans.' },
-      { title: 'Lead Capture & CRM Sync', desc: 'AI automatically captures name & email and syncs to Systeme.io email campaigns.' },
-      { title: 'Outscraper Lead Import', desc: 'Pull targeted business leads from Google Maps by niche and city.' },
-      { title: 'Telnyx SMS Outreach', desc: 'Send AI-drafted SMS messages to leads directly from the dashboard.' },
-      { title: 'Supabase Dashboard', desc: 'Live lead feed, conversation history, and usage tracking per billing period.' },
+      { title: 'Lead Capture & Email Enrollment', desc: 'AI automatically captures name & email and enrolls the lead into a nurture campaign instantly.' },
+      { title: 'Targeted Lead Import', desc: 'Pull targeted business leads from Google Maps by niche and city — ready for outreach.' },
+      { title: 'SMS Outreach', desc: 'Send AI-drafted SMS messages to leads directly from the dashboard.' },
+      { title: 'Live Dashboard', desc: 'Live lead feed, conversation history, and usage tracking per billing period.' },
     ],
   },
   {
@@ -23,8 +23,8 @@ const PHASES = [
     color: '#6366f1',
     items: [
       { title: 'Client Portal', desc: 'Full dashboard for clients to view leads, conversations, usage, and billing — no code needed.' },
-      { title: 'Moxie CRM Integration', desc: 'Two-way sync with Moxie: book appointments, update contact stages, and log AI activity.' },
-      { title: 'Voice Calling Agent', desc: 'AI agents that call leads, qualify them, and book appointments over phone via Telnyx Voice.' },
+      { title: 'CRM & Calendar Sync', desc: 'Two-way sync with your calendar: book appointments, update contact stages, and log AI activity automatically.' },
+      { title: 'Voice Calling Agent', desc: 'AI agents that call leads, qualify them, and book appointments over the phone.' },
       { title: 'Call Recording & Transcripts', desc: 'Every call recorded, transcribed, and scored for conversion coaching.' },
       { title: 'Multi-Number Routing', desc: 'Assign dedicated local numbers per campaign or market for higher pickup rates.' },
     ],
