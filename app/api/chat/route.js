@@ -1,4 +1,5 @@
-import { streamText } from 'ai';
+import { generateText } from 'ai';
+import { NextResponse } from 'next/server';
 import { getLLM } from '@/lib/agents/llm-router';
 import { z } from 'zod';
 import { enrollLeadInSysteme } from '@/lib/systeme';
@@ -301,14 +302,15 @@ ${SHARED_RULES}`;
       };
     }
 
-    const result = streamText({
+    const { text } = await generateText({
       model,
       messages,
       system: systemPrompt,
       tools: Object.keys(tools).length > 0 ? tools : undefined,
+      maxSteps: 3,
     });
-    
-    return result.toTextStreamResponse();
+
+    return NextResponse.json({ content: text });
   } catch (err) {
     console.error("Chat API Error:", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });

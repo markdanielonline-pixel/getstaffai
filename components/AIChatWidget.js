@@ -19,12 +19,6 @@ export default function AIChatWidget() {
     }
   }, [messages, isLoading]);
 
-  // Build the API message history (exclude hidden context message)
-  const getHistory = () =>
-    messages
-      .filter(m => !(m.role === 'user' && m.hidden))
-      .map(m => ({ role: m.role, content: m.content }));
-
   const streamResponse = async (history) => {
     setIsLoading(true);
     setError(null);
@@ -52,24 +46,12 @@ export default function AIChatWidget() {
         throw new Error(`Server error ${res.status}`);
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = '';
+      const data = await res.json();
+      const aiText = data.content || '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-        setMessages(prev =>
-          prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m)
-        );
-      }
-
-      if (!accumulated) {
-        setMessages(prev =>
-          prev.map(m => m.id === aiId ? { ...m, content: '...' } : m)
-        );
-      }
+      setMessages(prev =>
+        prev.map(m => m.id === aiId ? { ...m, content: aiText } : m)
+      );
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error('[StaffAI]', err);
