@@ -3,44 +3,36 @@ import { NextResponse } from 'next/server';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Maps tier name → Stripe price ID
-const PRICE_MAP = {
-  Operator:    process.env.STRIPE_PRICE_OPERATOR,
-  Accelerator: process.env.STRIPE_PRICE_ACCELERATOR,
-  Authority:   process.env.STRIPE_PRICE_AUTHORITY,
-  Dominance:   process.env.STRIPE_PRICE_DOMINANCE,
-};
-
-// Recurring add-on price IDs
 const ADDON_RECURRING = {
-  callRecording: process.env.STRIPE_PRICE_ADDON_CALL_RECORDING,
-  extraNumber:   process.env.STRIPE_PRICE_ADDON_EXTRA_NUMBER,
+  callRecording: 'price_1T2bh1Be48ha5T2sLcSvvXtz',
+  extraNumber:   'price_1T2biqBe48ha5T2s9BYAaSJK',
 };
 
 export async function POST(req) {
   try {
-    const { tierName, addons = {}, email } = await req.json();
+    const { priceId, tierName, billing = 'monthly', addons = {}, email } = await req.json();
     const siteUrl = process.env.APP_URL || 'https://www.getstaffai.com';
 
-    // Free tier — no Stripe needed
+    // Free tier — skip Stripe
     if (tierName === 'Launch') {
       return NextResponse.json({ url: `${siteUrl}/portal/signup?plan=launch` });
     }
 
-    const basePriceId = PRICE_MAP[tierName];
-    if (!basePriceId) {
-      return NextResponse.json({ error: 'Invalid plan selected' }, { status: 400 });
+    if (!priceId) {
+      return NextResponse.json({ error: 'No price ID for selected plan' }, { status: 400 });
     }
 
-    // Build line items — base plan first
-    const lineItems = [{ price: basePriceId, quantity: 1 }];
+    // Base subscription line item
+    const lineItems = [{ price: priceId, quantity: 1 }];
 
-    // Add recurring add-ons
-    if (addons.callRecording && ADDON_RECURRING.callRecording) {
-      lineItems.push({ price: ADDON_RECURRING.callRecording, quantity: 1 });
-    }
-    if (addons.extraNumber > 0 && ADDON_RECURRING.extraNumber) {
-      lineItems.push({ price: ADDON_RECURRING.extraNumber, quantity: addons.extraNumber });
+    // Recurring add-ons (only valid on monthly billing — annual subscriptions don't support mixed intervals)
+    if (billing === 'monthly') {
+      if (addons.callRecording) {
+        lineItems.push({ price: ADDON_RECURRING.callRecording, quantity: 1 });
+      }
+      if (addons.extraNumber > 0) {
+        lineItems.push({ price: ADDON_RECURRING.extraNumber, quantity: addons.extraNumber });
+      }
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -48,15 +40,18 @@ export async function POST(req) {
       payment_method_types: ['card'],
       line_items: lineItems,
       customer_email: email || undefined,
-      success_url: `${siteUrl}/portal/signup?plan=${tierName.toLowerCase()}&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${siteUrl}/portal/signup?plan=${tierName.toLowerCase()}&billing=${billing}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/pricing`,
       allow_promotion_codes: true,
-      metadata: { tier: tierName },
+      metadata: { tier: tierName, billing },
+      subscription_data: {
+        metadata: { tier: tierName, billing },
+      },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('[/api/checkout] Error:', error);
+    console.error('[/api/checkout]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
