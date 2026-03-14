@@ -10,6 +10,8 @@ export default function AIChatWidget() {
   const [leadCaptured, setLeadCaptured] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const [errorMsg, setErrorMsg] = useState(null);
+
   const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
     api: '/api/chat',
     body: { agentType: 'lead_gen' },
@@ -20,7 +22,12 @@ export default function AIChatWidget() {
         role: 'assistant',
         content: "What's your current biggest bottleneck — finding leads, following up, or closing them?"
       }
-    ]
+    ],
+    onError: (err) => {
+      console.error('[StaffAI Widget]', err);
+      setErrorMsg('Something went wrong. Please try again in a moment.');
+      setTimeout(() => setErrorMsg(null), 5000);
+    }
   });
 
   // Detect when AI asks for name/email and show structured form
@@ -226,6 +233,15 @@ export default function AIChatWidget() {
                     Continue →
                   </button>
                 </form>
+              </div>
+            )}
+
+            {/* ERROR MESSAGE */}
+            {errorMsg && (
+              <div style={{ alignSelf: 'flex-start', maxWidth: '83%' }}>
+                <div style={{ background: '#3b1a1a', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '0.65rem 0.95rem', borderRadius: '16px 16px 16px 3px', fontSize: '0.85rem' }}>
+                  {errorMsg}
+                </div>
               </div>
             )}
 
