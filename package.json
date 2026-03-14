@@ -9,9 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.24",
+    "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/openai": "^3.0.41",
+    "@ai-sdk/react": "^3.0.118",
+    "@langchain/core": "^1.1.31",
+    "@supabase/supabase-js": "^2.99.1",
+    "@upstash/redis": "^1.36.4",
+    "ai": "^6.0.116",
+    "dotenv": "^17.3.1",
+    "langchain": "^1.2.30",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "stripe": "^20.4.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
