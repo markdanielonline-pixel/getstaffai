@@ -1,22 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useChat } from '@ai-sdk/react';
 
 export default function AIChatWidget() {
   const [isOpen, setIsOpen]     = useState(false);
   const [phase, setPhase]       = useState('form'); // 'form' | 'chat'
   const [lead, setLead]         = useState({ name: '', email: '' });
+  const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError]       = useState(null);
   const messagesEndRef          = useRef(null);
-
-  const { messages, append, status, error } = useChat({
-    api: '/api/chat',
-    body: { agentType: 'lead_gen', leadName: lead.name, leadEmail: lead.email },
-    id: 'staffai-agent',
-  });
-
-  const isLoading = status === 'streaming' || status === 'submitted';
+  const abortRef                = useRef(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -24,33 +19,99 @@ export default function AIChatWidget() {
     }
   }, [messages, isLoading]);
 
-  // Extract text from either content string or parts array
-  function getText(msg) {
-    if (typeof msg.content === 'string' && msg.content) return msg.content;
-    if (Array.isArray(msg.parts)) {
-      return msg.parts.filter(p => p.type === 'text').map(p => p.text).join('');
+  // Build the API message history (exclude hidden context message)
+  const getHistory = () =>
+    messages
+      .filter(m => !(m.role === 'user' && m.hidden))
+      .map(m => ({ role: m.role, content: m.content }));
+
+  const streamResponse = async (history) => {
+    setIsLoading(true);
+    setError(null);
+
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
+
+    const aiId = Date.now().toString();
+    setMessages(prev => [...prev, { id: aiId, role: 'assistant', content: '' }]);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: abortRef.current.signal,
+        body: JSON.stringify({
+          messages: history,
+          agentType: 'lead_gen',
+          leadName: lead.name,
+          leadEmail: lead.email,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server error ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        setMessages(prev =>
+          prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m)
+        );
+      }
+
+      if (!accumulated) {
+        setMessages(prev =>
+          prev.map(m => m.id === aiId ? { ...m, content: '...' } : m)
+        );
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('[StaffAI]', err);
+      setError('Something went wrong. Please try again.');
+      setMessages(prev => prev.filter(m => m.id !== aiId));
+    } finally {
+      setIsLoading(false);
     }
-    return '';
-  }
+  };
 
   // Submit pre-chat form
   const handleLeadSubmit = async (e) => {
     e.preventDefault();
     if (!lead.name.trim() || !lead.email.trim()) return;
-    setPhase('chat');
-    // First message provides context and kicks off the conversation
-    await append({
+
+    const context = {
+      id: 'ctx',
       role: 'user',
-      content: `Hi, my name is ${lead.name.trim()} and my email is ${lead.email.trim()}.`
-    });
+      content: `Hi, my name is ${lead.name.trim()} and my email is ${lead.email.trim()}.`,
+      hidden: true,
+    };
+
+    setMessages([context]);
+    setPhase('chat');
+    await streamResponse([{ role: 'user', content: context.content }]);
   };
 
-  // Send chat message using append (bypasses broken handleSubmit)
+  // Send chat message
   const sendMessage = async () => {
     const text = inputVal.trim();
     if (!text || isLoading) return;
     setInputVal('');
-    await append({ role: 'user', content: text });
+
+    const userMsg = { id: Date.now().toString(), role: 'user', content: text };
+    const updated = [...messages, userMsg];
+    setMessages(updated);
+
+    await streamResponse(
+      updated
+        .filter(m => !m.hidden)
+        .map(m => ({ role: m.role, content: m.content }))
+    );
   };
 
   const onKeyDown = (e) => {
@@ -85,33 +146,29 @@ export default function AIChatWidget() {
                 <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', border: '2px solid #13131e', boxShadow: '0 0 6px rgba(16,185,129,0.7)' }} />
               </div>
               <div>
-                <div style={{ fontWeight: '700', fontSize: '0.92rem', color: '#f9fafb', lineHeight: 1.2 }}>StaffAI</div>
+                <div style={{ fontWeight: '700', fontSize: '0.92rem', color: '#f9fafb' }}>StaffAI</div>
                 <div style={{ fontSize: '0.7rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
                   <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
                   Online · Replies instantly
                 </div>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} style={{ background: 'rgba(255,255,255,0.07)', border: 'none', color: '#9ca3af', cursor: 'pointer', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', lineHeight: 1 }}>&times;</button>
+            <button onClick={() => setIsOpen(false)} style={{ background: 'rgba(255,255,255,0.07)', border: 'none', color: '#9ca3af', cursor: 'pointer', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>&times;</button>
           </div>
 
           {/* PRE-CHAT FORM */}
           {phase === 'form' && (
             <div style={{ padding: '1.5rem', background: '#0d0d14' }}>
-              <p style={{ color: '#9ca3af', fontSize: '0.85rem', marginTop: 0, marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
                 Before we start — who are we speaking with?
               </p>
               <form onSubmit={handleLeadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <input
-                  type="text" placeholder="Your first name" required autoFocus
-                  value={lead.name}
-                  onChange={e => setLead(p => ({ ...p, name: e.target.value }))}
+                <input type="text" placeholder="Your first name" required autoFocus
+                  value={lead.name} onChange={e => setLead(p => ({ ...p, name: e.target.value }))}
                   style={{ padding: '0.75rem 1rem', background: '#1c1c2a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', color: '#f9fafb', fontSize: '0.9rem', outline: 'none', width: '100%', boxSizing: 'border-box' }}
                 />
-                <input
-                  type="email" placeholder="Your email address" required
-                  value={lead.email}
-                  onChange={e => setLead(p => ({ ...p, email: e.target.value }))}
+                <input type="email" placeholder="Your email address" required
+                  value={lead.email} onChange={e => setLead(p => ({ ...p, email: e.target.value }))}
                   style={{ padding: '0.75rem 1rem', background: '#1c1c2a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', color: '#f9fafb', fontSize: '0.9rem', outline: 'none', width: '100%', boxSizing: 'border-box' }}
                 />
                 <button type="submit" disabled={!lead.name.trim() || !lead.email.trim()}
@@ -119,52 +176,33 @@ export default function AIChatWidget() {
                   Start Conversation →
                 </button>
               </form>
-              <p style={{ textAlign: 'center', fontSize: '0.7rem', color: '#4b5563', marginBottom: 0, marginTop: '1rem' }}>
+              <p style={{ textAlign: 'center', fontSize: '0.7rem', color: '#4b5563', margin: '1rem 0 0' }}>
                 Your info is kept private. No spam.
               </p>
             </div>
           )}
 
-          {/* CHAT VIEW */}
+          {/* CHAT */}
           {phase === 'chat' && (
             <>
               <div style={{ flex: 1, padding: '1rem 0.9rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.65rem', background: '#0d0d14' }}>
 
-                {/* Static opening */}
-                <div style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
-                  <div style={{ fontSize: '0.68rem', color: '#6b7280', marginBottom: '3px', paddingLeft: '3px' }}>StaffAI</div>
-                  <div style={{ background: '#1c1c2a', color: '#f9fafb', padding: '0.65rem 0.95rem', borderRadius: '16px 16px 16px 3px', fontSize: '0.88rem', lineHeight: '1.55', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    {lead.name ? `Good to meet you, ${lead.name}. ` : ''}What's your current biggest bottleneck — finding leads, following up, or closing them?
-                  </div>
-                </div>
-
-                {/* Messages */}
-                {messages.map(m => {
-                  const text = getText(m);
-                  if (!text) return null;
-                  // Hide the opening context message from display
-                  if (m.role === 'user' && text.startsWith('Hi, my name is') && text.includes('my email is')) return null;
-                  return (
-                    <div key={m.id} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                      {m.role === 'assistant' && <div style={{ fontSize: '0.68rem', color: '#6b7280', marginBottom: '3px', paddingLeft: '3px' }}>StaffAI</div>}
-                      <div style={{ background: m.role === 'user' ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : '#1c1c2a', color: '#f9fafb', padding: '0.65rem 0.95rem', borderRadius: m.role === 'user' ? '16px 16px 3px 16px' : '16px 16px 16px 3px', fontSize: '0.88rem', lineHeight: '1.55', border: m.role === 'assistant' ? '1px solid rgba(255,255,255,0.06)' : 'none', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                        {text}
-                      </div>
+                {messages.filter(m => !m.hidden).map(m => (
+                  <div key={m.id} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                    {m.role === 'assistant' && <div style={{ fontSize: '0.68rem', color: '#6b7280', marginBottom: '3px', paddingLeft: '3px' }}>StaffAI</div>}
+                    <div style={{ background: m.role === 'user' ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : '#1c1c2a', color: '#f9fafb', padding: '0.65rem 0.95rem', borderRadius: m.role === 'user' ? '16px 16px 3px 16px' : '16px 16px 16px 3px', fontSize: '0.88rem', lineHeight: '1.55', border: m.role === 'assistant' ? '1px solid rgba(255,255,255,0.06)' : 'none', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {m.content || <span style={{ opacity: 0.4 }}>...</span>}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
 
-                {/* Error */}
                 {error && (
                   <div style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
-                    <div style={{ background: '#3b1a1a', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '0.65rem 0.95rem', borderRadius: '16px 16px 16px 3px', fontSize: '0.85rem' }}>
-                      Something went wrong. Please try again.
-                    </div>
+                    <div style={{ background: '#3b1a1a', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '0.65rem 0.95rem', borderRadius: '12px', fontSize: '0.85rem' }}>{error}</div>
                   </div>
                 )}
 
-                {/* Typing indicator */}
-                {isLoading && (
+                {isLoading && messages[messages.length - 1]?.content === '' && (
                   <div style={{ alignSelf: 'flex-start' }}>
                     <div style={{ fontSize: '0.68rem', color: '#6b7280', marginBottom: '3px', paddingLeft: '3px' }}>StaffAI</div>
                     <div style={{ background: '#1c1c2a', border: '1px solid rgba(255,255,255,0.06)', padding: '0.65rem 0.9rem', borderRadius: '16px 16px 16px 3px', display: 'flex', gap: '5px', alignItems: 'center' }}>
@@ -178,14 +216,9 @@ export default function AIChatWidget() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* INPUT */}
               <div style={{ padding: '0.8rem 0.9rem', background: '#13131e', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
-                <input
-                  value={inputVal}
-                  onChange={e => setInputVal(e.target.value)}
-                  onKeyDown={onKeyDown}
-                  placeholder="Send a message..."
-                  disabled={isLoading}
+                <input value={inputVal} onChange={e => setInputVal(e.target.value)} onKeyDown={onKeyDown}
+                  placeholder="Send a message..." disabled={isLoading}
                   style={{ flex: 1, padding: '0.65rem 1rem', background: '#252535', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', color: '#f9fafb', fontSize: '0.875rem', outline: 'none', caretColor: '#f9fafb' }}
                 />
                 <button onClick={sendMessage} disabled={isLoading || !inputVal.trim()}
@@ -198,7 +231,6 @@ export default function AIChatWidget() {
             </>
           )}
 
-          {/* FOOTER */}
           <div style={{ textAlign: 'center', padding: '0.35rem', background: '#13131e', borderTop: '1px solid rgba(255,255,255,0.04)', fontSize: '0.62rem', color: '#374151' }}>
             Powered by StaffAI · getstaffai.com
           </div>

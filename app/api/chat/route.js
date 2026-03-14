@@ -308,7 +308,7 @@ ${SHARED_RULES}`;
       tools: Object.keys(tools).length > 0 ? tools : undefined,
     });
     
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (err) {
     console.error("Chat API Error:", err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
