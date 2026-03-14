@@ -16,9 +16,9 @@ export default function AIChatWidget() {
       {
         id: 'welcome-msg',
         role: 'assistant',
-        content: agentType === 'lead_gen' ? "Hey there! I'm the Lead Gen agent. What brings you to StaffAi today?" :
-                 agentType === 'setter' ? "Hi! I'm the Setter agent. Looking to book a demo call with our team?" :
-                 "I'm the Closer agent. Ready to deploy your AI Revenue Workforce, or do you have final questions before we process payment?"
+        content: agentType === 'lead_gen' ? "What's your current biggest bottleneck — finding leads, following up, or closing them?" :
+                 agentType === 'setter' ? "The StaffAI team does focused 20-minute calls — no pitch, just a direct conversation about your situation. What kind of business are you running?" :
+                 "What's the thing still holding you back from deploying this?"
       }
     ]
   });
