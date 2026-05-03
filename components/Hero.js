@@ -1,64 +1,153 @@
 import Link from 'next/link';
 
+const employees = [
+  { initials: 'NA', name: 'Nadia Ashworth',  role: 'Executive Assistant',   status: 'Briefing CEO',   cls: 's-typing', bg: '#1B3A6B', fg: '#C9A84C' },
+  { initials: 'MR', name: 'Marcus Reid',     role: 'General Manager',        status: 'Board Report',   cls: 's-report', bg: '#0D1F3C', fg: '#818cf8' },
+  { initials: 'SL', name: 'Sofia Lamas',     role: 'Marketing Specialist',   status: 'Active',         cls: 's-active', bg: '#0D2B1A', fg: '#4ade80' },
+  { initials: 'JP', name: 'James Park',      role: 'Sales Specialist',       status: 'Active',         cls: 's-active', bg: '#2B0D0D', fg: '#f87171' },
+  { initials: 'AO', name: 'Amara Osei',      role: 'CS Agent',               status: 'Responding',     cls: 's-typing', bg: '#1E0D2B', fg: '#c084fc' },
+];
+
 export default function Hero() {
   return (
-    <section className="section hero-section flex-center" style={{ minHeight: '85vh', paddingTop: '6rem' }}>
-      
-      {/* Animated Glowing Orbs Background */}
-      <div className="orb-glow orb-blue" style={{ top: '15%', left: '15%', width: '500px', height: '500px' }}></div>
-      <div className="orb-glow orb-purple" style={{ top: '40%', right: '15%', width: '400px', height: '400px', animationDelay: '2s' }}></div>
+    <section className="hero-section">
 
-      <div className="container hero-content animate-fade-in-up" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-        
-        <div className="hero-text-area">
-          <h1 className="hero-title animate-fade-in-up delay-100" style={{ fontSize: 'clamp(4rem, 8vw, 7.5rem)', fontWeight: '900', letterSpacing: '-0.05em', lineHeight: '1.05', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
-            Deploy Your AI <br/>
-            <span className="text-gradient-vibrant">Revenue Workforce.</span>
+      {/* LEFT: white, typography-led */}
+      <div className="hero-left">
+        <div className="animate-fade-in-up">
+
+          <div className="hero-eyebrow kicker">
+            The World's First AI Company-as-a-Service
+          </div>
+
+          <h1 className="display-xl" style={{ marginBottom: '1.75rem', color: 'var(--ink)' }}>
+            <span style={{ display: 'block' }}>Your company.</span>
+            <span style={{ display: 'block' }}>Fully staffed.</span>
+            <span className="display-italic text-gradient-gold" style={{ display: 'block' }}>
+              Fully running.
+            </span>
           </h1>
-          
-          <p className="hero-subtitle animate-fade-in-up delay-200" style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginBottom: '2.5rem', maxWidth: '600px', fontWeight: '400', lineHeight: '1.6' }}>
-            Lead generation, nurturing, appointment booking, and closing. Fully automated. Text-first with voice escalation when it matters.
+
+          <p style={{
+            fontSize: '1.1rem',
+            color: 'var(--ink-55)',
+            maxWidth: '500px',
+            lineHeight: '1.75',
+            fontFamily: 'var(--font-body)',
+          }}>
+            StaffAI places a complete AI-powered organisation at your command. Named employees. Real departments. A General Manager who runs the company. An Executive Assistant who never leaves your side.
           </p>
-          
-          <div className="flex justify-center gap-1.5 animate-fade-in-up delay-200" style={{ marginBottom: '4rem' }}>
-            <Link href="/portal/signup" className="btn btn-primary btn-pulse" style={{ padding: '1.2rem 3rem', fontSize: '1.2rem', background: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
-              Start Free Forever
+
+          <div className="hero-cta-row">
+            <Link href="/portal/signup" className="btn btn-navy btn-lg btn-pulse">
+              Incorporate Free
             </Link>
-            <Link href="/pricing" className="btn btn-outline" style={{ padding: '1rem 2.5rem', fontSize: '1rem', backdropFilter: 'blur(10px)', border: '1px solid var(--border-light)' }}>
-              View Pricing
+            <Link href="/pricing" className="btn btn-ghost btn-lg">
+              View Intelligence Levels
             </Link>
           </div>
-          
-          <div className="trust-bar animate-fade-in-up delay-400" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: `1px solid var(--border-light)` }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ color: 'var(--accent-color)' }}>✓</span> Text-first revenue architecture</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ color: 'var(--accent-color)' }}>✓</span> Follow-up that does not stop</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ color: 'var(--accent-color)' }}>✓</span> Human escalation option</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ color: 'var(--accent-color)' }}>✓</span> Built on real-world sales systems</span>
+
+          <div className="hero-trust">
+            {[
+              'Named employees with distinct personalities',
+              'EA contacts you within 60 seconds of incorporation',
+              'Weekly Board Report delivered every Friday',
+              'No contracts. Cancel anytime.',
+            ].map(item => (
+              <span key={item} className="hero-trust-item">{item}</span>
+            ))}
+          </div>
+
+        </div>
+      </div>
+
+      {/* RIGHT: navy, live org preview */}
+      <div className="hero-right">
+
+        {/* Ambient photo layer — city through glass */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'url("https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=1200&q=80")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.28,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }} />
+        {/* Gradient overlay — depth and legibility */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(13,31,60,0.72) 0%, rgba(27,58,107,0.38) 60%, rgba(13,31,60,0.55) 100%)',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }} />
+
+        {/* Floating stat: lead conversion */}
+        <div className="hero-float" style={{ top: '12%', right: '-1.5rem', animation: 'float-slow 6s ease-in-out infinite' }}>
+          <div className="hero-float-label">This Week</div>
+          <div className="hero-float-value" style={{ color: 'var(--navy)' }}>+38%</div>
+          <div style={{ fontSize: '0.68rem', color: 'var(--ink-35)', marginTop: '0.15rem', fontFamily: 'var(--font-heading)' }}>
+            Lead conversion
           </div>
         </div>
-        
-        {/* Floating Glassmorphism UI Visualizer */}
-        <div className="hero-visualizer glass-panel-vip animate-fade-in-up delay-500 animate-float-slow" style={{ padding: '2rem', position: 'relative' }}>
-          
-          <div className="activity-card glass-panel" style={{ padding: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-            <div className="pulse-dot" style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-secondary)', boxShadow: '0 0 10px var(--accent-secondary)' }}></div>
-            <span style={{ flex: 1, color: 'var(--text-primary)' }}>Lead Gen Agent: Capturing...</span>
-            <span className="time" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Just now</span>
+
+        {/* Floating stat: EA online */}
+        <div className="hero-float" style={{ bottom: '14%', left: '-1.5rem', animation: 'float-slow 8s ease-in-out infinite 1s' }}>
+          <div className="hero-float-label">EA Status</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.15rem' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'dot-pulse 1.5s infinite' }} />
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '0.82rem', color: '#18a34a' }}>
+              Online. Ready.
+            </span>
           </div>
-          
-          <div className="activity-card glass-panel" style={{ opacity: 0.9, transform: 'translateX(10px)', padding: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-            <div className="pulse-dot active" style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-color)', boxShadow: '0 0 10px var(--accent-color)', animation: 'pulse 1.5s infinite' }}></div>
-            <span style={{ flex: 1, color: 'var(--text-primary)' }}>Appointment Setter: Qualifying...</span>
-            <span className="time" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>12s ago</span>
-          </div>
-          
-          <div className="activity-card glass-panel" style={{ opacity: 0.8, transform: 'translateX(20px)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-            <div className="pulse-dot success" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></div>
-            <span style={{ flex: 1, color: 'var(--text-primary)' }}>Closing Agent: Meeting booked.</span>
-            <span className="time" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>1m ago</span>
-          </div>
-          
         </div>
+
+        {/* Main org card */}
+        <div className="exec-suite-card animate-fade-in-up delay-300">
+          <div className="exec-card-header">
+            <div>
+              <div className="exec-card-title">Your Executive Suite</div>
+              <div className="exec-card-name">Active Organisation</div>
+            </div>
+            <div className="live-badge">
+              <span className="live-dot" /> Live
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            {employees.map(emp => (
+              <div key={emp.name} className="emp-row">
+                <div className="emp-avatar" style={{ background: emp.bg, color: emp.fg }}>
+                  {emp.initials}
+                </div>
+                <div className="emp-info">
+                  <div className="emp-name">{emp.name}</div>
+                  <div className="emp-role">{emp.role}</div>
+                </div>
+                <span className={`emp-status ${emp.cls}`}>{emp.status}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{
+            marginTop: '1.2rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-heading)' }}>
+              Weekly team meeting in
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>
+              2d 14h
+            </span>
+          </div>
+        </div>
+
       </div>
     </section>
   );

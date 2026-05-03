@@ -11,7 +11,7 @@ const PHASES = [
       { title: 'AI Chat Widget', desc: 'Live on-site agents for Lead Gen, Appointment Setting, and Closing.' },
       { title: 'Stripe Subscriptions', desc: '5 tiers (Launch → Dominance) with monthly & annual billing, 2 months free on annual plans.' },
       { title: 'Lead Capture & Email Enrollment', desc: 'AI automatically captures name & email and enrolls the lead into a nurture campaign instantly.' },
-      { title: 'Targeted Lead Import', desc: 'Pull targeted business leads from Google Maps by niche and city — ready for outreach.' },
+      { title: 'Targeted Lead Import', desc: 'Pull targeted business leads from Google Maps by niche and city, ready for outreach.' },
       { title: 'SMS Outreach', desc: 'Send AI-drafted SMS messages to leads directly from the dashboard.' },
       { title: 'Live Dashboard', desc: 'Live lead feed, conversation history, and usage tracking per billing period.' },
     ],
@@ -22,7 +22,7 @@ const PHASES = [
     status: 'next',
     color: '#6366f1',
     items: [
-      { title: 'Client Portal', desc: 'Full dashboard for clients to view leads, conversations, usage, and billing — no code needed.' },
+      { title: 'Client Portal', desc: 'Full dashboard for clients to view leads, conversations, usage, and billing. No code needed.' },
       { title: 'CRM & Calendar Sync', desc: 'Two-way sync with your calendar: book appointments, update contact stages, and log AI activity automatically.' },
       { title: 'Voice Calling Agent', desc: 'AI agents that call leads, qualify them, and book appointments over the phone.' },
       { title: 'Call Recording & Transcripts', desc: 'Every call recorded, transcribed, and scored for conversion coaching.' },

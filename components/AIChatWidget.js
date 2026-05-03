@@ -143,7 +143,7 @@ export default function AIChatWidget() {
           {phase === 'form' && (
             <div style={{ padding: '1.5rem', background: '#0d0d14' }}>
               <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
-                Before we start — who are we speaking with?
+                Before we start, who are we speaking with?
               </p>
               <form onSubmit={handleLeadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <input type="text" placeholder="Your first name" required autoFocus
