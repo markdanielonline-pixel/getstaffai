@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-purple: #2D0B68;
+  --color-brand-pink: #E91E80;
+  --color-brand-offwhite: #F8F6FB;
+  --color-brand-dark: #171022;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --background: #F8F6FB;
+  --foreground: #171022;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0D051A; /* Deep dark purple for background */
+    --foreground: #F8F6FB;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  @apply bg-white/70 dark:bg-black/40 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg;
+}
+
+.glass-card {
+  @apply bg-white/80 dark:bg-brand-dark/80 backdrop-blur-sm border border-black/5 dark:border-white/10 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-purple/30 dark:bg-brand-purple/50 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-brand-purple/50 dark:bg-brand-purple/70;
+}
+
+.mask-edges {
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
