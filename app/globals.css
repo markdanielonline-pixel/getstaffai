@@ -21,6 +21,16 @@
   --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 8px 40px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+
+  /* Portal theme mapping */
+  --text-primary:     var(--ink);
+  --text-secondary:   var(--ink-55);
+  --text-muted:       var(--ink-35);
+  --accent-color:     var(--navy);
+  --accent-secondary: var(--gold);
+  --bg-primary:       var(--paper);
+  --bg-secondary:     var(--white);
+  --border-light:     var(--line);
 }
 
 /* Reset */

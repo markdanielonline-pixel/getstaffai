@@ -26,8 +26,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #1B3A6B 0%, #0D1F3C 100%)',
     avatarFg: '#C9A84C',
     bio: 'Victoria manages executive calendars, document workflows, and inbox operations with the precision of a seasoned corporate administrator. Scheduling conflicts resolve before they form. Her turnaround on CEO-flagged documents is consistently same-day.',
-    ventureSeat: '$49',
-    executiveSeat: '$119',
+    executiveSeat: '$84',
     prestigeSeat: '$249',
     delivers: [
       'Full calendar management: scheduling, rescheduling, and conflict resolution',
@@ -38,8 +37,8 @@ const EMPLOYEES = [
       'Internal filing and document organisation via the company knowledge base',
     ],
     kpiLabel: 'Email drafts approved without revision',
-    kpiValue: '70%+ (Venture) to 90%+ (Prestige)',
-    market: 'An executive-level administrator costs $3,000–$5,500/month on the open market. Victoria joins your organisation from $49/month.',
+    kpiValue: '80%+ (Executive) to 95%+ (Prestige)',
+    market: 'An executive-level administrator costs $3,000–$5,500/month on the open market. Victoria joins your organisation from $84/month.',
   },
   {
     id: 'emmanuel-okafor',
@@ -53,8 +52,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #0D2A5C 0%, #1B3A6B 100%)',
     avatarFg: '#C9A84C',
     bio: 'Emmanuel builds the operational infrastructure that keeps growing organisations from breaking. His process documentation becomes the operational rulebook. His multi-stakeholder coordination handles what most administrators decline to attempt.',
-    ventureSeat: '$79',
-    executiveSeat: '$179',
+    executiveSeat: '$129',
     prestigeSeat: '$349',
     delivers: [
       'Complex multi-stakeholder scheduling and cross-functional coordination',
@@ -64,8 +62,8 @@ const EMPLOYEES = [
       'Oversight of Admin Associates when both are recruited to the same organisation',
     ],
     kpiLabel: 'Multi-party scheduling success rate',
-    kpiValue: '85%+ (Venture) to 98%+ (Prestige)',
-    market: 'A senior operations administrator costs $4,500–$8,000/month. Emmanuel joins your Admin department from $79/month.',
+    kpiValue: '88%+ (Executive) to 98%+ (Prestige)',
+    market: 'A senior operations administrator costs $4,500–$8,000/month. Emmanuel joins your Admin department from $129/month.',
   },
 
   // ── MARKETING ──
@@ -81,8 +79,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)',
     avatarFg: '#ffffff',
     bio: 'Sofia runs the full marketing operation. Social strategy, branded video, SEO, and email campaigns, each executed with the rigour of a retained agency and the brand consistency of a seasoned in-house director. Her campaigns compound. Her results are documented weekly.',
-    ventureSeat: '$199',
-    executiveSeat: '$399',
+    executiveSeat: '$299',
     prestigeSeat: '$699',
     delivers: [
       'Full social media strategy and management across all active platforms',
@@ -93,8 +90,8 @@ const EMPLOYEES = [
       'Paid social ad copy and campaign setup (media budget passed through at cost)',
     ],
     kpiLabel: 'Monthly organic traffic growth',
-    kpiValue: '5%+ (Venture) to 18%+ (Prestige)',
-    market: 'Full-service social media management costs $3,000–$7,000/month. SEO retainers cost $1,500–$5,000/month. Sofia delivers both from $199/month.',
+    kpiValue: '8%+ (Executive) to 18%+ (Prestige)',
+    market: 'Full-service social media management costs $3,000–$7,000/month. SEO retainers cost $1,500–$5,000/month. Sofia delivers both from $299/month.',
   },
   {
     id: 'yuki-tanaka',
@@ -108,8 +105,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 100%)',
     avatarFg: '#ffffff',
     bio: 'Yuki keeps your brand visible and consistent across every platform. On-time publishing, active community engagement, and email campaign support delivered with the discipline of a brand guardian who has never missed a deadline.',
-    ventureSeat: '$99',
-    executiveSeat: '$199',
+    executiveSeat: '$149',
     prestigeSeat: '$349',
     delivers: [
       'Social media content across all active platforms: Instagram, LinkedIn, Facebook, X, TikTok',
@@ -119,8 +115,8 @@ const EMPLOYEES = [
       'Content scheduling and publishing calendar management via Postiz',
     ],
     kpiLabel: 'Content published on schedule',
-    kpiValue: '90%+ (Venture) to 98%+ (Prestige)',
-    market: 'Part-time social media management costs $1,500–$3,000/month. Yuki never takes a day off and joins from $99/month.',
+    kpiValue: '92%+ (Executive) to 98%+ (Prestige)',
+    market: 'Part-time social media management costs $1,500–$3,000/month. Yuki never takes a day off and joins from $149/month.',
   },
 
   // ── CUSTOMER SERVICE ──
@@ -136,8 +132,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
     avatarFg: '#ffffff',
     bio: 'Amara handles omnichannel customer communications with warmth, precision, and a satisfaction score that consistently outperforms human team benchmarks. Every customer leaves the interaction better informed than they arrived.',
-    ventureSeat: '$89',
-    executiveSeat: '$199',
+    executiveSeat: '$144',
     prestigeSeat: '$399',
     delivers: [
       'Full omnichannel coverage: email, live chat, WhatsApp, and social media DMs',
@@ -147,8 +142,8 @@ const EMPLOYEES = [
       'Escalation to Senior CS Agent or GM when beyond her authorised scope',
     ],
     kpiLabel: 'Customer Satisfaction Score (CSAT)',
-    kpiValue: '80%+ (Venture) to 90%+ (Prestige)',
-    market: 'A customer service team of three agents costs $2,000–$4,000/month. Amara handles comparable volume from $89/month.',
+    kpiValue: '84%+ (Executive) to 90%+ (Prestige)',
+    market: 'A customer service team of three agents costs $2,000–$4,000/month. Amara handles comparable volume from $144/month.',
   },
   {
     id: 'isabela-ferreira',
@@ -162,8 +157,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #047857 0%, #065F46 100%)',
     avatarFg: '#ffffff',
     bio: 'Isabela specialises in high-stakes escalations, VIP relationship management, and churn prevention. Complaints that arrive on her desk rarely reach the CEO and rarely result in cancellations. Her retention record defines her reputation.',
-    ventureSeat: '$129',
-    executiveSeat: '$279',
+    executiveSeat: '$204',
     prestigeSeat: '$549',
     delivers: [
       'Everything the CS Agent delivers, at elevated depth and authority',
@@ -173,8 +167,8 @@ const EMPLOYEES = [
       'Weekly CS performance summary delivered directly to the GM',
     ],
     kpiLabel: 'First Contact Resolution rate',
-    kpiValue: '78%+ (Venture) to 90%+ (Prestige)',
-    market: 'A senior customer success manager costs $4,000–$7,500/month. Isabela joins your CS department from $129/month.',
+    kpiValue: '82%+ (Executive) to 90%+ (Prestige)',
+    market: 'A senior customer success manager costs $4,000–$7,500/month. Isabela joins your CS department from $204/month.',
   },
 
   // ── SALES ──
@@ -190,8 +184,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #B91C1C 0%, #991B1B 100%)',
     avatarFg: '#ffffff',
     bio: 'James runs full sales cycles from qualified lead to closed deal. His proposals are always persuasive, his pipelines always clean, and his close rates consistently sit above market average. No deal goes cold. No follow-up is skipped.',
-    ventureSeat: '$199',
-    executiveSeat: '$449',
+    executiveSeat: '$324',
     prestigeSeat: '$799',
     delivers: [
       'Full sales cycle ownership: from qualified lead through negotiation to close',
@@ -201,8 +194,8 @@ const EMPLOYEES = [
       'Sales pipeline health analysis and monthly revenue forecasting for the GM',
     ],
     kpiLabel: 'Win rate (qualified leads to closed)',
-    kpiValue: '15%+ (Venture) to 30%+ (Prestige)',
-    market: 'Senior sales representatives cost $4,000–$15,000/month. AI sales agents cost $417–$8,333/month. James joins from $199/month.',
+    kpiValue: '20%+ (Executive) to 30%+ (Prestige)',
+    market: 'Senior sales representatives cost $4,000–$15,000/month. James joins from $324/month.',
   },
   {
     id: 'rania-al-farsi',
@@ -216,8 +209,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
     avatarFg: '#ffffff',
     bio: 'Rania lives in the CRM. No lead goes cold. Every follow-up is timed, personalised, and tracked against the pipeline with the discipline of a top-tier sales professional who has never accepted a missed opportunity.',
-    ventureSeat: '$129',
-    executiveSeat: '$299',
+    executiveSeat: '$214',
     prestigeSeat: '$499',
     delivers: [
       'Lead follow-up and qualification across all inbound and assigned leads',
@@ -227,7 +219,7 @@ const EMPLOYEES = [
       'Appointment setting for the CEO or senior sales team',
     ],
     kpiLabel: 'Lead response time',
-    kpiValue: 'Under 2 hours (Venture) to under 30 minutes (Prestige)',
+    kpiValue: 'Under 1 hour (Executive) to under 30 minutes (Prestige)',
     market: 'Responding to a lead within 5 minutes increases conversion 9x. Rania responds within shift hours, and within 30 minutes at Prestige level.',
   },
 
@@ -244,8 +236,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #4338CA 0%, #3730A3 100%)',
     avatarFg: '#ffffff',
     bio: 'Tariq diagnoses at architecture level, not symptom level. The problems he solves rarely recur, because his documentation is thorough enough to prevent the next one from forming. At Prestige level, he operates with the strategic thinking of a senior engineer.',
-    ventureSeat: '$169',
-    executiveSeat: '$349',
+    executiveSeat: '$259',
     prestigeSeat: '$649',
     delivers: [
       'Complex systems and integrations troubleshooting and full resolution',
@@ -256,8 +247,8 @@ const EMPLOYEES = [
       'Vendor and platform evaluation support for upcoming integrations',
     ],
     kpiLabel: 'Complex issue resolution rate',
-    kpiValue: '75%+ (Venture) to 90%+ (Prestige)',
-    market: 'Senior IT specialists cost $6,000–$10,000/month. Senior engineers cost $10,000–$18,000/month. Tariq joins from $169/month.',
+    kpiValue: '80%+ (Executive) to 90%+ (Prestige)',
+    market: 'Senior IT specialists cost $6,000–$10,000/month. Senior engineers cost $10,000–$18,000/month. Tariq joins from $259/month.',
   },
   {
     id: 'lena-kovac',
@@ -271,8 +262,7 @@ const EMPLOYEES = [
     avatarBg: 'linear-gradient(135deg, #3730A3 0%, #4338CA 100%)',
     avatarFg: '#ffffff',
     bio: 'Lena resolves technical issues with precision and patience. Her first-contact resolution rate benchmarks consistently above department average. Her documentation is clean enough that the same issue is rarely raised twice.',
-    ventureSeat: '$99',
-    executiveSeat: '$219',
+    executiveSeat: '$159',
     prestigeSeat: '$399',
     delivers: [
       'Software, integration, and technical issue troubleshooting',
@@ -283,8 +273,8 @@ const EMPLOYEES = [
       'Inbound support ticket management via the company helpdesk',
     ],
     kpiLabel: 'Ticket resolution rate (first contact)',
-    kpiValue: '65%+ (Venture) to 83%+ (Prestige)',
-    market: 'IT support freelancers cost $1,500–$4,000/month. Premium IT support packages cost $4,000–$7,000/month. Lena joins from $99/month.',
+    kpiValue: '75%+ (Executive) to 83%+ (Prestige)',
+    market: 'IT support freelancers cost $1,500–$4,000/month. Lena joins from $159/month.',
   },
 ];
 
@@ -323,14 +313,13 @@ function EmployeeCard({ emp, isExpanded, onToggle }) {
         <div>
           <div className="emp-seat-from">From</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2rem' }}>
-            <span className="emp-seat-price">${emp.ventureSeat}</span>
+            <span className="emp-seat-price">{emp.executiveSeat}</span>
             <span className="emp-seat-mo">/mo</span>
           </div>
         </div>
         <div className="emp-level-prices">
-          Venture: ${emp.ventureSeat}/mo<br />
-          Executive: ${emp.executiveSeat}/mo<br />
-          Prestige: ${emp.prestigeSeat}/mo
+          Executive: {emp.executiveSeat}/mo<br />
+          Prestige: {emp.prestigeSeat}/mo
         </div>
       </div>
 
@@ -365,10 +354,10 @@ function EmployeeCard({ emp, isExpanded, onToggle }) {
 
           <div className="accordion-label">Seat fee by Intelligence Level</div>
           <div className="seat-levels-row">
-            {[['Venture', emp.ventureSeat], ['Executive', emp.executiveSeat], ['Prestige', emp.prestigeSeat]].map(([lvl, price]) => (
+            {[['Executive', emp.executiveSeat], ['Prestige', emp.prestigeSeat]].map(([lvl, price]) => (
               <div key={lvl} className="seat-level-pill">
                 <div className="seat-level-name">{lvl}</div>
-                <div className="seat-level-price">${price}<span style={{ fontSize: '0.6rem', opacity: 0.6 }}>/mo</span></div>
+                <div className="seat-level-price">{price}<span style={{ fontSize: '0.6rem', opacity: 0.6 }}>/mo</span></div>
               </div>
             ))}
           </div>
@@ -445,7 +434,7 @@ export default function TalentPoolPage() {
               {[
                 { n: '40+', l: 'Active profiles' },
                 { n: '5',   l: 'Departments' },
-                { n: '3',   l: 'Intelligence Levels' },
+                { n: '2',   l: 'Intelligence Levels' },
                 { n: '15%', l: 'Bundle discount' },
               ].map(s => (
                 <div key={s.l} style={{ textAlign: 'center' }}>
@@ -525,7 +514,7 @@ export default function TalentPoolPage() {
                 />
               ))}
 
-              {/* Locked ghost cards — only in "All" view */}
+              {/* Locked ghost cards ── only in "All" view */}
               {activeFilter === 'all' && GHOST_CARDS.map((g, i) => (
                 <div key={i} className="employee-card-locked">
                   {/* Ghost content */}
@@ -641,7 +630,7 @@ export default function TalentPoolPage() {
                 marginTop: '0.5rem',
               }}>
                 The same talent.<br />
-                <em className="text-gradient-gold">Three levels of depth.</em>
+                <em className="text-gradient-gold">Two levels of depth.</em>
               </h2>
               <p className="reveal reveal-delay-2" style={{
                 color: 'var(--ink-55)',
@@ -649,7 +638,7 @@ export default function TalentPoolPage() {
                 lineHeight: 1.75,
                 marginBottom: '2.5rem',
               }}>
-                Every employee is available across all three Intelligence Levels: Venture, Executive, and Prestige. The same name. The same role. A fundamentally different depth of performance.
+                Every employee is available across two Intelligence Levels: Executive and Prestige. The same name. The same role. A fundamentally different depth of performance.
               </p>
               <div className="reveal reveal-delay-3" style={{
                 display: 'flex',

@@ -217,16 +217,15 @@ ${SHARED_RULES}`;
             // 1. Push to StaffAi Systeme.io Campaigns
             const marketingResult = await enrollLeadInSysteme(email, name);
             
-            // 2. Push to Supabase Dashboard Live Feed
+            // 2. Push to Supabase portal_leads
             try {
-              const { supabase } = await import('@/lib/supabase');
-              await supabase.from('leads').insert({
-                name,
-                email,
-                stage: 'Contacted',
-                source: 'AI Web Widget'
-              });
-              console.log("[Tool] Lead logged to Supabase dashboard successfully.");
+              const { createAdminClient } = await import('@/lib/supabase/server');
+              const supabase = await createAdminClient();
+              await supabase.from('portal_leads').upsert(
+                { name, email, source: 'AI Web Widget' },
+                { onConflict: 'email' }
+              );
+              console.log("[Tool] Lead logged to portal_leads successfully.");
             } catch (err) {
               console.error("[Tool] Dashboard Supabase error: ", err);
             }

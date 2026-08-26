@@ -9,37 +9,53 @@ export async function POST(req) {
     if (body.data && body.data.event_type === 'message.received') {
       const incomingMessage = body.data.payload.text;
       const fromNumber = body.data.payload.from.phone_number;
+      // Get the exact virtual number that received the SMS to route multi-tenant replies correctly
+      const receivedNumber = body.data.payload.to?.[0]?.phone_number || process.env.TELNYX_PHONE_NUMBER;
       
-      // We would load this from the User's Moxie CRM profile in Postgres/KV
-      const mockCalendarLink = "https://moxie.com/book/demo";
+      // Load verified business booking calendar link
+      const calendarLink = process.env.TIDYCAL_LINK || "https://tidycal.com/staffai/sales";
+
+      console.log(`[Telnyx Webhook] SMS Received from ${fromNumber} targeting ${receivedNumber}. Processing reply.`);
 
       // Pass the text to our LangChain Setter Agent
       const agentResponse = await processSmsReply(
         fromNumber, 
         incomingMessage, 
-        mockCalendarLink
+        calendarLink
       );
 
-      // In a real production setup, we then call Telnyx's API to actually send the SMS
-      /* 
-      await fetch('https://api.telnyx.com/v2/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': \`Bearer \${process.env.TELNYX_API_KEY}\`
-        },
-        body: JSON.stringify({
-          from: process.env.TELNYX_PHONE_NUMBER,
-          to: fromNumber,
-          text: agentResponse.replyText
-        })
-      });
-      */
+      const replyText = agentResponse.replyText || "Thanks for your interest. We will get back to you shortly!";
+
+      // Dispatches actual outbound message back to Telnyx API
+      const telnyxKey = process.env.TELNYX_API_KEY;
+      if (telnyxKey) {
+        const response = await fetch('https://api.telnyx.com/v2/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${telnyxKey}`
+          },
+          body: JSON.stringify({
+            from: receivedNumber,
+            to: fromNumber,
+            text: replyText
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error("[Telnyx Webhook] Failed to dispatch outbound SMS via Telnyx API:", errText);
+        } else {
+          console.log(`[Telnyx Webhook] Outbound reply dispatched successfully to ${fromNumber}`);
+        }
+      } else {
+        console.warn("[Telnyx Webhook] TELNYX_API_KEY missing. Simulating outbound SMS reply:", replyText);
+      }
 
       return NextResponse.json({ 
         success: true, 
-        reply: agentResponse.replyText,
-        toolsUsed: agentResponse.toolsTriggered 
+        reply: replyText,
+        toolsUsed: agentResponse.toolsTriggered || []
       });
     }
 

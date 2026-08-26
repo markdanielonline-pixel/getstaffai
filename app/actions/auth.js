@@ -1,0 +1,81 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+
+export async function signUp(formData) {
+  const supabase = await createClient()
+
+  const email = formData.get('email')
+  const password = formData.get('password')
+  const name = formData.get('name')
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
+  })
+
+  if (error) {
+    redirect(`/portal/signup?error=${encodeURIComponent(error.message)}`)
+  }
+
+  if (data.user) {
+    // Update CEO name after auth user + ceos record created via the handle_new_user trigger
+    const admin = await createAdminClient()
+    await admin.from('ceos').update({ name }).eq('id', data.user.id)
+  }
+
+  // If Supabase email confirmation is enabled, data.session will be null.
+  if (!data.session) {
+    redirect(`/portal/signup?confirm=1&email=${encodeURIComponent(email)}`)
+  }
+
+  redirect('/portal/incorporate')
+}
+
+export async function signIn(formData) {
+  const supabase = await createClient()
+
+  const email = formData.get('email')
+  const password = formData.get('password')
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (error) {
+    redirect(`/portal/login?error=${encodeURIComponent(error.message)}`)
+  }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    await supabase.from('ceos').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id)
+  }
+
+  revalidatePath('/', 'layout')
+  redirect('/portal/dashboard')
+}
+
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/')
+}
+
+export async function getUser() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
+export async function getCEO() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data } = await supabase.from('ceos').select('*').eq('id', user.id).single()
+  return data
+}

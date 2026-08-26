@@ -60,19 +60,27 @@ export async function POST(req) {
 
 // Helper to issue REST commands to Telnyx Call Control API
 async function sendTelnyxCommand(callControlId, action, data) {
-    if (!process.env.TELNYX_API_KEY) {
+    const telnyxKey = process.env.TELNYX_API_KEY;
+    if (!telnyxKey) {
         console.warn("[Voice Webhook] Missing TELNYX_API_KEY. Mocking command:", action, data);
         return;
     }
     
-    /* PRODUCTION IMPLEMENTATION:
-    await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/${action}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`
-        },
-        body: JSON.stringify(data)
-    });
-    */
+    try {
+      const response = await fetch(`https://api.telnyx.com/v2/calls/${callControlId}/actions/${action}`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${telnyxKey}`
+          },
+          body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`[Voice Webhook] Telnyx API command ${action} failed:`, errText);
+      }
+    } catch (err) {
+      console.error(`[Voice Webhook] Connection error posting to Telnyx API:`, err.message);
+    }
 }

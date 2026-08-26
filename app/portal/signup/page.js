@@ -1,9 +1,13 @@
-'use client';
-
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { signUp } from '@/app/actions/auth';
 
-export default function Signup() {
+export default async function Signup({ searchParams }) {
+  const params = await searchParams;
+  const error = params?.error;
+  const confirm = params?.confirm;
+  const confirmEmail = params?.email;
+
   return (
     <>
       <Header />
@@ -16,7 +20,7 @@ export default function Signup() {
         padding: '5rem 1rem 2rem 1rem'
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 450px) minmax(300px, 400px)', gap: '4rem', alignItems: 'center', maxWidth: '1000px' }}>
-          
+
           <div className="glass-panel" style={{ padding: '3.5rem', background: 'var(--bg-secondary)', borderTop: '3px solid var(--accent-secondary)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)' }}>
             <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
               Start <span style={{ color: 'var(--accent-secondary)' }}>Free Forever.</span>
@@ -25,48 +29,73 @@ export default function Signup() {
               Deploy your AI Revenue Workforce in minutes. No credit card required.
             </p>
 
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>First Name</label>
-                  <input type="text" style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }} required placeholder="Alex" />
+            {error && (
+              <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#fca5a5', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                {decodeURIComponent(error)}
+              </div>
+            )}
+
+            {confirm ? (
+              <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', color: '#a7f3d0', borderRadius: '0.5rem', fontSize: '0.95rem' }}>
+                Almost there — we sent a confirmation link to <strong>{confirmEmail}</strong>. Click it to activate your account, then come back and sign in.
+              </div>
+            ) : (
+              <form action={signUp} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }}
+                    required
+                    placeholder="Alex Smith"
+                  />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Last Name</label>
-                  <input type="text" style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }} required placeholder="Smith" />
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Work Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }}
+                    required
+                    placeholder="alex@company.com"
+                  />
                 </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Work Email</label>
-                <input type="email" style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }} required placeholder="alex@company.com" />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Business Phone</label>
-                <input type="tel" style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }} required placeholder="+1 (555) 000-0000" />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Password</label>
-                <input type="password" style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }} required placeholder="••••••••" />
-              </div>
-              
-              <button type="button" onClick={() => window.location.href = '/portal/login'} className="btn btn-primary" style={{ padding: '1rem', fontSize: '1.1rem', background: 'linear-gradient(135deg, var(--accent-secondary), var(--accent-color))', color: '#ffffff', border: 'none', cursor: 'pointer', borderRadius: '0.5rem', fontWeight: 'bold', marginTop: '1rem' }}>
-                Create Account
-              </button>
-              
-              <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-                Already have an account?{' '}
-                <Link href="/portal/login" style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                  Login to your workspace here
-                </Link>
-              </div>
-            </form>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }}
+                    required
+                    minLength={6}
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ padding: '1rem', fontSize: '1.1rem', background: 'linear-gradient(135deg, var(--accent-secondary), var(--accent-color))', color: '#ffffff', border: 'none', cursor: 'pointer', borderRadius: '0.5rem', fontWeight: 'bold', marginTop: '1rem' }}
+                >
+                  Create Account
+                </button>
+
+                <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+                  Already have an account?{' '}
+                  <Link href="/portal/login" style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                    Login to your workspace here
+                  </Link>
+                </div>
+              </form>
+            )}
           </div>
 
           <div style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
               What you get today
             </h2>
-            
+
             <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '1rem', border: '1px solid var(--border-light)', marginBottom: '1.5rem' }}>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-secondary)', marginBottom: '0.5rem' }}>Launch Tier ($0/mo)</div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
@@ -82,7 +111,7 @@ export default function Signup() {
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Email support</li>
             </ul>
           </div>
-          
+
         </div>
       </div>
     </>
