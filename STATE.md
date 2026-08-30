@@ -24,7 +24,7 @@ never exposed infrastructure.
   `lib/engine.js`; **OpenRouter** is the initial upstream gateway but must not
   be hard-coded. Intended models: **Qwen 3.8 Flash** (customer-facing
   workforce), **GLM-5.3** (internal Staff AI system engineering/maintenance).
-- **Social media subsystem:** **OpenReply** is the current provisional choice,
+- **Social media subsystem:** **OutReply** is the current provisional choice,
   pending final API/integration confirmation.
 
 ## Implemented and verified
@@ -73,7 +73,7 @@ never exposed infrastructure.
 - Model layer not yet aligned: `lib/engine.js` defaults to `z-ai/glm-5.2:free`
   and `lib/provision.js` defaults to `z-ai/glm-4.7` — neither matches the
   intended Qwen 3.8 Flash (customer) / GLM-5.3 (internal) decision.
-- OpenReply integration: no code present yet (provisional decision only).
+- OutReply integration: no code present yet (provisional decision only).
 
 ## Superseded / historical (do not build on; do not delete until dependencies mapped)
 
