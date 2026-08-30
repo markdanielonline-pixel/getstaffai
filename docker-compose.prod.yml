@@ -1,0 +1,72 @@
+services:
+  staffai-web:
+    build: .
+    container_name: staffai-web
+    restart: always
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env.local
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:3000/portal/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - npm_network
+      - stack_default
+
+  staffai-reminder-worker:
+    image: curlimages/curl:8.16.0
+    container_name: staffai-reminder-worker
+    restart: always
+    env_file:
+      - .env.local
+    depends_on:
+      staffai-web:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        while true; do
+          curl --fail --silent --show-error --request POST --header "Authorization: Bearer $$WORKER_SECRET_KEY" http://staffai-web:3000/api/worker/reminders || true;
+          curl --fail --silent --show-error http://staffai-web:3000/api/health || true;
+          sleep 30;
+        done
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - npm_network
+      - stack_default
+
+  pgvector:
+    image: ankane/pgvector:latest
+    container_name: stack-pgvector-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: staffai
+      POSTGRES_PASSWORD: StaffAIVectorPassword2026!
+      POSTGRES_DB: company_brain
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - stack_default
+
+networks:
+  npm_network:
+    external: true
+  stack_default:
+    external: true
+
+volumes:
+  pgvector_data:

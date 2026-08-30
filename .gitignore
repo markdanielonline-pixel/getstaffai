@@ -30,6 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local audit, deployment, database, and credential artifacts
+*.tar.gz
+*.zip
+*.sqlite
+*_token.txt
+
 # env files (can opt-in for committing if needed)
 .env*
 
@@ -41,3 +47,7 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# multi-agent ops workspace and logs (credential review pending)
+/Team-Comms/
+*.log

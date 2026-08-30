@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
-import { executeTask } from '@/lib/engine';
+import { dispatchTaskToAgent, pollProvisionTask } from '@/lib/provision';
 import { createAdminClient } from '@/lib/supabase/server';
+import { hasValidWorkerAuthorization } from '@/lib/worker-auth';
 
 export async function POST(req) {
   try {
+    if (!hasValidWorkerAuthorization(req)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { taskId, orgId, employeeId, description, idempotencyKey } = await req.json();
 
     // The caller can either pass an existing taskId, OR pass the raw intent and we create the task here.
@@ -48,11 +53,33 @@ export async function POST(req) {
       targetTaskId = newTask.id;
     }
 
-    // In a real serverless env like Vercel, we would use `waitUntil(executeTask(targetTaskId))` 
-    // to return the 202 Accepted instantly while the background function runs.
-    // Since we are running in a long-lived Node.js process (Next.js server), 
-    // we can just fire and forget the Promise.
-    executeTask(targetTaskId).catch(err => console.error("Background task failed:", err));
+    const taskResult = await supabase.from('employee_tasks')
+      .select('id, employee_id, description, idempotency_key, provision_task_id')
+      .eq('id', targetTaskId)
+      .single();
+    if (taskResult.error) throw taskResult.error;
+
+    if (taskResult.data.provision_task_id) {
+      pollProvisionTask(taskResult.data.id)
+        .catch(err => console.error("Provision task synchronization failed:", err));
+    } else {
+      try {
+        await dispatchTaskToAgent(taskResult.data.employee_id, taskResult.data.description, {
+          idempotencyKey: taskResult.data.idempotency_key,
+          waitForResult: false,
+        });
+        pollProvisionTask(taskResult.data.id)
+          .catch(err => console.error("Provision task synchronization failed:", err));
+      } catch (dispatchError) {
+        await supabase.from('employee_tasks').update({
+          status: 'failed',
+          provision_status: 'unavailable',
+          error_details: dispatchError.message,
+          provision_last_synced_at: new Date().toISOString(),
+        }).eq('id', taskResult.data.id);
+        return NextResponse.json({ error: 'Provision runtime unavailable', taskId: taskResult.data.id }, { status: 503 });
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 

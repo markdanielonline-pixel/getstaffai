@@ -1,4 +1,4 @@
-import { generateText } from 'ai';
+import { generateText, stepCountIs } from 'ai';
 import { NextResponse } from 'next/server';
 import { getLLM } from '@/lib/agents/llm-router';
 import { z } from 'zod';
@@ -177,16 +177,20 @@ ${SHARED_RULES}`;
       tools = {
         lookupBusiness: {
           description: "Look up a business on Google Maps using Outscraper to find contact info. Use this when a user wants you to check if they can scrape a certain niche in a city.",
-          parameters: z.object({
+          inputSchema: z.object({
             query: z.string().describe("The search query for Google Maps, e.g., 'plumbers in Dallas, TX'")
           }),
           execute: async ({ query }) => {
             console.log(`[Tool] Looking up business via Outscraper: ${query}`);
             try {
+              if (!process.env.OUTSCRAPER_API_KEY) {
+                return { success: false, message: 'Business lookup is not configured.' };
+              }
               const url = `https://api.outscraper.com/maps/search-v2?query=${encodeURIComponent(query)}&limit=3`;
               const response = await fetch(url, {
-                headers: { 'X-API-KEY': process.env.OUTSCRAPER_API_KEY || '' }
+                headers: { 'X-API-KEY': process.env.OUTSCRAPER_API_KEY }
               });
+              if (!response.ok) throw new Error(`Outscraper returned ${response.status}`);
               const data = await response.json();
               
               if (data && data.data && data.data.length > 0) {
@@ -207,34 +211,45 @@ ${SHARED_RULES}`;
         },
         captureContactInfo: {
           description: "When the user shares their name and email, trigger this strictly to lock the lead in.",
-          parameters: z.object({
+          inputSchema: z.object({
             name: z.string().describe("The user's provided first and last name"),
             email: z.string().email().describe("The user's provided email address")
           }),
           execute: async ({ name, email }) => {
             console.log(`[Tool] Capturing lead info for: ${name} <${email}>`);
             
-            // 1. Push to StaffAi Systeme.io Campaigns
-            const marketingResult = await enrollLeadInSysteme(email, name);
-            
-            // 2. Push to Supabase portal_leads
+            // The StaffAI database is the source of truth. Never report a captured lead unless this succeeds.
+            let leadSaved = false;
             try {
               const { createAdminClient } = await import('@/lib/supabase/server');
               const supabase = await createAdminClient();
-              await supabase.from('portal_leads').upsert(
+              const { error } = await supabase.from('portal_leads').upsert(
                 { name, email, source: 'AI Web Widget' },
                 { onConflict: 'email' }
               );
+              if (error) throw error;
+              leadSaved = true;
               console.log("[Tool] Lead logged to portal_leads successfully.");
             } catch (err) {
               console.error("[Tool] Dashboard Supabase error: ", err);
             }
 
+            if (!leadSaved) {
+              return { success: false, message: 'I could not securely save those details. Please use the contact page.' };
+            }
+
+            let marketingResult = { success: false };
+            try {
+              marketingResult = await enrollLeadInSysteme(email, name);
+            } catch (err) {
+              console.error('[Tool] Marketing enrollment error:', err);
+            }
+
             return {
               success: true,
-              message: `You successfully secured the lead! 
-                Marketing status text: ${marketingResult.success ? "Enrolled" : "Warning - Check marketing key"}
-                Reply back acknowledging you have their details and push the conversation forward.`
+              leadSaved: true,
+              marketingEnrolled: marketingResult.success === true,
+              message: 'The contact details were securely saved. Acknowledge receipt without claiming marketing enrollment.'
             };
           }
         }
@@ -243,19 +258,19 @@ ${SHARED_RULES}`;
       tools = {
         checkCalendarAvailability: {
           description: "Check the Moxie calendar for available time slots on a given date.",
-          parameters: z.object({
+          inputSchema: z.object({
             date: z.string().describe("The date to check in YYYY-MM-DD format, e.g., '2024-10-15'")
           }),
           execute: async ({ date }) => {
             console.log(`[Tool] Checking Moxie calendar for: ${date}`);
-            if (!process.env.MOXIE_API_KEY) {
-              console.warn("MOXIE_API_KEY missing. Simulating availability for demo.");
-              return { success: true, availableSlots: ["10:00 AM", "1:30 PM", "3:00 PM", "4:15 PM"] };
+            if (!process.env.MOXIE_API_KEY || !process.env.MOXIE_API_URL) {
+              return { success: false, message: 'Calendar availability is temporarily unavailable.' };
             }
 
             try {
               const url = `${process.env.MOXIE_API_URL}/calendar/availability?date=${date}`;
               const response = await fetch(url, { headers: { 'Authorization': `Bearer ${process.env.MOXIE_API_KEY}` }});
+              if (!response.ok) throw new Error(`Moxie returned ${response.status}`);
               const data = await response.json();
               return { success: true, availableSlots: data.slots || [] };
             } catch (err) {
@@ -265,16 +280,15 @@ ${SHARED_RULES}`;
         },
         bookAppointment: {
           description: "Book an appointment directly into the Moxie CRM calendar.",
-          parameters: z.object({
+          inputSchema: z.object({
             name: z.string().describe("The lead's full name"),
             email: z.string().email().describe("The lead's email address"),
             timeSlot: z.string().describe("The desired time slot, e.g., '1:30 PM'")
           }),
           execute: async ({ name, email, timeSlot }) => {
             console.log(`[Tool] Booking Moxie appointment for ${name} at ${timeSlot}`);
-            if (!process.env.MOXIE_API_KEY) {
-              console.warn("MOXIE_API_KEY missing. Simulating booking for demo.");
-              return { success: true, message: `Successfully booked a placeholder meeting for ${name} at ${timeSlot}. Your CRM will sync once the key is added!` };
+            if (!process.env.MOXIE_API_KEY || !process.env.MOXIE_API_URL) {
+              return { success: false, message: 'Direct calendar booking is temporarily unavailable. Use https://calendly.com/getstaffai/demo.' };
             }
 
             try {
@@ -305,6 +319,8 @@ ${SHARED_RULES}`;
       model,
       messages,
       system: systemPrompt,
+      tools,
+      stopWhen: stepCountIs(4),
     });
 
     return NextResponse.json({ content: text });

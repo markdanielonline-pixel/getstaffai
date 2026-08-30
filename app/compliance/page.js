@@ -335,7 +335,7 @@ export default function CompliancePage() {
             </p>
 
             <h3 style={h3Style}>2.10 Limitation of Liability</h3>
-            <p style={pStyle} style={{ ...pStyle, textTransform: 'uppercase', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink-80)' }}>
+            <p style={{ ...pStyle, textTransform: 'uppercase', fontSize: '0.82rem', fontWeight: 600, color: 'var(--ink-80)' }}>
               To the maximum extent permitted by applicable law, Studio9 LLC and its officers, directors, employees, agents, and licensors shall not be liable for any indirect, incidental, special, consequential, punitive, or exemplary damages, including but not limited to: loss of profits, loss of revenue, loss of data, loss of goodwill, loss of business opportunities, or business interruption, arising out of or in connection with your use of or inability to use the service, regardless of whether Studio9 LLC was advised of the possibility of such damages.
             </p>
             <p style={pStyle}>

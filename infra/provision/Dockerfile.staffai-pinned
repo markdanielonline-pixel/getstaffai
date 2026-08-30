@@ -1,0 +1,10 @@
+ARG AGENT_RUNTIME_IMAGE
+FROM ${AGENT_RUNTIME_IMAGE}
+
+COPY packages/provisiond/bundle/provisiond.mjs /opt/provisiond/provisiond.mjs
+COPY packages/provisiond/package.json /opt/provisiond/package.json
+COPY docker/agent-runtime/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

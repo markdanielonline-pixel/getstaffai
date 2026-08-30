@@ -1,7 +1,8 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { resolvePriceEnvVar } from '@/lib/billing/tierMap';
+import { provisionInitialWorkforce } from '@/lib/workforce';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -38,9 +39,35 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Invalid plan selected' }, { status: 400 });
     }
 
-    // Save incorporation details before checkout — survives abandonment.
-    if (companyName) {
-      await supabase.from('ceos').update({
+    if (!companyName?.trim()) {
+      return NextResponse.json({ error: 'Company name is required' }, { status: 400 });
+    }
+
+    const admin = await createAdminClient();
+    const ceoResult = await admin.from('ceos').select('org_id, stripe_customer_id, name, email').eq('id', user.id).single();
+    if (ceoResult.error) throw new Error(`Unable to load CEO record: ${ceoResult.error.message}`);
+
+    let orgId = ceoResult.data.org_id;
+    if (!orgId) {
+      const orgResult = await admin.from('organizations').insert({
+        name: companyName.trim(),
+        industry: industry || null,
+        status: 'active',
+        settings: {},
+      }).select('id').single();
+      if (orgResult.error) throw new Error(`Unable to create organization: ${orgResult.error.message}`);
+      orgId = orgResult.data.id;
+    } else {
+      const orgResult = await admin.from('organizations').update({
+        name: companyName.trim(),
+        industry: industry || null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', orgId);
+      if (orgResult.error) throw new Error(`Unable to update organization: ${orgResult.error.message}`);
+    }
+
+    const ceoUpdate = await admin.from('ceos').update({
+        org_id: orgId,
         company_name: companyName,
         industry,
         business_description: businessDescription,
@@ -49,29 +76,34 @@ export async function POST(req) {
         culture_tone: cultureTone,
         preferred_channel: preferredChannel || 'app',
       }).eq('id', user.id);
-    }
+    if (ceoUpdate.error) throw new Error(`Unable to save incorporation details: ${ceoUpdate.error.message}`);
 
     // If Launch tier, bypass Stripe checkout entirely and instantly provision.
     if (tierName === 'Launch') {
-      await supabase.from('ceos').update({
+      const activateResult = await admin.from('ceos').update({
         status: 'active',
         intelligence_level: 'free',
         billing_period: billing,
         incorporated_at: new Date().toISOString(),
       }).eq('id', user.id);
+      if (activateResult.error) throw new Error(`Unable to activate CEO: ${activateResult.error.message}`);
 
-      await supabase.from('subscriptions').upsert({
+      const subscriptionResult = await admin.from('subscriptions').upsert({
         ceo_id: user.id,
         intelligence_level: 'free',
         billing_period: billing,
         status: 'active',
         access_fee_cents: 0,
       }, { onConflict: 'ceo_id' });
+      if (subscriptionResult.error) throw new Error(`Unable to create subscription: ${subscriptionResult.error.message}`);
 
-      await supabase.from('wallets').upsert(
+      const walletResult = await admin.from('wallets').upsert(
         { ceo_id: user.id, balance_cents: 0 },
         { onConflict: 'ceo_id', ignoreDuplicates: true }
       );
+      if (walletResult.error) throw new Error(`Unable to create wallet: ${walletResult.error.message}`);
+
+      await provisionInitialWorkforce(user.id, 'free');
 
       return NextResponse.json({ url: `${siteUrl}/portal/incorporate/success` });
     }
@@ -91,7 +123,7 @@ export async function POST(req) {
     }
 
     // Get or create the Stripe customer for this CEO
-    const { data: ceo } = await supabase.from('ceos').select('stripe_customer_id, name, email').eq('id', user.id).single();
+    const ceo = ceoResult.data;
     let customerId = ceo?.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -100,7 +132,8 @@ export async function POST(req) {
         metadata: { ceo_id: user.id },
       });
       customerId = customer.id;
-      await supabase.from('ceos').update({ stripe_customer_id: customerId }).eq('id', user.id);
+      const customerResult = await admin.from('ceos').update({ stripe_customer_id: customerId }).eq('id', user.id);
+      if (customerResult.error) throw new Error(`Unable to save Stripe customer: ${customerResult.error.message}`);
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -110,9 +143,9 @@ export async function POST(req) {
       success_url: `${siteUrl}/portal/incorporate/success`,
       cancel_url: `${siteUrl}/portal/incorporate`,
       allow_promotion_codes: true,
-      metadata: { ceo_id: user.id, tier: tierName, billing },
+      metadata: { ceo_id: user.id, org_id: orgId, tier: tierName, billing },
       subscription_data: {
-        metadata: { ceo_id: user.id, tier: tierName, billing },
+        metadata: { ceo_id: user.id, org_id: orgId, tier: tierName, billing },
       },
     });
 

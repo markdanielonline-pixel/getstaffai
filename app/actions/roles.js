@@ -1,9 +1,11 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/server';
+import { requireStaffAdmin } from '@/lib/auth/admin';
 import { revalidatePath } from 'next/cache';
 
 export async function createRoleTemplate(data) {
+  await requireStaffAdmin();
   const supabase = await createAdminClient();
   
   const { data: newRole, error } = await supabase
@@ -31,6 +33,7 @@ export async function createRoleTemplate(data) {
 }
 
 export async function updateRoleTemplate(id, updates) {
+  await requireStaffAdmin();
   const supabase = await createAdminClient();
   
   const { error } = await supabase

@@ -9,6 +9,7 @@ export default function PortalSidebar() {
     { name: 'Overview', href: '/portal/dashboard', icon: '📊' },
     { name: 'Conversations', href: '/portal/dashboard/conversations', icon: '💬' },
     { name: 'AI Workforce', href: '/portal/dashboard/agents', icon: '🤖' },
+    { name: 'Settings & Support', href: '/portal/dashboard/settings', icon: '⚙️' },
   ];
 
   return (
@@ -72,8 +73,8 @@ export default function PortalSidebar() {
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
           Workforce Active
         </div>
-        <Link href="/pricing" style={{ fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>
-          Upgrade your organisation →
+        <Link href="/portal/dashboard/settings" style={{ fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>
+          Manage billing →
         </Link>
       </div>
     </aside>

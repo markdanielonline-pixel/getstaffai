@@ -1,13 +1,13 @@
 import Header from '@/components/Header';
-import Link from 'next/link';
+import SupportForm from '@/components/SupportForm';
 
 export default function Contact() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: '100px', paddingBottom: '8rem' }}>
+      <main className="contact-main">
         <section className="section container text-center animate-fade-in-up">
-          <h1 style={{ fontSize: '4.5rem', fontWeight: '800', marginBottom: '1.5rem', letterSpacing: '-0.04em' }}>
+          <h1 className="contact-title">
             Connect with StaffAi.
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 2rem auto', lineHeight: '1.6' }}>
@@ -19,9 +19,9 @@ export default function Contact() {
           </div>
         </section>
 
-        <section className="container" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1.2fr)', gap: '4rem', maxWidth: '1000px', margin: '0 auto' }}>
+        <section className="container contact-grid">
           
-          <div className="glass-panel-vip animate-fade-in-up delay-100" style={{ padding: '3rem' }}>
+          <div className="glass-panel-vip contact-panel animate-fade-in-up delay-100">
             <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Direct Contact</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
@@ -35,44 +35,9 @@ export default function Contact() {
             </div>
           </div>
 
-          <div className="glass-panel-vip animate-fade-in-up delay-200" style={{ padding: '3rem', background: 'var(--bg-secondary)' }}>
+          <div className="glass-panel-vip contact-panel contact-form-panel animate-fade-in-up delay-200">
             <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: '2rem' }}>Sales Inquiry</h2>
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>First Name</label>
-                  <input type="text" style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Last Name</label>
-                  <input type="text" style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Work Email</label>
-                <input type="email" style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Company Name</label>
-                <input type="text" style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Estimated Lead Volume</label>
-                <select style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                  <option value="1-50">1 - 50 leads/mo</option>
-                  <option value="51-500">51 - 500 leads/mo</option>
-                  <option value="501-2000">501 - 2,000 leads/mo</option>
-                  <option value="2000+">2,000+ leads/mo</option>
-                </select>
-              </div>
-
-              <button type="button" className="btn btn-primary btn-pulse" style={{ padding: '1.2rem', background: 'var(--accent-color)', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', marginTop: '1rem', cursor: 'pointer' }}>
-                Submit Inquiry
-              </button>
-            </form>
+            <SupportForm source="contact" defaults={{ category: 'sales' }} />
           </div>
 
         </section>

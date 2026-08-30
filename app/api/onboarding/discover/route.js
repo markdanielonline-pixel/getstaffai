@@ -12,10 +12,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'websiteUrl is required' }, { status: 400 });
     }
 
-    const orgId = ceo.org_id || '00000000-0000-0000-0000-000000000000';
-    
-    // Run the discovery pipeline
-    const companyBrain = await discoverCompanyData(orgId, websiteUrl);
+    const companyBrain = await discoverCompanyData(ceo.org_id || null, websiteUrl);
 
     return NextResponse.json({ 
       success: true, 

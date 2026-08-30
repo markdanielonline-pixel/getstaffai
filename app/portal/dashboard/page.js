@@ -7,11 +7,11 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 export default async function Dashboard() {
   const ceo = await getCEO();
   if (!ceo) redirect('/portal/login');
+  if (!ceo.org_id) redirect('/portal/onboarding'); // Redirect to onboarding if no org is attached
 
   const supabase = await createClient();
   
-  // We assume ceo.org_id exists for v2 tenancy, fallback for now
-  const orgId = ceo.org_id || '00000000-0000-0000-0000-000000000000';
+  const orgId = ceo.org_id;
 
   // Fetch v2 stats
   const { data: employeesData } = await supabase.from('employees').select('*').eq('org_id', orgId);
@@ -93,8 +93,8 @@ export default async function Dashboard() {
             <div className="glass-panel" style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '0.5rem', border: '1px solid var(--border-light)' }}>
               <h3 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem', textTransform: 'uppercase' }}>Priorities Today</h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                <li>â—‹ Review Q3 SDR performance</li>
-                <li>â—‹ Finalize brand tone settings</li>
+                <li>• Review Q3 SDR performance</li>
+                <li>• Finalize brand tone settings</li>
               </ul>
             </div>
 

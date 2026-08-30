@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { executeTask } from '@/lib/engine';
+import { dispatchTaskToAgent } from '@/lib/provision';
 
 export async function POST(req) {
   try {
@@ -32,20 +32,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
-    // 1. Fetch chat history
-    const { data: history } = await supabase
-      .from('messages')
-      .select('role, content')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    const historyMessages = (history ?? []).reverse().map(m => ({
-      role: m.role === 'employee' ? 'assistant' : 'user',
-      content: m.content,
-    }));
-
-    // 2. Record the CEO's incoming message
+    // 1. Record the CEO's incoming message
     const admin = await createAdminClient();
     await admin.from('messages').insert({
       conversation_id: conversationId,
@@ -55,24 +42,13 @@ export async function POST(req) {
       metadata: {},
     });
 
-    // 3. Create an Execution Engine Task for this message
+    // 2. Dispatch the message to the employee's real Provision workforce runtime.
     const idempotencyKey = `chat_${conversationId}_${Date.now()}`;
-    const { data: task, error: taskError } = await admin
-        .from('employee_tasks')
-        .insert({
-          org_id: employee.org_id,
-          employee_id: employee.id,
-          description: message.trim(),
-          idempotency_key: idempotencyKey,
-          status: 'pending'
-        })
-        .select('id')
-        .single();
-    
-    if (taskError) throw taskError;
-
-    // 4. Execute the Task Synchronously (for now, to match UI expectations)
-    const engineResult = await executeTask(task.id, { chatHistory: historyMessages });
+    const engineResult = await dispatchTaskToAgent(employee.id, message.trim(), {
+      idempotencyKey,
+      title: `CEO message to ${employee.name}`,
+      waitForResult: true,
+    });
 
     if (!engineResult.success) {
       throw new Error(`Engine execution failed: ${engineResult.error || engineResult.reason}`);
@@ -86,7 +62,7 @@ export async function POST(req) {
       ceo_id: user.id,
       role: 'employee',
       content: responseText,
-      metadata: { employee_id: employee.id, employee_name: employee.name, task_id: task.id },
+      metadata: { employee_id: employee.id, employee_name: employee.name, task_id: engineResult.taskId, provision_task_id: engineResult.provisionTaskId },
     }).select().single();
 
     await admin.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);

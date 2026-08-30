@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -9,7 +10,7 @@ export default function Header() {
     <header className="header">
       <div className="container flex-between header-inner">
         <Link href="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <img src="/logo.png" alt="StaffAI" style={{ height: '32px', width: 'auto' }} />
+          <Image src="/logo.png" alt="StaffAI" width={160} height={32} priority style={{ height: '32px', width: 'auto' }} />
         </Link>
 
         <nav className="nav-links">

@@ -1,0 +1,31 @@
+services:
+  staffai-web:
+    build: .
+    container_name: staffai-web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    networks:
+      - stack_default
+
+  pgvector:
+    image: ankane/pgvector:latest
+    container_name: stack-pgvector-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: staffai
+      POSTGRES_PASSWORD: StaffAIVectorPassword2026!
+      POSTGRES_DB: company_brain
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - stack_default
+
+networks:
+  stack_default:
+    external: true
+
+volumes:
+  pgvector_data:

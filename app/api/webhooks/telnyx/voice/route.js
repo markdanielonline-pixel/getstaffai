@@ -1,5 +1,6 @@
 import { processVoiceInteraction } from '@/lib/agents/closer';
 import { NextResponse } from 'next/server';
+import { TelnyxWebhookAuthenticationError, TelnyxWebhookConfigurationError, verifyTelnyxWebhook } from '@/lib/telnyx-webhook';
 
 /**
  * Handle Telnyx Call Control Webhooks for the Closer Agent
@@ -8,7 +9,7 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(req) {
   try {
-    const body = await req.json();
+    const body = await verifyTelnyxWebhook(req);
     const eventType = body?.data?.event_type;
     const callControlId = body?.data?.payload?.call_control_id;
 
@@ -54,7 +55,9 @@ export async function POST(req) {
 
   } catch (error) {
     console.error("Voice Webhook Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error instanceof TelnyxWebhookAuthenticationError ? 403
+      : error instanceof TelnyxWebhookConfigurationError ? 503 : 500;
+    return NextResponse.json({ error: status === 403 ? 'Forbidden' : 'Webhook processing failed' }, { status });
   }
 }
 
@@ -62,8 +65,7 @@ export async function POST(req) {
 async function sendTelnyxCommand(callControlId, action, data) {
     const telnyxKey = process.env.TELNYX_API_KEY;
     if (!telnyxKey) {
-        console.warn("[Voice Webhook] Missing TELNYX_API_KEY. Mocking command:", action, data);
-        return;
+        throw new TelnyxWebhookConfigurationError('TELNYX_API_KEY is not configured');
     }
     
     try {
@@ -79,8 +81,10 @@ async function sendTelnyxCommand(callControlId, action, data) {
       if (!response.ok) {
         const errText = await response.text();
         console.error(`[Voice Webhook] Telnyx API command ${action} failed:`, errText);
+        throw new Error(`Telnyx command ${action} failed with status ${response.status}`);
       }
     } catch (err) {
       console.error(`[Voice Webhook] Connection error posting to Telnyx API:`, err.message);
+      throw err;
     }
 }

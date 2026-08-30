@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const simulationFeatures = [
   { icon: '📊', title: 'The Board Report', desc: 'Every Friday your GM delivers a full company performance report. Outcomes, KPIs, department breakdowns, staff assessments, and the week ahead. No activity padding.' },
@@ -114,7 +115,7 @@ export default function Features() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
+          <div className="department-grid">
             {simulationFeatures.map((f, i) => (
               <div key={f.title} className={`feature-card reveal reveal-delay-${(i % 3) + 1}`}>
                 <div className="feature-icon">{f.icon}</div>
@@ -129,7 +130,7 @@ export default function Features() {
       {/* EA SPOTLIGHT — dark navy section */}
       <section className="section" style={{ background: 'var(--navy)' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
+          <div className="market-value-grid">
 
             <div className="reveal">
               <span className="kicker" style={{ color: 'rgba(201,168,76,0.8)' }}>The Executive Assistant</span>
@@ -211,7 +212,7 @@ export default function Features() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
+          <div className="department-grid">
             {departments.map((d, i) => (
               <div key={d.name} className={`dept-card reveal reveal-delay-${(i % 3) + 1}`}>
                 <div className="dept-number">{d.n}</div>
@@ -250,10 +251,12 @@ export default function Features() {
       {/* PHOTO SPLIT — editorial moment */}
       <div className="photo-split">
         <div className="photo-split-photo photo-reveal">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80"
             alt="Executive team in operation"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            fill
+            sizes="(max-width: 900px) 100vw, 50vw"
+            style={{ objectFit: 'cover' }}
           />
           <div style={{
             position: 'absolute',
@@ -300,7 +303,7 @@ export default function Features() {
       {/* MARKET VALUE — white section with value table */}
       <section className="section" style={{ background: 'var(--white)' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
+          <div className="market-value-grid">
             <div className="reveal">
               <span className="kicker">Real Market Value</span>
               <h2 className="display-md reveal reveal-delay-1" style={{ marginBottom: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
@@ -317,9 +320,9 @@ export default function Features() {
             <div className="reveal reveal-delay-2">
               <div className="card" style={{ padding: '0' }}>
                 {marketValues.map((row, i) => (
-                  <div key={row.service} className="value-row" style={{ padding: '1.1rem 2rem' }}>
+                  <div key={row.service} className="value-row">
                     <span className="value-service">{row.service}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                    <div className="value-prices">
                       <span className="value-market">{row.market}</span>
                       <span className="value-staffai">{row.staffai}</span>
                     </div>

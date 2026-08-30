@@ -1,0 +1,79 @@
+services:
+  app:
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8086:8085"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: http://provision-app-1:8000
+      DB_CONNECTION: mysql
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: provision
+      DB_USERNAME: provision
+      DB_PASSWORD: ${PROVISION_DB_PASSWORD}
+      PROVISION_DOCKER_APP_URL: http://provision-app-1:8000
+      TASK_AGENTS_ENABLED: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+    networks:
+      - default
+      - staffai
+
+  redis:
+    restart: unless-stopped
+
+  database:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: provision
+      MARIADB_USER: provision
+      MARIADB_PASSWORD: ${PROVISION_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${PROVISION_DB_ROOT_PASSWORD}
+    volumes:
+      - database-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  agent-runtime:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: docker/agent-runtime/Dockerfile.staffai-pinned
+      args:
+        AGENT_RUNTIME_IMAGE: ${PROVISION_AGENT_RUNTIME_IMAGE}
+    ports: !override
+      - "127.0.0.1:6080:6080"
+    volumes:
+      - provisiond-config:/etc/provisiond
+    healthcheck:
+      test: ["CMD-SHELL", "node --version >/dev/null && test -f /opt/provisiond/provisiond.mjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  database-data:
+  provisiond-config:
+
+networks:
+  staffai:
+    external: true
+    name: stack_default

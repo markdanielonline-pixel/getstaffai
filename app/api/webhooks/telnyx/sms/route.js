@@ -1,9 +1,10 @@
 import { processSmsReply } from '@/lib/agents/setter';
 import { NextResponse } from 'next/server';
+import { TelnyxWebhookAuthenticationError, TelnyxWebhookConfigurationError, verifyTelnyxWebhook } from '@/lib/telnyx-webhook';
 
 export async function POST(req) {
   try {
-    const body = await req.json();
+    const body = await verifyTelnyxWebhook(req);
     
     // Validate Telnyx Webhook payload
     if (body.data && body.data.event_type === 'message.received') {
@@ -45,11 +46,12 @@ export async function POST(req) {
         if (!response.ok) {
           const errText = await response.text();
           console.error("[Telnyx Webhook] Failed to dispatch outbound SMS via Telnyx API:", errText);
+          throw new Error(`Telnyx outbound SMS failed with status ${response.status}`);
         } else {
           console.log(`[Telnyx Webhook] Outbound reply dispatched successfully to ${fromNumber}`);
         }
       } else {
-        console.warn("[Telnyx Webhook] TELNYX_API_KEY missing. Simulating outbound SMS reply:", replyText);
+        throw new TelnyxWebhookConfigurationError('TELNYX_API_KEY is not configured');
       }
 
       return NextResponse.json({ 
@@ -63,6 +65,8 @@ export async function POST(req) {
     
   } catch (error) {
     console.error("SMS Webhook Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const status = error instanceof TelnyxWebhookAuthenticationError ? 403
+      : error instanceof TelnyxWebhookConfigurationError ? 503 : 500;
+    return NextResponse.json({ error: status === 403 ? 'Forbidden' : 'Webhook processing failed' }, { status });
   }
 }
