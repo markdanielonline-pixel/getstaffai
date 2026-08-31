@@ -36,9 +36,14 @@ never exposed infrastructure.
   Provision runtime mapping columns exist).
 - `lib/provision.js` — real Provision Core REST client: team/agent/task
   provisioning, idempotency keys, tenant-correlation guards, result polling.
-- Employee factory (`lib/factory.js`): idempotent hiring, knowledge binding
-  (pgvector, optional), tool-identity provisioning, Provision runtime gating
-  (employees never go `active` until Provision reports the agent active).
+- Initial workforce foundation: EA/GM use the existing factory and Provision
+  integration with tenant-scoped SQL leases, durable employee reservations and
+  resumable mappings. Active/training claims require fresh operational evidence,
+  not merely Provision Active records. Dashboard checks readiness live and offers
+  authenticated resume. See `docs/P1-WORKFORCE-FOUNDATION.md`.
+- Local validation: 16 PostgreSQL-backed foundation tests; Provision 33 targeted
+  tests (151 assertions); real disposable Redis network isolation fixture passed.
+  These are integration fixtures, not proof of a production employee task.
 - Control-plane hardening: operational-table security, CEO/org/scheduling
   unification, idempotency constraints, SMS conversation memory, support/ops
   tables (migrations 2026-08-28).
@@ -56,6 +61,9 @@ never exposed infrastructure.
 - Provision Core end-to-end dispatch (checkout → workforce → agent task →
   result): code paths exist and checkout/stripe hooks call
   `provisionInitialWorkforce`, but no verified production run is recorded.
+- New initial-workforce SQL migration and Provision dedicated daemon-heartbeat
+  migration are local only. Earlier runtime/Redis isolation and these foundation
+  changes require an authorized rollout before production workforce use.
 - Deployment: `Dockerfile`, `docker-compose*.yml`, `vps_deploy.sh` exist;
   current live deployment state (Vercel vs Contabo VPS) not verified from here.
 
@@ -102,6 +110,7 @@ never exposed infrastructure.
 1. Read this file top to bottom.
 2. `git log --oneline -5` and `git status` — expect the checkpoint commits and
    only untracked debris.
-3. The open implementation seam is the **frappe-provisioner + ERPNext adapters
-   + model-layer alignment (Qwen 3.8 Flash / GLM-5.3)** — do not start without
-   founder authorization.
+3. Review the P1 foundation checkpoint and rollout prerequisites first. The next
+   production gate is authorized migration/runtime rollout followed by two-tenant
+   provisioning and a real employee task. Frappe/model work remains separately
+   scoped; do not deploy or start another phase without founder authorization.

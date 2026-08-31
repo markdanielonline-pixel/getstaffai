@@ -5,7 +5,7 @@ import { provisionInitialWorkforce } from '@/lib/workforce';
 
 const requestSchema = z.object({
   ceoId: z.string().uuid(),
-  intelligenceLevel: z.enum(['venture', 'executive', 'prestige']),
+  intelligenceLevel: z.enum(['free', 'venture', 'executive', 'prestige']),
 });
 
 export async function POST(request) {

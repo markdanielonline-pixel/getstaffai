@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import PortalHeader from '@/components/PortalHeader';
 import PortalSidebar from '@/components/PortalSidebar';
 import { getCEO } from '@/app/actions/auth';
+import { retryInitialWorkforce } from '@/app/actions/workforce';
+import { inspectInitialWorkforce } from '@/lib/workforce';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 export default async function Dashboard() {
@@ -12,6 +14,7 @@ export default async function Dashboard() {
   const supabase = await createClient();
   
   const orgId = ceo.org_id;
+  const workforce = await inspectInitialWorkforce(orgId);
 
   // Fetch v2 stats
   const { data: employeesData } = await supabase.from('employees').select('*').eq('org_id', orgId);
@@ -32,6 +35,10 @@ export default async function Dashboard() {
           
           {/* Main Column: Pulse & EA Thread */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <section role="status">
+              <p>{workforce.ready ? 'Initial EA/GM workforce is operational.' : 'Initial EA/GM workforce is not ready. Provisioning may still be running or need a retry.'}</p>
+              {!workforce.ready && <form action={retryInitialWorkforce}><button type="submit">Resume workforce setup</button></form>}
+            </section>
             {/* Top Bar: Pulse */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '0.5rem', borderLeft: '4px solid var(--accent-color)' }}>
               <div>

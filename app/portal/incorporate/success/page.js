@@ -16,7 +16,7 @@ export default async function IncorporateSuccess() {
             You're incorporated.
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: '1.6' }}>
-            Sophia is reviewing your details now and will reach out shortly. Your dashboard is ready.
+            Your dashboard is available. Check workforce setup there; Sophia and Marcus become operational only after their runtime checks pass.
           </p>
           <Link href="/portal/dashboard" className="btn btn-primary" style={{ display: 'inline-block', padding: '1rem 2rem', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', color: '#fff', borderRadius: '0.5rem', fontWeight: 'bold', textDecoration: 'none' }}>
             Enter your Executive Suite
