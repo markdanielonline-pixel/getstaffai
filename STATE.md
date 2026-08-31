@@ -1,8 +1,9 @@
 # Staff AI current authoritative state
 
-Updated 2026-08-31 from completed engineering and incident-response evidence.
-This is the current handoff, not a new audit. Rewrite current facts in place;
-use Git for history. Production was not accessed for this continuity checkpoint.
+Updated 2026-08-31 from engineering and live bounded incident-response evidence.
+This is the current handoff, not a new architecture audit. Rewrite current facts
+in place; use Git for history. Production was accessed for the remediation checks
+below. Remediation is NOT complete and rollout remains PAUSED.
 
 ## Architecture: preserve these boundaries
 
@@ -136,8 +137,80 @@ Evidence contains sensitive material: keep restricted; never commit its contents
 
 ## Immediate next task: bounded incident remediation
 
-The fresh session must coordinate broad-impact remediation explicitly, not silently
-rotate shared credentials or deploy from this handoff alone:
+Mark explicitly authorized coordinated incident remediation, routine rotations,
+dependent-service restarts, clean Formbricks rebuilding and narrow hardening in
+the 2026-08-31 remediation task. Do not request the same general authorization
+again. This does NOT authorize resuming the Staff AI rollout in that task.
+
+### Live remediation checkpoint, 2026-08-31
+
+- Original evidence manifest verified successfully; the off-host archive still
+  matches SHA256 `f5941e5006ee9dc06adea82edad25655f5b2f6b02c723bc97d3fa6278173600a`.
+  Original incident directory and backup directory remain mode 0700.
+- `stack-formbricks-1` was rechecked: exited, restart=no. Not restarted, removed,
+  rebuilt, or reused. No credentials have yet been rotated in this task.
+- New restricted evidence directory: `/root/staffai-remediation.cz3iglo8/`.
+  It contains secret-bearing inspection/backup material; never commit contents.
+- Additional diffs completed for shared PostgreSQL, Provision pilot runtime,
+  Authentik server, Cal.com, both stack Chatwoot containers, both LynkWe Chatwoot
+  containers, InvoiceShelf, Wekan and n8n. These collected diff/process/log sets
+  contain no matches for the checked miner indicators. Postiz diff still timed
+  out; its process and log captures completed. This is NOT a clean certification.
+- Host `dpkg -V` for openssh-server, sudo, systemd, coreutils, bash and cron
+  returned no mismatches. Captured accepted SSH logins use the known authorized
+  key fingerprint. These bounded checks do not establish absence of host escape.
+- Provision tracked diff SHA256 remains
+  `5fee5edf43e8d5fc7676e779636194b86b3a1780854869602dbd2cdd4bddf46d`, exactly
+  matching `production-pre-rollout/provision-dirty.patch`. Staff AI production
+  source is not a Git checkout; source integrity comparison remains incomplete.
+- Shared PostgreSQL has only `postgres` as a login role. No event triggers or
+  subscriptions were found in the examined non-template databases. The captured
+  non-extension function catalog contains SQL/PLpgSQL functions, not native-code
+  functions. Function definitions/data still require appropriate review; names
+  and language metadata alone do not establish integrity.
+- PostgreSQL connection/disconnection logging is off and statement logging is
+  `none`. Captured logs had no checked SQL execution/exfiltration indicators, but
+  cannot exclude credential abuse. No forensic clean verdict is justified.
+- NEW confirmed reuse: the exposed PostgreSQL password also matches MariaDB
+  root/application environment credentials and MinIO root credentials. Include
+  those identities and legitimate consumers in rotation scope. PostgreSQL
+  consumers additionally include Postiz, Temporal and both LynkWe Chatwoot
+  containers. Detailed variable-name mapping: `postgres-consumers.json`.
+- Resend exposed credential successfully lists API keys, so it has management
+  access, not merely SMTP sending scope. Its account lists Beacon and Prospects.
+  The connected Resend app lists a DIFFERENT account/key (Studio9/markdanielagency).
+  Do not rotate/delete the connector account's unrelated key. Direct provider
+  API access using the exposed key is available for scoped recovery.
+- Exposed Stripe key is Beacon2, suffix `vwX3`, account
+  `acct_1JCwmmBe48ha5T2s` (StaffAi); API authentication succeeds and Cal.com uses
+  the same key. Browser dashboard is authenticated. Suspicious API activity UI
+  shows zero flagged requests, not proof of absence of abuse. This task's two
+  account-read probes explain new legitimate API usage on 2026-08-31.
+- Stripe rotation dialog is open, not submitted. Browser safety rules require
+  action-time confirmation for creating/rotating persistent credentials. Mark
+  was asked to confirm Beacon2 rotation with a one-hour overlap, consumer update,
+  and old-key expiry after verification. Await that specific confirmation, not
+  credentials or renewed general operational permission.
+- Exact Formbricks counts: one User, Organization, Membership and Project; two
+  Environments; eight ContactAttributeKeys; 110 Prisma migration records; seven
+  DataMigration records. No Survey, Response, Account, ApiKey or Integration
+  rows. Both retained upload/SAML volumes contain no files. Preserve this data;
+  neither database nor volumes have yet been cleared for reuse.
+- Upstream latest stable release observed: Formbricks 5.4.1 (2026-08-28). No image
+  has been pulled/pinned/verified or deployed. Review its versioned migration
+  requirements; never substitute the compromised image or writable layer.
+- Shared PostgreSQL/config preservation completed under
+  `/root/staffai-remediation.cz3iglo8/pre-repair/`; pg_dumpall exited 0 and the
+  preservation manifest verified. This is incident-state preservation, not a
+  known-clean backup or a tested restoration.
+
+Outstanding P1 security gates: exposed-key revocation and dependent updates;
+remaining integrity and activity evidence; verified clean Formbricks rebuild;
+restricted database/network isolation; affected-service end-to-end verification.
+Current verdict: **MUST REMAIN PAUSED / NO-GO**. No rollout, P1 migration, pilot
+binding, production configuration change, or application deployment was performed.
+
+Continue the authorized bounded work:
 
 1. Coordinate rotation of confirmed exposed shared and Formbricks-specific credentials.
 2. Review affected-service activity where practical.
