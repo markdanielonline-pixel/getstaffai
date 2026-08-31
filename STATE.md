@@ -1,116 +1,167 @@
-# StaffAi — current state
+# Staff AI current authoritative state
 
-**Rewritten in place, never appended.** Facts below were verified against the
-working tree, git history, and the live Supabase schema on **2026-08-30**.
-History belongs in commit messages, not here.
+Updated 2026-08-31 from completed engineering and incident-response evidence.
+This is the current handoff, not a new audit. Rewrite current facts in place;
+use Git for history. Production was not accessed for this continuity checkpoint.
 
-## Authoritative architecture (2026-08-30 reconciliation)
+## Architecture: preserve these boundaries
 
-Execution path: **CEO/customer → Staff AI web/PWA → Staff AI proprietary control
-plane → Executive Assistant / General Manager orchestration → Provision Core
-workforce engine → Staff AI employees → business systems / provider adapters →
-results returned through Staff AI.** Customers experience a company/workforce,
-never exposed infrastructure.
+CEO/customer -> Staff AI web/PWA -> Staff AI control plane -> EA/GM orchestration
+-> Provision Core execution -> employees -> provider/business adapters -> Staff AI results.
 
-- **Control plane:** Staff AI's own control plane (Supabase-backed) is
-  authoritative for tenants/organizations, users/memberships, RBAC, employee
-  entitlements, product configuration, approvals/autonomy controls, and
-  orchestration metadata. Frappe/ERPNext does **not** replace it.
-- **Workforce engine:** **Provision Core**, version-pinned in
-  `infra/provision/PINNED_VERSION` (provisiond 0.5.0). Do not replace it.
-- **Business OS:** **Frappe + ERPNext** with isolated client sites/databases
-  (one ERPNext site per tenant). Supersedes the Twenty CRM direction.
-- **Model layer:** provider-agnostic via `lib/llm/router.js` /
-  `lib/engine.js`; **OpenRouter** is the initial upstream gateway but must not
-  be hard-coded. Intended models: **Qwen 3.8 Flash** (customer-facing
-  workforce), **GLM-5.3** (internal Staff AI system engineering/maintenance).
-- **Social media subsystem:** **OutReply** is the current provisional choice,
-  pending final API/integration confirmation.
+- Staff AI's Supabase-backed control plane owns tenants/organizations, users,
+  memberships/RBAC, entitlements, approvals/autonomy, employee/customer-facing state
+  and orchestration metadata.
+- Provision Core is the workforce execution engine, not the SaaS control plane.
+- Frappe + ERPNext is the Business OS, with isolated tenant sites/databases.
+- Qwen 3.8 Flash is the architectural default customer-facing workforce model;
+  GLM-5.3 is the internal engineering/maintenance model. Code alignment remains
+  incomplete. OpenRouter is the initial upstream gateway; Staff AI remains
+  model/provider agnostic.
+- OutReply is provisional, pending final API/integration confirmation.
+- Do not restart broad architecture reconciliation or redesign these boundaries
+  without a concrete architectural contradiction.
 
-## Implemented and verified
+## Authoritative implementation checkpoints
 
-- Git checkpoint of the full reconciliation tree (commit `5adcd4d`, 2026-08-30).
-- Live Supabase schema includes all reconciliation migrations through
-  `20260830024500_add_frappe_tenant_mappings.sql` (verified read-only via REST:
-  `organizations.frappe_site_domain` / `frappe_connection_status` and the
-  Provision runtime mapping columns exist).
-- `lib/provision.js` — real Provision Core REST client: team/agent/task
-  provisioning, idempotency keys, tenant-correlation guards, result polling.
-- Initial workforce foundation: EA/GM use the existing factory and Provision
-  integration with tenant-scoped SQL leases, durable employee reservations and
-  resumable mappings. Active/training claims require fresh operational evidence,
-  not merely Provision Active records. Dashboard checks readiness live and offers
-  authenticated resume. See `docs/P1-WORKFORCE-FOUNDATION.md`.
-- Local validation: 16 PostgreSQL-backed foundation tests; Provision 33 targeted
-  tests (151 assertions); real disposable Redis network isolation fixture passed.
-  These are integration fixtures, not proof of a production employee task.
-- Control-plane hardening: operational-table security, CEO/org/scheduling
-  unification, idempotency constraints, SMS conversation memory, support/ops
-  tables (migrations 2026-08-28).
-- Production execution engine (`lib/engine.js`): raw OpenRouter loop replacing
-  the Vercel AI SDK (root cause: SDK Zod validation stripped tool args).
-- Validation at checkpoint time: `npm run lint` clean; `npm run build` succeeds
-  (full route table builds).
+StaffAi: `fffc72c3afa9d7d46bbea7cfb8ed423edb20e87e`, branch `main`.
+This is the P1 code checkpoint; continuity-only commits do not replace the approved
+deployment version.
 
-## Implemented but unverified
+ProvisionCore: `cfc52488ef893839ef9572b044e8b1c4fc3aada6`, working branch
+`p1-initial-workforce`, sibling repository `../ProvisionCore`.
 
-- **Frappe site/user provisioning** (`lib/frappe.js`, `lib/factory.js`
-  `provisionTools`): code complete and wired, but every organization in the
-  live DB is still `frappe_connection_status='disconnected'` — no end-to-end
-  Frappe provisioning has ever succeeded.
-- Provision Core end-to-end dispatch (checkout → workforce → agent task →
-  result): code paths exist and checkout/stripe hooks call
-  `provisionInitialWorkforce`, but no verified production run is recorded.
-- New initial-workforce SQL migration and Provision dedicated daemon-heartbeat
-  migration are local only. Earlier runtime/Redis isolation and these foundation
-  changes require an authorized rollout before production workforce use.
-- Deployment: `Dockerfile`, `docker-compose*.yml`, `vps_deploy.sh` exist;
-  current live deployment state (Vercel vs Contabo VPS) not verified from here.
+P1 workforce foundation is implemented and locally validated: initial EA/GM use
+the existing factory and real Provision integration, tenant-scoped durable leases/
+reservations, resumable mappings and truthful readiness. Provision Server-specific
+runtime/configuration ownership, Redis control-plane isolation and dedicated
+daemon-heartbeat readiness are implemented and tested locally.
 
-## Missing
+Readiness requires owned/running runtime, matching daemon identity, fresh heartbeat,
+successful gateway health, and installed/authenticated EA and GM on the correct
+team/Server. Records or queued jobs alone cannot establish readiness.
 
-- **`frappe-provisioner` microservice** — `lib/frappe.js` calls
-  `http://frappe-provisioner:9000/provision`, but no such service exists in
-  this repo. This is the blocking seam for the Frappe direction.
-- **ERPNext business adapters** — CRM, leads, opportunities, quotes, invoices,
-  accounting, projects, support, HR, procurement, inventory, reporting,
-  appointments: no adapter code yet (only site/user provisioning).
-- Env wiring for Frappe: `FRAPPE_TENANT_DOMAIN_SUFFIX`,
-  `FRAPPE_ADMIN_PASSWORD`/Infisical, wildcard DNS strategy.
-- Role templates listing `frappe`/`erpnext` in `required_tools`.
-- Model layer not yet aligned: `lib/engine.js` defaults to `z-ai/glm-5.2:free`
-  and `lib/provision.js` defaults to `z-ai/glm-4.7` — neither matches the
-  intended Qwen 3.8 Flash (customer) / GLM-5.3 (internal) decision.
-- OutReply integration: no code present yet (provisional decision only).
+Recorded validation: 16 PostgreSQL-backed Staff AI foundation tests; 33 Provision
+tests with 151 assertions; real disposable Redis isolation fixture; Staff AI lint
+and build passed. These do not substitute for production employee-task acceptance.
 
-## Superseded / historical (do not build on; do not delete until dependencies mapped)
+Detailed contracts:
 
-- **Twenty CRM** as primary Business OS (replaced by Frappe/ERPNext).
-- **LiteLLM / Ollama** as required primary model architecture.
-- `lib/crm/moxie.js`, `lib/systeme.js` (Moxie/systeme.io adapters) — legacy
-  CRM/marketing direction; classify before removing.
-- LangGraph-era experiments (`studio9_*.py`, `service_main*.py`) and
-  n8n scripts — untracked debris, left in the working tree for triage.
-- Old self-hosted launch-plan assumptions in `STAFFAI-LAUNCH-PLAN.md` /
-  `PHASE_2_INFRASTRUCTURE.md` that conflict with the reconciled architecture.
-- `Team-Comms/` multi-agent board (April 2026, dormant) — now gitignored.
+- `docs/P1-WORKFORCE-FOUNDATION.md`
+- `infra/provision/PINNED_VERSION`
+- `../ProvisionCore/docs/STAFFAI-WORKFORCE-READINESS.md`
+- `../ProvisionCore/docs/docker-runtime-isolation.md`
 
-## Open hygiene items
+## Production rollout: PAUSED
 
-- Tracked-in-history archives/logs: `staffai.zip`, `compliance.zip`,
-  `document.zip`, `build_output.log` (predate the checkpoint; leave for a
-  later history-cleanup decision).
-- Founder-side Stripe account cleanup (revoke Beacon's leftover keys/prices/
-  webhook `we_1TwE4E…`) — still outstanding since July.
-- ~180 disposable debug scripts remain untracked at the repo root; triage
-  before any cleanup.
+Host: `158.220.123.254`. Staff AI: `/root/staffai-v2`;
+Provision: `/root/provision-core`.
+No approved P1 deployment, migration or explicit pilot binding has been applied.
+Last verified production Provision HEAD: `493253894ba36fb8e26601eb97a2d60619b4f748`,
+with pre-existing uncommitted runtime changes. Preserve that exact working state.
 
-## First thing to do in a new session here
+Pilot: `provision-agent-runtime-1`; sole owning Server:
+`01m17qdsag8c57cr4x031yavnn`. Existing daemon configuration matches this Server;
+gateway returned `ok: true`. New explicit legacy binding is still pending.
 
-1. Read this file top to bottom.
-2. `git log --oneline -5` and `git status` — expect the checkpoint commits and
-   only untracked debris.
-3. Review the P1 foundation checkpoint and rollout prerequisites first. The next
-   production gate is authorized migration/runtime rollout followed by two-tenant
-   provisioning and a real employee task. Frappe/model work remains separately
-   scoped; do not deploy or start another phase without founder authorization.
+Pending migrations:
+
+- Staff AI: `supabase/migrations/20260831020853_initial_workforce_foundation.sql`
+- Provision: `database/migrations/2026_08_31_030000_add_daemon_heartbeat_at_to_servers.php`
+
+Apply the Provision heartbeat migration before new application code; never invent
+or backfill heartbeat readiness. Deploy Redis isolation before tenant execution.
+Two-tenant initial workforce, duplicate/resume and real EA/GM task acceptance remain
+unperformed in production. Never report FOUNDATION ACCEPTED from local tests.
+
+## Staff AI database backup gate: PASS
+
+Verified PostgreSQL 17.6 custom-format logical backup plus separate role export:
+`/root/staffai-p1-backup.Nfcw4C/`, completed `2026-08-31T02:52:27Z`.
+`staffai.dump` SHA256:
+`3e2ff02a6dbdf1ffedc4e1537d7ac846b0b7b6776362a6d44417d95e9e09510e`.
+
+Isolated restoration succeeded. All 81 table counts matched; application state,
+constraints, indexes, functions, triggers, sequences, RLS and grants were verified.
+The live heartbeat's inventory timing difference was resolved by matching restored
+COPY data directly to the dump. Application-role reads passed.
+
+Restore uses compatible platform role stand-ins, mapped ownership and preserved
+application grants, not blind replay of Supabase's managed global-role hierarchy.
+See `P1-RESTORE-VERIFIED.md` and `restore-compatible.sh` inside the backup directory.
+Temporary restore infrastructure was removed; the verified backup was retained.
+
+The separate `production-pre-rollout/` preservation set is INCOMPLETE/NOT VERIFIED:
+source, SQL, Redis and pilot snapshots were written, but dependency/image archival
+and final verification stopped at the incident. Complete this rollback gate before
+deployment; do not assume those snapshots represent a known-clean environment.
+
+## Security incident: confirmed Formbricks compromise
+
+Compromised container: `stack-formbricks-1`.
+Confirmed unauthorized RandomX mining, root mining processes, modified writable
+layer and credential exposure. Processes `/Y6dTV -c /iYl -B` and `/AaOeRu0` were
+children of Formbricks' Next.js process. Exact entry exploit/persistence remains
+unproven. Its shared `stack_default` attachment allowed access to Provision's API.
+
+Containment completed `2026-08-31T16:27:30Z`:
+
+- Evidence preserved before containment.
+- Container stopped; automatic restart disabled (`restart=no`).
+- Container, image and volumes retained. DO NOT restart it or reuse its writable layer.
+- No credentials rotated; no Staff AI rollout performed.
+
+No confirmed host escape or Staff AI/Provision compromise. Clean-environment status
+has NOT been established. Classification remains INCONCLUSIVE for total blast radius.
+Thirteen container diffs completed, five timed out, and remaining queued checks
+stopped at the broad-impact credential-rotation STOP condition. No matching host
+process/startup indicators or unauthorized SSH key were identified. Unauthenticated
+Provision integration/task/daemon probes returned 401, but available logs cannot
+exclude API abuse or lateral access.
+
+Treat these confirmed exposed credentials as compromised:
+
+- Shared PostgreSQL `postgres` superuser credential affecting multiple services,
+  including Authentik, Chatwoot and Cal.com, not only Formbricks.
+- SMTP credential reused by six other containers.
+- Stripe secret reused by Cal.com.
+- Formbricks encryption, OIDC client, session and cron secrets.
+
+Evidence: `/root/staffai-incident.VG8Cv3/`; detailed findings: `INCIDENT-DECISION.md`.
+Restricted, hash-verified off-host archive:
+`C:\Users\Dell Latitude\.codex\private-evidence\staffai-incident-VG8Cv3\evidence.tar.gz`.
+Archive SHA256:
+`f5941e5006ee9dc06adea82edad25655f5b2f6b02c723bc97d3fa6278173600a`.
+Evidence contains sensitive material: keep restricted; never commit its contents.
+
+## Immediate next task: bounded incident remediation
+
+The fresh session must coordinate broad-impact remediation explicitly, not silently
+rotate shared credentials or deploy from this handoff alone:
+
+1. Coordinate rotation of confirmed exposed shared and Formbricks-specific credentials.
+2. Review affected-service activity where practical.
+3. Finish necessary integrity/blast-radius verification.
+4. Rebuild Formbricks from a verified patched, pinned clean image.
+5. Give Formbricks a dedicated restricted database account and appropriate network isolation.
+6. Never reuse the compromised writable layer.
+7. Verify affected production services after rotation.
+8. Determine whether the Staff AI production rollout can safely resume.
+
+After security remediation passes, resume the already-approved bounded rollout:
+finalize verified rollback preservation, safely bind the pilot, deploy the approved
+checkpoints/migrations, verify Redis isolation and pilot compatibility, then prove
+two-tenant provisioning, idempotency/resume and real harmless tasks with correct
+tenant-specific results. Do not begin another architecture layer beforehand.
+
+## Deferred work and preservation rules
+
+Frappe/ERPNext infrastructure exists in production; preserve it. Tenant provisioning
+and ERPNext business adapters remain separate unaccepted work. Model alignment,
+OutReply confirmation/integration and general durable result synchronization are
+not part of incident response. Twenty CRM as primary Business OS and mandatory
+LiteLLM/Ollama architecture are superseded.
+
+Do not touch historical/untracked artifacts, archives, debug scripts or Team-Comms
+without explicit authorization. Do not clean history or unrelated files. Read this
+file and Git status/history first; update state after consequential completed work.
