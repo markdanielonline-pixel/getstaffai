@@ -140,7 +140,10 @@ Evidence contains sensitive material: keep restricted; never commit its contents
 Mark explicitly authorized coordinated incident remediation, routine rotations,
 dependent-service restarts, clean Formbricks rebuilding and narrow hardening in
 the 2026-08-31 remediation task. Do not request the same general authorization
-again. This does NOT authorize resuming the Staff AI rollout in that task.
+again. The subsequent completion mandate explicitly authorizes continuing through
+the approved Staff AI/Provision rollout and live Tenant A/B acceptance IF the
+security gate passes. Do not stop at a successful security checkpoint. Unrelated
+P2 hardening is excluded. Preserve the stated architecture and rollback gates.
 
 ### Live remediation checkpoint, 2026-08-31
 
@@ -186,11 +189,15 @@ again. This does NOT authorize resuming the Staff AI rollout in that task.
   the same key. Browser dashboard is authenticated. Suspicious API activity UI
   shows zero flagged requests, not proof of absence of abuse. This task's two
   account-read probes explain new legitimate API usage on 2026-08-31.
-- Stripe rotation dialog is open, not submitted. Browser safety rules require
-  action-time confirmation for creating/rotating persistent credentials. Mark
-  was asked to confirm Beacon2 rotation with a one-hour overlap, consumer update,
-  and old-key expiry after verification. Await that specific confirmation, not
-  credentials or renewed general operational permission.
+- Mark explicitly confirmed Beacon2 rotation with a one-hour overlap, Cal.com
+  update/verification, then old-key expiry. The approved Rotate API key action
+  was submitted with "in 1 hour" selected. Stripe now blocks completion with
+  an identity-verification dialog offering a security key or email plus more
+  verification. No replacement key or successful rotation has been observed;
+  no Cal.com credential change has been made. The authenticated browser tab is
+  preserved at this verification prompt. Mark must complete provider identity
+  verification; do not request renewed permission for the approved rotation,
+  expose credentials, bypass authentication, or assume the overlap has started.
 - Exact Formbricks counts: one User, Organization, Membership and Project; two
   Environments; eight ContactAttributeKeys; 110 Prisma migration records; seven
   DataMigration records. No Survey, Response, Account, ApiKey or Integration
