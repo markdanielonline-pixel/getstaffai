@@ -29,10 +29,14 @@ services:
       start_period: 180s
     networks:
       - default
+      - control-plane
       - staffai
 
   redis:
     restart: unless-stopped
+    # Replace any inherited attachment: runtimes must never share Redis's network.
+    networks: !override
+      - control-plane
 
   database:
     image: mariadb:11.4
@@ -74,6 +78,8 @@ volumes:
   provisiond-config:
 
 networks:
+  control-plane:
+    internal: true
   staffai:
     external: true
     name: stack_default
