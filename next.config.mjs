@@ -7,8 +7,8 @@ const nextConfig = {
   },
 };
 
-// if (!process.env.VERCEL) {
-//   nextConfig.output = 'standalone';
-// }
+if (!process.env.VERCEL) {
+  nextConfig.output = 'standalone';
+}
 
 export default nextConfig;
