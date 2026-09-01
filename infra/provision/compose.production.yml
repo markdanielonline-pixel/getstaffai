@@ -16,6 +16,9 @@ services:
       DB_PASSWORD: ${PROVISION_DB_PASSWORD}
       PROVISION_DOCKER_APP_URL: http://provision-app-1:8000
       TASK_AGENTS_ENABLED: "true"
+      # The daemon uses long-poll endpoints. Multiple CLI workers prevent those
+      # requests from blocking heartbeats and integration control-plane calls.
+      PHP_CLI_SERVER_WORKERS: "8"
     depends_on:
       redis:
         condition: service_healthy
