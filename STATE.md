@@ -289,11 +289,27 @@ Production rollout: **DEPLOYED AND BACKEND ACCEPTED**.
   `ACCEPTANCE_BETA_OK`. A cross-tenant Beta-org/Alpha-employee probe returned 503,
   remained failed/unavailable locally and created no Provision task.
 
-Public routing STOP: `getstaffai.com` and `www.getstaffai.com` still resolve to the
-separate Vercel project `dist`, whose home is static and `/api/health` returns 404.
-The correctly linked `staffai-app` project has production environment variables but
-is not assigned the custom domain; its deployment URLs are Vercel-auth protected.
-The active Vercel CLI identity can list the domain but receives a permission denial
-when inspecting or listing its DNS records. Do not claim public web completion until
-an identity with domain-management permission reassigns the apex and `www` from
-`dist` to the intended public target, followed by browser and API verification.
+Public routing and rendered-site acceptance: **PASS**.
+
+- The existing final/new Staff AI release was identified before completing the
+  domain move: Vercel deployment `dpl_GQcPQzGVUaLT2uhaptJ8ByFK3TAk`, URL
+  `staffai-imyvixln7-markdanielonline-1161s-projects.vercel.app`, built from Git
+  commit `b4e2312`. Its READY deployment, Vercel source metadata, rendered site,
+  and local Git content all identify the completed new Staff AI website.
+- The release was promoted without rebuilding or modifying the website. Both
+  `getstaffai.com` and `www.getstaffai.com` were moved from the old `dist` routing
+  to the `staffai-app` Production environment. Vercel reports the apex as Valid
+  Configuration and both public hosts serve the same release payload.
+- Public HTTP acceptance passed on both apex and `www`: home returned 200 with
+  identical 81,217-byte Next.js HTML and identical ETag
+  `bd450a9d2457f95d0ba53080b609637c`; `/api/health` returned 200 with
+  `status=ok`, `service=staffai-web`, and both web and database checks `ok`.
+- Real Chrome rendering passed on both hosts with title `StaffAI | The World's
+  First AI Company-as-a-Service`, hero `Your company. Fully staffed. Fully
+  running.`, complete final-site navigation, and no browser console warnings or
+  errors. The apex visual inspection showed the intended premium white, navy and
+  gold final design, not the former static site.
+
+Final bounded production-readiness verdict, 2026-09-02: **PASS / READY**. The
+security gate, clean recovery, production rollout, two-tenant backend acceptance,
+public domain routing, API health and rendered-site acceptance are complete.
