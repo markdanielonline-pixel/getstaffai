@@ -324,3 +324,36 @@ rebuilt or deleted. Both hosts return HTTP 200 with matching ETag
 web and database checks `ok`; a fresh Chrome render passed with no console errors.
 Do not promote `dpl_GQcPQzGVUaLT2uhaptJ8ByFK3TAk` again without Mark's explicit
 instruction.
+
+## Final upgraded-site public verification, 2026-09-02
+
+This section supersedes the public-site deployment identification in the two
+preceding routing notes. Mark confirmed that the upgraded Staff AI marketing
+website is the restored static Vercel site. Do not redesign, replace or redeploy
+it unless required to fix a verified P0/P1 defect.
+
+- The authoritative public website is Vercel project `dist`, deployment
+  `dpl_3FibY8LGFGEzxxi9TJRJd2mEeMcb`
+  (`dist-gzazo4iey-markdanielonline-1161s-projects.vercel.app`), READY in
+  Production. Vercel shows both `getstaffai.com` and `www.getstaffai.com` as its
+  aliases. The earlier `staffai-app` promotions are not the approved marketing
+  website and must not be promoted to these domains without Mark's instruction.
+- Real Chrome verification passed on apex and `www`. Both render the upgraded
+  Staff AI experience with title `Staff AI | Your company. Fully staffed. Fully
+  running.` and hero `Stop managing software. Start leading your company.` No
+  browser console warnings or errors were observed; displayed images loaded.
+- Homepage assets `/src/main.js`, `/src/style.css`, `/src/overrides.css` and
+  `/src/home-fixes.css` all returned HTTP 200. The small 639-byte root HTML is
+  the valid Vite application shell, not evidence of the former website.
+- All 15 linked public product and legal pages returned HTTP 200 after their
+  canonical redirects: How It Works, Employees, Teams, Pricing, About, FAQ,
+  Terms, Privacy, Acceptable Use, AI Disclosure, Refund, Cookies, Security, DPA
+  and Communications. Browser rendering checks passed on the five primary
+  product pages. The homepage has zero broken local anchors.
+- `/api/health` is not a route in this locked static marketing deployment. Its
+  404 is expected and is not used as its health signal. The separate Staff AI
+  application/backend health and two-tenant production acceptance remain
+  recorded above and were not modified during this verification.
+
+Final production-readiness verdict: **READY**. No verified public P0/P1 defect
+was found, so no website code, design, deployment or routing change was made.
