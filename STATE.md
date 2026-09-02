@@ -245,3 +245,55 @@ LiteLLM/Ollama architecture are superseded.
 Do not touch historical/untracked artifacts, archives, debug scripts or Team-Comms
 without explicit authorization. Do not clean history or unrelated files. Read this
 file and Git status/history first; update state after consequential completed work.
+
+## One-shot production completion, 2026-09-02
+
+The prior NO-GO is superseded for the bounded Staff AI/Provision rollout. Security
+remediation, rollback preservation, migrations, deployment and two-tenant backend
+acceptance completed. Public apex routing remains the sole STOP described below.
+
+Security and rollback gate: **PASS**.
+
+- All confirmed exposed shared and Formbricks credentials were rotated or revoked;
+  legitimate dependent consumers were updated and verified. Old PostgreSQL, Resend
+  and Stripe authentication was rejected. Affected-service error scans were clean.
+- The original compromised `stack-formbricks-1` remains exited with restart `no`.
+  Its writable layer and volumes were not reused. Evidence remains preserved.
+- Formbricks was rebuilt from pinned 5.4.1 and dedicated pinned pgvector images,
+  with a dedicated database role/network and fresh upload/SAML volumes. The rebuilt
+  app, Hub, Cube, PostgreSQL and Redis stack passed its bounded health checks.
+- Exact rollback archives, databases, Redis/pilot state, source snapshots and images
+  are under `/root/staffai-p1-backup.Nfcw4C/production-pre-rollout/`. The final
+  `SHA256SUMS` verification passed, including `rollback-images.tar.gz`.
+
+Production rollout: **DEPLOYED AND BACKEND ACCEPTED**.
+
+- Supabase migration `initial_workforce_foundation` and Provision migration
+  `2026_08_31_030000_add_daemon_heartbeat_at_to_servers` were applied and verified.
+- Staff AI production runs commit `f82ec0d` on `/root/staffai-release-f82ec0d`.
+  `staffai-web` is healthy and its database health check passes; the reminder worker
+  is running. Commits `3421873` and `f82ec0d` extend slow Provision create/readiness
+  calls to the observed production startup window.
+- Provision production uses approved checkpoint `cfc5248` plus `85ae3fd` and the
+  Staff AI production overlay from `e27a78d`. `--no-reload` activates eight CLI
+  server workers, preventing daemon long polls from starving heartbeats. App,
+  MariaDB, Redis, pilot runtime and both acceptance runtimes are running; shared
+  Redis is only on `provision_control-plane`, and the runtime cannot resolve it.
+- Alpha runtime was repaired from an incomplete live OpenClaw `2026.7.1` mutation
+  to pinned `2026.7.1-2`; only Alpha's tenant container was restarted. Its gateway
+  and daemon heartbeat recovered.
+- Acceptance Alpha (`8388880c-305f-4c9b-842d-c67e18736489`) and Acceptance Beta
+  (`7dccb353-e6d2-44bc-95e9-1d762b9a4674`) each have a distinct Provision team,
+  two distinct active agents, `workforce_status=ready`, and successful first contact.
+- Real harmless tasks completed with exact results `ACCEPTANCE_ALPHA_OK` and
+  `ACCEPTANCE_BETA_OK`. A cross-tenant Beta-org/Alpha-employee probe returned 503,
+  remained failed/unavailable locally and created no Provision task.
+
+Public routing STOP: `getstaffai.com` and `www.getstaffai.com` still resolve to the
+separate Vercel project `dist`, whose home is static and `/api/health` returns 404.
+The correctly linked `staffai-app` project has production environment variables but
+is not assigned the custom domain; its deployment URLs are Vercel-auth protected.
+The active Vercel CLI identity can list the domain but receives a permission denial
+when inspecting or listing its DNS records. Do not claim public web completion until
+an identity with domain-management permission reassigns the apex and `www` from
+`dist` to the intended public target, followed by browser and API verification.
