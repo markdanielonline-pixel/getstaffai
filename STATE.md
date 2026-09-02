@@ -313,3 +313,14 @@ Public routing and rendered-site acceptance: **PASS**.
 Final bounded production-readiness verdict, 2026-09-02: **PASS / READY**. The
 security gate, clean recovery, production rollout, two-tenant backend acceptance,
 public domain routing, API health and rendered-site acceptance are complete.
+
+Emergency production pointer correction, 2026-09-02: at Mark's direction, the
+temporary promotion of `dpl_GQcPQzGVUaLT2uhaptJ8ByFK3TAk` was reversed. Apex and
+`www` now point to the exact deployment that was live immediately beforehand:
+`dpl_Ds4YPUnfNjntdgTTj699xUVKHPHu`
+(`staffai-cljo0izv6-markdanielonline-1161s-projects.vercel.app`). No website was
+rebuilt or deleted. Both hosts return HTTP 200 with matching ETag
+`28cc1b650a3e9ab769e4771802fa5d04`; apex `/api/health` returns `status=ok` with
+web and database checks `ok`; a fresh Chrome render passed with no console errors.
+Do not promote `dpl_GQcPQzGVUaLT2uhaptJ8ByFK3TAk` again without Mark's explicit
+instruction.
