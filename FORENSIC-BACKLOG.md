@@ -21,10 +21,11 @@ investigate these further in this session.
 
 ## Auth / UX
 
-- **Supabase Auth Site URL is `localhost:3000`.** Confirmation and recovery
-  links land on a dead localhost tab. The underlying auth still succeeds
-  server-side and the user can navigate back and sign in. Fix is a Supabase
-  dashboard setting, not code.
+- **Supabase built-in SMTP is the mail sender** (`noreply@mail.app.supabase.io`).
+  Delivery is verified working, but it is rate limited (we hit
+  "email rate limit exceeded" during testing) and unbranded. Move Auth email to
+  the existing Resend integration before real signup volume.
+
 - **EA dashboard panel is honest but not wired.** Fabricated activity was
   removed and replaced with real empty states; it is still not connected to
   live conversation state.

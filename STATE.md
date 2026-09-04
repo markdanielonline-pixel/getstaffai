@@ -2115,3 +2115,45 @@ paying-customer lifecycle; do not stop acceptance for them.
   a CEO record, no org, no Stripe customer, no charge.
 - **Credentials note** — Alpha and Beta CEO passwords were administratively
   reset during acceptance; rotate or reset if that is not desired.
+
+## Auth journey blockers from Mark's real signup attempt, 2026-09-04
+
+**Blocker A — "we sent a confirmation link" for an account that already exists.
+FIXED and verified.** Root cause: `markdanielonline@gmail.com` has existed and
+been confirmed since 2026-07-09. Supabase deliberately does not error on signup
+with a registered address (anti-enumeration); it returns an obfuscated user with
+an **empty `identities` array** and sends no mail. `signUp()` only checked
+`data.session`, so the UI promised a confirmation link that could never arrive.
+Fixed in `app/actions/auth.js` by detecting the empty-identities case and
+redirecting to `/portal/login?notice=…`, rendered on the login page.
+Verified live: that signup now lands on
+`/portal/login?notice=That%20email%20already%20has%20an%20account…` and no
+longer says "Almost there".
+
+**Email delivery itself is NOT broken.** A genuinely new address
+(`markdanielphd+deliver-1788560156@gmail.com`) received "Confirm Your Signup"
+at 22:15:58Z, ~2s after signup. Sender is Supabase's built-in SMTP — rate
+limited and unbranded; moving Auth mail to Resend is in `FORENSIC-BACKLOG.md`.
+
+**Blocker B — Google OAuth is not enabled. NOT fixable from this harness.**
+`GET /auth/v1/authorize?provider=google` returns
+`{"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`
+— byte-identical to the response for GitHub, which was never configured. So the
+"Sign in with Google" button is presented to customers but the provider was
+never set up. Enabling it needs a Google Cloud OAuth client and secret pasted
+into Supabase, which is Mark's action.
+
+**Related, and it would break Google login even after enabling it:** Supabase's
+Site URL is still `http://localhost:3000` (proven by the confirmation link
+observed earlier). `LoginExtras` requests
+`redirectTo: ${origin}/auth/callback?next=/portal/dashboard`; if
+`https://app.getstaffai.com` is not in Supabase's redirect allowlist, Supabase
+falls back to the Site URL and drops the customer on a dead localhost tab. This
+was previously filed as backlog and is **promoted to a blocker**, because it is
+on the Google path. The same change also fixes email confirmation links landing
+on localhost.
+
+Cosmetic auth fixes made in passing (not blockers, but on the failing page):
+status colours were pale green `#a7f3d0` and pale red `#fca5a5` on their own
+light tinted backgrounds — unreadable in light mode, so a customer could not
+read why login failed. All now use `var(--text-primary)`.
