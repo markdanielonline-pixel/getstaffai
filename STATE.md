@@ -1303,6 +1303,98 @@ same server-side. **Verified live**: the endpoint now returns
 500 Internal Server Error: Internal Server Error","taskId":"682e6884-…","status":"failed"}`.
 This is how the gateway root cause above became visible at all.
 
+### Gateway 500 root cause: broken OpenClaw install, not OpenRouter, 2026-09-04
+
+Codex's read-only VPS diagnosis found the failure occurs **inside OpenClaw
+before OpenRouter is ever contacted**:
+
+`ERR_MODULE_NOT_FOUND: Cannot find module /usr/lib/node_modules/openclaw/dist/openresponses-http-DPyXZf-A.js imported from /usr/lib/node_modules/openclaw/dist/server.impl-qYPVZMND.js`
+
+Installed OpenClaw reports `2026.7.1`.
+
+**My earlier hypothesis was wrong and is retracted.** I suggested the model
+slug might be retired or the OpenRouter credential exhausted. Neither is
+supported: the three 500s never reached OpenRouter, so **the credential remains
+completely untested**, and I verified against OpenRouter's public model list
+that `z-ai/glm-4.7` does exist. Do not carry the "retired slug" theory forward.
+
+**Analysis of the OpenClaw fault.** Those hashed filenames
+(`-DPyXZf-A`, `-qYPVZMND`) are build-specific bundle chunks. One chunk importing
+another that is absent means `dist/` holds files from **two different builds** —
+the signature of an interrupted or partial global npm install, not a code bug.
+This matches the existing record in this file: *"Alpha runtime was repaired from
+an incomplete live OpenClaw `2026.7.1` mutation to pinned `2026.7.1-2`."* The
+installed version reporting bare `2026.7.1` indicates it is **also the wrong
+version**, not merely incomplete.
+
+**The structural fault this exposes, which matters more than the immediate
+repair.** `infra/provision/PINNED_VERSION` pins the runtime by immutable digest
+(`AGENT_RUNTIME_IMAGE=ghcr.io/provision-org/agent-runtime@sha256:60ff04b6…`,
+`PROVISIOND_VERSION=0.5.0`). If OpenClaw were baked into that image, a fresh
+container could not be inconsistent. Alpha's runtime container was **created
+fresh today** when its team was recreated, and it is broken — so OpenClaw is
+being installed or mutated **live inside the container at/after start**, outside
+the digest pin. That means the pin does not actually cover the workforce
+runtime, and **every newly provisioned tenant is one interrupted npm install
+away from a workforce that cannot execute anything.** For launch this is a P1
+bordering on P0: it is a silent, per-tenant failure mode that readiness alone
+does not catch (Alpha passed strict readiness with fresh heartbeats while being
+completely unable to run a task).
+
+**Smallest safe repair, and explicitly what NOT to do.** Do not hand-patch or
+copy individual files into the running container — an in-place partial mutation
+is precisely what produced this state. The repair is a clean, atomic,
+version-pinned reinstall, verified before the runtime is trusted again.
+
+### Workforce model alignment: corrected in Staff AI, unverified end to end
+
+Codex confirmed the workforce requests `z-ai/glm-4.7` /
+`openrouter/z-ai/glm-4.7`. `AGENTS.md` states the architectural default
+customer-facing workforce model is **Qwen 3.8 Flash**, with GLM-5.3 reserved for
+internal engineering. `z-ai/glm-4.7` is neither.
+
+Verified against OpenRouter's public `/api/v1/models` (unauthenticated, 200):
+`qwen/qwen3.8-flash` **exists**, as do `z-ai/glm-5.3` and `z-ai/glm-4.7`. (An
+initial grep of mine missed `qwen3.8-` because of the dot; corrected before
+relying on it. There is no ambiguity: the intended model is available.)
+
+Changed: the hardcoded fallback in `lib/provision.js` is now
+`qwen/qwen3.8-flash`, and `PROVISION_DEFAULT_MODEL=qwen/qwen3.8-flash` is set in
+Vercel Production (deployed `dpl_BVFqmAZFsVKGKdvaZbHwt9B1Z52Z`).
+
+**Two caveats, neither resolved:** (1) the model is passed at *agent creation*
+time, so Alpha's existing agents still carry `z-ai/glm-4.7` and must be
+re-provisioned to pick up the new default; (2) **the OpenRouter credential has
+still never been exercised**, so "the model is configured" must not be read as
+"the model works".
+
+### Bounded handoff for Codex (single task, in this order)
+
+> 1. **Repair OpenClaw integrity on Alpha's runtime** (`staffai-runtime-01m1pnjmncvnb9d3be8nexrdkd`).
+>    Do a clean, atomic, version-pinned global reinstall — remove
+>    `/usr/lib/node_modules/openclaw` entirely and install the pinned
+>    `2026.7.1-2`, rather than copying in the missing chunk. Then verify:
+>    `openclaw --version` reports exactly `2026.7.1-2`, and the server module
+>    actually loads (no `ERR_MODULE_NOT_FOUND` on startup).
+> 2. **Report how OpenClaw gets into the runtime**: is it baked into
+>    `ghcr.io/provision-org/agent-runtime@sha256:60ff04b6…`, or installed/
+>    upgraded live at container start? If live, say so explicitly — that is the
+>    structural defect above and determines whether every new tenant is
+>    affected. Do not change the provisioning flow yet; report first.
+> 3. **Verify the OpenRouter credential** with a single minimal authenticated
+>    call (e.g. `GET /api/v1/key` or one cheap completion) and report whether it
+>    authenticates and has credit. Report the configured model slug as it
+>    actually reaches the gateway, including any `openrouter/` prefix.
+> 4. Do **not** change readiness records, tenant mappings, teams, or Vercel
+>    configuration. Do not switch the model slug — Staff AI now sends
+>    `qwen/qwen3.8-flash` per `AGENTS.md`; if Provision overrides it, report the
+>    override rather than resolving it unilaterally.
+
+After 1–3 land, the next action here is to re-provision Alpha's agents so they
+adopt `qwen/qwen3.8-flash`, then rerun the harmless echo task
+(`ALPHA_LIVE_TASK_20260904_OK`) through `POST /api/employees/chat`. **Capability
+is not demonstrated until an actual model response returns that token.**
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
@@ -1330,11 +1422,15 @@ implemented, deployed, and behaviorally verified end to end for Alpha, which
 now holds genuine live readiness. **The fabricated-dashboard-activity blocker
 is RESOLVED.** No known open P0.
 
-Open **P1 (blocking, and now the single most important item)**: Alpha's live
-workforce is `ready` but **cannot execute any task** — reproducible upstream
-model-gateway 500. The product's core function is unproven and currently
-non-working. Open P1: **Beta recovery not yet run** (distinct no-team-exists
-case). Billing/employee lifecycle acceptance also not yet performed.
+Open **P1 (blocking, single most important item)**: Alpha's live workforce is
+`ready` but **cannot execute any task** — root-caused to a broken/mixed-build
+OpenClaw install in the tenant runtime, failing before OpenRouter is contacted.
+The product's core function is currently non-working and the OpenRouter
+credential is still untested. Open **P1 (structural)**: OpenClaw appears to be
+installed live inside runtimes rather than baked into the digest-pinned image,
+so every new tenant is exposed to the same silent failure — and strict
+readiness does not catch it. Open P1: **Beta recovery not yet run**
+(no-team-exists case). Billing/employee lifecycle acceptance not yet performed.
 
 Open P2: Supabase Auth Site URL still `localhost:3000`; Provision Laravel emits
 `http://` redirects behind the proxy (NPM's 301 corrects it); the EA panel is
