@@ -624,9 +624,82 @@ infrastructure issue) — read-only production queries went through the
 Supabase MCP instead, and identity resumption switched to fresh real signups
 per Mark's direction.
 
-Current verdict: **NOT READY / NO-GO.** Exact next action: get Mark's decision
-on deploying commit `a8d2fa7` to the real Vercel production target
-`staffai-app` (not the VPS), redeploy, re-verify login → incorporate → EA/GM →
-dashboard live; separately fix the Supabase Auth Site URL; then create Tenant
-Delta and complete the cross-tenant isolation proof before any launch-gate
-verdict is revisited.
+### Deployment and live re-verification of both P0 fixes, 2026-09-04
+
+With Mark's explicit approval, commit `a8d2fa7` was deployed to the **real**
+production target: Vercel project `staffai-app`, deployment
+`dpl_A44fUBgGZbD5hKcN2eQ5xs4ip9Um`
+(`staffai-3cqui9bth-markdanielonline-1161s-projects.vercel.app`), READY,
+target production, aliased to `app.getstaffai.com`. Deployed via
+`npx vercel --prod --yes` from this repo as user `markdanielonline-1161`.
+The locked `dist` marketing site and its `getstaffai.com`/`www` routing were
+NOT touched; only the `app.` application host changed. Post-deploy
+`/api/health` returned `status=ok` with web=ok and database=ok.
+
+Live browser re-verification against the deployed build **PASS**: logging in
+as the Gamma CEO now resolves `getCEO()` successfully and lands on
+`/portal/incorporate?product=company_office&billing=monthly`, rendering the
+real onboarding flow ("Establish your organisation", Company Office $199/mo
+7-day trial). The website-discovery step, the Skip path and the Verify Company
+Profile form (company name, industry, description, values, culture tone,
+preferred channel) were all exercised and accept input. Both P0s are therefore
+confirmed fixed in production, not merely locally.
+
+### Newly found defects this session, NOT yet fixed
+
+- **P2, password recovery is undrivable and drops known context.**
+  `app/portal/login/page.js` renders `<LoginExtras />` with no props, but
+  `components/LoginExtras.js` accepts an `email` prop and falls back to a
+  native `window.prompt()` when it is absent. So "Forgot password?" always
+  opens a blocking browser prompt instead of using the email already typed
+  into the form. It cannot be driven by automation, and for real users it is
+  a poor flow that re-asks for information already on screen. Smallest fix is
+  to lift the login email into state and pass it to `LoginExtras`. This
+  blocked using recovery to re-enter the pre-existing Acceptance Beta tenant
+  this session.
+- **P1/P2, Supabase Auth Site URL still `localhost:3000`** (described in the
+  section above) — unchanged and still outstanding.
+
+### Payment-gate constraint discovered (blocks fresh-tenant lifecycle)
+
+Production `STRIPE_SECRET_KEY` is a **live-mode** key (`sk_live`). In
+`app/api/checkout/route.js` the organization row and `ceos.org_id` are written
+*before* Stripe, but entitlement and the EA/GM workforce are only provisioned
+from the completed-subscription webhook path. Completing checkout therefore
+requires entering real card details into a live Stripe Checkout session, which
+is a prohibited action for this agent and is not a "safe synthetic mechanism".
+**Consequence: a brand-new synthetic tenant cannot be driven all the way to a
+provisioned EA/GM workforce without either (a) a human completing a live
+checkout, (b) a Stripe test-mode path/test clock, or (c) resuming a tenant
+that already holds entitlement.** Tenant Gamma was deliberately stopped at the
+pre-payment onboarding form; no Stripe customer, subscription or charge was
+created for it, and its `org_id` remains unset.
+
+Because of this, the remaining acceptance work should resume through
+**Acceptance Beta**, which already has `workforce_status=ready`, an EA and a
+GM, and completed provisioning operations. Its CEO email is
+`markdanielphd@gmail.com` — an inbox that IS reachable from this environment
+via the Gmail connector — so a real password recovery is the intended way in
+once the `LoginExtras` prompt defect above is fixed (fixing it is also the
+cheapest way to unblock the rest of the mission).
+
+Current verdict: **NOT READY / NO-GO.**
+
+PASS this session: read-only Alpha/Beta state query; production topology
+identification; P0 signup/CEO-record defect (fixed, live); P0 dashboard
+dead-end redirect (fixed, deployed, live-verified); public site → signup →
+email confirmation → login → onboarding form for a fresh tenant.
+
+FAIL / NOT DEMONSTRATED: post-payment entitlement; EA/GM readiness and
+harmless task execution for a fresh tenant; billing and employee-lifecycle
+management screens; logout / returning login; password recovery; **tenant
+isolation (not started — no cross-tenant probe was performed this session)**.
+
+Exact next action, in order: (1) fix `LoginExtras` to receive the login
+email and drop the `window.prompt` fallback; (2) fix the Supabase Auth Site
+URL / redirect allowlist so confirmation and recovery links stop resolving to
+`localhost:3000`; (3) recover into Acceptance Beta via the real recovery flow
+and complete EA/GM readiness, a harmless task, billing/employee UI, logout and
+returning login; (4) perform the cross-tenant isolation proof from Beta
+against Alpha's org/employee/task IDs, confirming denial with no data leak and
+no mutation. Do not treat the launch gate as demonstrable until (4) passes.
