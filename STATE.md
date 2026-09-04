@@ -1538,6 +1538,67 @@ task through `POST /api/employees/chat`.
 `ALPHA_LIVE_TASK_20260904_OK` through the real production path. Capability is
 not demonstrated until an actual model response returns that token.**
 
+## RESUME HERE — compact session checkpoint, 2026-09-04 end of session
+
+Read this block first; it is sufficient to resume without reconstructing the
+session. Nonblocking findings are in `FORENSIC-BACKLOG.md` and are deferred to
+a separate forensic session by directive — do not investigate them here.
+
+**Verdict: NO-GO. Two gates remain, one machine-side and one human-side.**
+
+**Proven working (do not re-verify):**
+- Production app is Vercel project `staffai-app` at `app.getstaffai.com`
+  (NOT the VPS container; `getstaffai.com` is the locked marketing site).
+- Signup → email confirm → login → onboarding form.
+- Stripe authentication, after Mark installed a fresh key: live billing-portal
+  session and live `cs_live_…` checkout session both created, proving the key
+  and `STRIPE_PRICE_COMPANY_OFFICE` are valid. No charge made.
+- Stripe webhook endpoint is live and rejects unsigned POSTs with 400.
+- Tenant isolation at the data layer: all cross-tenant reads/updates/deletes
+  denied, cross-tenant insert rejected `42501`, own-tenant control passes.
+- **Alpha executes real work**: `ALPHA_LIVE_TASK_20260904_OK` returned through
+  the authenticated path, task `6c71c47e…`, Provision task
+  `01m1q44s6sm9ww4vktk7fdr6zm`. (Alpha's runtime config was hand-repaired.)
+- **Beta recovery works with no manual container repair**: new team
+  `01m1q5gk937nvs2kc8kxfm1r92`, both agents fresh and `active`, 3 succession
+  audit rows, strict readiness earned, dashboard rendered operational.
+
+**GATE 1 — machine-side, with AntiGravity (launch blocker).** Fresh-tenant
+provisioning writes an unusable model configuration. Beta's freshly provisioned
+agents run with model `openclaw/01m1q5hx0mm41fmcppcckes216` (an OpenClaw
+internal agent id) instead of the `qwen/qwen3.8-flash` slug Staff AI sends, so
+the gateway returns 404 and every task fails. Alpha only works because its
+config was hand-edited, which masked this. Full detail and the consolidated
+4-item handoff are in the section below. **When it returns: log in as Beta and
+run ONE fresh authenticated task** (`BETA_LIVE_TASK_20260904_OK`) via
+`POST /api/employees/chat`, conversation `a5e31c1c-5056-4fb4-b0cc-59f1caa6c986`.
+
+**GATE 2 — human-side, needs Mark's card (see instruction below).** Entitlement
+has never been granted to any tenant: both Alpha and Beta are
+`status=provisional`, `stripe_subscription_id=null`, `incorporated_at=null`.
+Consequently `/portal/dashboard/conversations` redirects to
+`/portal/incorporate`, because the Conversations UI is gated on entitlement.
+The webhook → entitlement → UI-unlock chain therefore cannot be proven without
+one completed Stripe checkout. This is the exact and only point in the
+remaining mission that requires a payment action.
+
+**Sequence to finish the mission:** Gate 1 returns → verify Beta with one task →
+Mark completes the trial checkout (Gate 2) → confirm webhook fired, CEO
+`status=active`, `stripe_subscription_id` set, Conversations UI reachable →
+re-run cross-tenant execution probe → declare FUNCTIONAL ACCEPTANCE COMPLETE
+and stop. Do not start the forensic sweep in that session.
+
+**Test identities:** Alpha `testceo123@gmail.com` / `AlphaAcc7#vQ2mZx9`
+(org `8388880c-305f-4c9b-842d-c67e18736489`, conversation
+`f93f5567-eb0c-4457-9965-a07e378319f7`). Beta `markdanielphd@gmail.com` /
+`BetaAcc7#vQ2mZx9` (org `7dccb353-e6d2-44bc-95e9-1d762b9a4674`). Passwords were
+administratively reset during acceptance.
+
+**Browser note:** Next.js server-action forms cannot be driven by synthetic
+clicks in this harness — the POST aborts client-side. Submit the form's
+`FormData` to `location.pathname` via `fetch` instead; that is the genuine
+progressive-enhancement production path and is how Beta recovery was run.
+
 ## CURRENT VERDICT: NO-GO — one specific launch blocker, 2026-09-04
 
 **The blocker:** fresh-tenant provisioning writes an unusable model
