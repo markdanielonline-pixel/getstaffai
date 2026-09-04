@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import PortalHeader from '@/components/PortalHeader';
 import PortalSidebar from '@/components/PortalSidebar';
 import { getCEO } from '@/app/actions/auth';
@@ -75,9 +76,9 @@ export default async function Dashboard() {
                 </p>
               </div>
 
-              <a href="/portal/dashboard/conversations" className="btn btn-primary" style={{ display: 'block', textAlign: 'center', padding: '1rem', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', textDecoration: 'none' }}>
+              <Link href="/portal/dashboard/conversations" className="btn btn-primary" style={{ display: 'block', textAlign: 'center', padding: '1rem', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', textDecoration: 'none' }}>
                 Open Conversations
-              </a>
+              </Link>
             </div>
           </div>
 
