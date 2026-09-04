@@ -474,3 +474,39 @@ then resume the real browser lifecycle from the existing labeled synthetic
 identity: CTA, authentication, safe trial/checkout, entitlement, onboarding,
 truthful EA/GM readiness and harmless execution, management, billing, logout,
 returning login, recovery and tenant-isolation proof.
+
+## Capacity closeout, 2026-09-04
+
+Engineering stopped at the completed deployment boundary because daily capacity
+reached 16%. Current Git branch is `codex/reconcile-sept3-20260904`; the commit
+immediately before this closeout is
+`f03e72d2dee2c6e0d413bcb4c23616d44d9a2a56`. The tracked working tree was clean.
+Relative to base `69797619346668f725d657ca71f13fe04a089e8d`, the branch contains 15
+tracked files with 266 insertions and 358 deletions. There are 1,111 pre-existing
+untracked paths; they were inventoried before reconciliation and remain untouched.
+Do not clean or bulk-add them.
+
+Completed evidence remains: all September 3 semantic deltas reconciled; P1
+false-readiness and interrupted error-handling defects repaired; lint zero errors
+with one existing warning; focused readiness 6/6 PASS; PostgreSQL foundation
+16/16 PASS; local and production Docker builds PASS; production image
+`sha256:22b3f5613da7724641e053d7e218ab8bdfa2c13fe0e98d7506e4b210d8cfbd86`
+running since `2026-09-04T04:41:37Z`; application health at
+`2026-09-04T04:43:26Z` returned web=ok and database=ok. Rollback source and image
+remain preserved. No marketing-site routing, identity, payment, subscription or
+production database state was changed by this reconciliation task.
+
+Synthetic lifecycle status remains **NOT TESTED after this deployment**. The
+read-only Acceptance Alpha/Beta query was interrupted before returning results;
+do not infer entitlement, onboarding, workforce readiness or task success from
+the earlier September 2 record. Open P0 count: zero known. Open P1: the full live
+CEO lifecycle and post-deployment tenant-isolation path remain unverified, so the
+release gate is **NOT READY / NO-GO**.
+
+Exact next action: from this branch and checkpoint, rerun only the ID-scoped
+read-only production-state query for Acceptance Alpha/Beta. Then use the existing
+labeled synthetic identity to verify the browser journey from public CTA through
+authentication, safe trial/checkout, entitlement, onboarding, truthful EA/GM
+readiness and harmless tasks, app and employee/org management, billing, logout,
+returning login, recovery and cross-tenant denial. Do not create a new identity
+or charge unless current evidence proves the existing fixture cannot be resumed.
