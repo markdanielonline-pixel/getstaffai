@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export async function POST() {
+export async function POST(req) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -30,7 +30,12 @@ export async function POST() {
       if (updateResult.error) throw new Error(`Unable to save Stripe customer: ${updateResult.error.message}`);
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.getstaffai.com';
+    // Derive the origin from the request, matching /api/checkout. The previous
+    // fallback pointed at the marketing host (www.getstaffai.com), which serves
+    // the locked static site and has no /portal routes — returning from the
+    // Stripe billing portal landed the customer on a 404. The app is served
+    // from app.getstaffai.com.
+    const siteUrl = new URL(req.url).origin;
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${siteUrl}/portal/dashboard/settings`,

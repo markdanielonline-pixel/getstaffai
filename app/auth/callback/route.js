@@ -8,7 +8,10 @@ export async function GET(request) {
 
   // Always use the public site URL — behind a proxy, request.url may resolve
   // to an internal IP instead of getstaffai.com
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://getstaffai.com'
+  // Fallback must be the application host. getstaffai.com serves the locked
+  // static marketing site and has no /portal or /auth routes, so if the env var
+  // were ever unset every auth redirect would land on a 404.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.getstaffai.com'
 
   if (code) {
     const supabase = await createClient()

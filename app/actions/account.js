@@ -33,7 +33,9 @@ export async function updateEmail(formData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: 'Please sign in again before changing your email.' };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.getstaffai.com';
+  // Fallback must be the application host, not the marketing site (see
+  // app/auth/callback/route.js) — the confirmation link targets /auth/callback.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.getstaffai.com';
   const { error } = await supabase.auth.updateUser(
     { email },
     { emailRedirectTo: `${siteUrl}/auth/callback?next=/portal/dashboard/settings` }
