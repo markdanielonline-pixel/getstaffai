@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
-import LoginExtras from '@/components/LoginExtras';
 import LoginForm from '@/components/LoginForm';
 
 export default async function Login({ searchParams }) {
@@ -43,8 +42,6 @@ export default async function Login({ searchParams }) {
             )}
 
             <LoginForm />
-
-            <LoginExtras />
 
             <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
               Ready to establish your Company Office?{' '}

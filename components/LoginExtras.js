@@ -26,8 +26,11 @@ export default function LoginExtras({ email }) {
   };
 
   const handleForgotPassword = async () => {
-    const targetEmail = email || window.prompt('Enter your email address to receive a reset link:');
-    if (!targetEmail) return;
+    const targetEmail = (email || '').trim();
+    if (!targetEmail) {
+      setResetMsg('Enter your email address above, then select Forgot password.');
+      return;
+    }
     setResetLoading(true);
     setResetMsg(null);
 
