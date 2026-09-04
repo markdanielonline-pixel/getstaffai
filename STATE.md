@@ -1538,7 +1538,48 @@ task through `POST /api/employees/chat`.
 `ALPHA_LIVE_TASK_20260904_OK` through the real production path. Capability is
 not demonstrated until an actual model response returns that token.**
 
-### NEW P0: the production Stripe secret key is EXPIRED — the revenue path is dead
+### Stripe P0 RESOLVED and independently verified, 2026-09-04
+
+Mark issued a fresh live secret key, set `STRIPE_SECRET_KEY` in Vercel
+Production and redeployed. **The key was never handled in chat** — it was
+entered directly into Vercel, so no rotation is required on account of this
+work. Verified behaviorally, not by inspection:
+
+- `POST /api/billing/portal` as the Alpha CEO → **200**, returning a real
+  `https://billing.stripe.com/p/session?secret=live_…` URL whose session secret
+  decodes to account `acct_1JCwmmBe48ha5T2s`, matching the StaffAi account of
+  record.
+- The Stripe customer round trip completed and persisted:
+  `ceos.stripe_customer_id = cus_VCRkQ1fkesQbpo` for Acceptance Alpha (it was
+  `null` before).
+- `POST /api/checkout` (Company Office, monthly) → **200**, returning a real
+  `https://checkout.stripe.com/…/cs_live_b1lRFXMi…` session. This matters
+  beyond authentication: it proves `STRIPE_PRICE_COMPANY_OFFICE` resolves to a
+  valid live price. A working key with an archived price would still have left
+  signup broken, and that was not covered by the portal check alone.
+- **No charge and no mutation.** Post-call state: `stripe_subscription_id`
+  still `null`, zero rows in `subscriptions`, org name/industry unchanged
+  (`Acceptance Alpha` / `Software`), `workforce_status` still `ready`. A
+  Checkout Session is an intent only and expires unused; the call was made with
+  Alpha's existing values so the org write was a no-op. No card details were
+  entered at any point.
+
+Operational note for future engineers: `vercel env ls` reported
+`STRIPE_SECRET_KEY` as `175d ago` **after** the key had been replaced — that
+column shows creation date, not last-modified, and reads misleadingly as
+"unchanged". Do not use it to judge whether a rotation landed; test behavior.
+
+Still unverified: `STRIPE_WEBHOOK_SECRET` was deliberately not changed and its
+validity remains unproven. It governs whether a completed checkout actually
+provisions entitlement, so subscription activation end to end is still
+unconfirmed. Completing a real subscription requires entering card details and
+was correctly not attempted.
+
+### Superseded: the Stripe expiry as originally found
+
+*(Retained for history — resolved above.)*
+
+### ORIGINAL P0: the production Stripe secret key is EXPIRED — the revenue path is dead
 
 Exercising the billing portal as the Acceptance Alpha CEO returned 500. The
 server log gives it unambiguously:
@@ -1664,9 +1705,14 @@ implemented, deployed, and behaviorally verified end to end for Alpha, which
 now holds genuine live readiness. **The fabricated-dashboard-activity blocker
 is RESOLVED.**
 
-Open **P0: the production Stripe secret key is expired**, disabling both
-checkout and billing management. The product cannot take money. Requires Mark
-to issue a new key; not fixable from this harness.
+The Stripe P0 is **RESOLVED and verified** (live portal + checkout sessions
+created, no charge). **No known open P0.**
+
+**THE REMAINING EXECUTION BLOCKER IS THE OPENCLAW VPS DEPLOYMENT** — it is not
+superseded by the Stripe work and must not be lost. Alpha's workforce still
+cannot execute any task until ProvisionCore `ab640b0`, `22168ce` and `44bd947`
+are deployed and the runtime's OpenClaw install is cleanly reinstalled at the
+pin. The consolidated handoff below is still pending and unchanged.
 
 Open **P1 (blocking, single most important item)**: Alpha's live workforce is
 `ready` but **cannot execute any task** — root-caused to a broken/mixed-build
