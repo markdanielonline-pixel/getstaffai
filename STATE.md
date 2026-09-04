@@ -382,3 +382,45 @@ To permanently prevent obsolete projects or deployments from competing for produ
     - `staffai-app`: stripped of all custom domains; restricted to platform backend/application development under its default Vercel preview domain.
     - Obsolete Vercel projects deleted: `getstaffai-live` (`prj_QEp1fot53kAsQz5SOyWM6SiIzg4N`), `staffai-web` (`prj_U0ADruauzWRYAC4nA0QCosHGwQJA`), and `getstaffai` (`prj_i6w0OayzR8As02Y1vIlulDveIfIa`).
 
+## September 3 interrupted-copy reconciliation, 2026-09-04
+
+Reconciliation branch: `codex/reconcile-sept3-20260904`. Pre-reconciliation
+tracked checkpoint: `997cac264d8a72f0dd585128590106e143e8f862`. A binary tracked patch and
+complete untracked-file inventory were preserved outside this repository under
+`Documents/Codex/2026-09-03/th/work/staffai-reconcile-20260904/`.
+
+The 11 semantic tracked-file differences against the September 3 copy were:
+`STATE.md`, `app/actions/auth.js`, `app/api/webhooks/stripe/route.js`,
+`app/page.js`, `app/portal/login/page.js`, `app/portal/signup/page.js`,
+`components/Header.js`, `lib/factory-core.js`, `lib/initial-workforce.js`,
+`lib/provision.js`, and `lib/supabase/server.js`.
+
+Seven application files were already byte-equivalent after newline normalization:
+`app/actions/auth.js`, `app/api/webhooks/stripe/route.js`, `app/page.js`,
+`app/portal/login/page.js`, `app/portal/signup/page.js`, `components/Header.js`,
+and `lib/supabase/server.js`; they required no transfer.
+
+`lib/initial-workforce.js` retains the authoritative fresh positive readiness
+gate and now safely returns false for an absent runtime. The interrupted copy's
+`op.update({ status: 'completed' })` was not transferred because the operation
+API has no `update` method and the wrapper already commits completed state.
+`lib/factory-core.js` was retained because its existing verified readiness gate
+guarantees `readiness.checked_at`; the copy's fallback timestamp would weaken
+evidence truthfulness. `lib/provision.js` was retained because the copy logged
+raw non-JSON upstream bodies and removed the structured HTTP `status` property,
+creating information-disclosure and error-handling regressions.
+
+The September 4 continuity facts were merged here without overwriting the newer
+canonical website infrastructure record. No production deployment or mutation
+was performed during reconciliation. `npm run lint` passed and six focused
+readiness cases passed (absent runtime, status-only, runtime-status-only, fresh
+ready, stale ready and fresh unhealthy). The PostgreSQL-backed foundation suite
+was not run because the required dedicated loopback `P1_TEST_DATABASE_URL` was
+not available. The reconciliation diff passed `git diff --check`. The final
+reconciliation commit immediately following this record is the checkpoint.
+
+Current gate remains **NOT READY / NO-GO** for a new production release until the
+PostgreSQL-backed foundation suite passes and the reconciled commit is deployed
+and live lifecycle-tested. Exact next action: provide/start the isolated test
+database on `127.0.0.1:55439`, run `tests/foundation.test.mjs`, then review the
+checkpoint before any deployment.
