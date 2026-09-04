@@ -919,6 +919,123 @@ here because the combination — convincing mock output plus a non-operational
 workforce — is precisely the kind of thing that becomes a credibility problem
 in technical due diligence.
 
+### Independent verification of AntiGravity's Provision repair, 2026-09-04 (later session)
+
+AntiGravity reported repairing the `StaffAiIntegrationController` payload
+contract on the VPS and declared "REPAIR SUCCESSFUL / live workforce readiness
+restored", with Alpha and Beta both passing `ready=true`. That report was
+treated as a repair claim requiring independent production verification.
+**It does not hold from production.** The repair itself may well be correct;
+it simply cannot be exercised by the live application.
+
+**P0 CONFIGURATION DEFECT FOUND: the production app cannot reach Provision at
+all.** Diagnostic instrumentation added this session (commit `f3a9b21`-equiv,
+see git log) now names the dialled origin on transport failure. The persisted
+`provisioning_operations.error` for Acceptance Alpha reads verbatim:
+
+`Provision unreachable at http://provision-app-1:8000/api/integrations/staffai/teams (ENOTFOUND)`
+
+Vercel Production's `PROVISION_BASE_URL` is set to **`http://provision-app-1:8000`**
+— an internal Docker Compose service hostname. It resolves only inside the
+VPS's `provision_default` Docker network. From Vercel's serverless runtime it
+is DNS-nonexistent, so **every** Staff AI → Provision call fails before a
+connection is opened. This is not a regression from AntiGravity's patch; the
+value has been wrong for as long as the app has run on Vercel, and it is the
+true reason the EA/GM workforce has never been demonstrable from production.
+
+This fully reconciles the conflicting evidence: AntiGravity's `req5_unix.sh`
+run and its `HTTP 200 {"ready":true}` result were executed **on the VPS**,
+where `provision-app-1` resolves normally. Its verification never traversed
+the path the real product uses.
+
+**Evidence-scope discrepancy in the repair report.** The cited evidence org
+`b1972d68-89e3-4530-b833-5777f0e5d534` is not Alpha or Beta — it is a new org
+created today at 15:34:39Z named literally
+`SYNTHETIC AUDIT COMPANY - SAFE TO DELETE`. So report item 4 ("Both Alpha and
+Beta ... passed the ready=true launch gate") is not supported by the evidence
+supplied. That org's `workforce_status='ready'` was written by a VPS-side
+script directly into Supabase and **has never been validated through the
+production application**; it is records-only readiness of exactly the class
+this project has repeatedly been burned by. Treat it as unverified and delete
+it during cleanup.
+
+**Truthful readiness proved itself again, on both tenants.** Loading Alpha's
+real dashboard as its CEO ran the live check, which failed on the unreachable
+Provision host, and the system correctly invalidated its own stale record:
+Alpha went `completed` → `retryable` with both employees demoted `active` →
+`training`. Beta had already done the same earlier. **Both Acceptance tenants
+now truthfully report NOT ready, and the September 2 `ready` records are gone
+because they were false.** The gate has now caught false readiness three
+separate times this session. Do not hand-restore these rows.
+
+### CORRECTION to this session's earlier P1 cleartext finding
+
+My earlier entry stated the integration token "crosses the public internet in
+cleartext **on every Vercel → Provision call**". That overstated it and is
+corrected here: because `PROVISION_BASE_URL` is an unresolvable internal
+hostname, those calls never establish a connection, so **no bearer token has
+been transmitted from Vercel over plaintext.** The accurate finding is
+narrower but still a genuine P1 launch blocker:
+
+- Provision's API is bound to `0.0.0.0:8000` and is confirmed reachable from
+  the open internet (`http://158.220.123.254:8000/up` → 200 from an external
+  host), with **no TLS anywhere** (443 and 8000 both fail TLS, code `000`).
+  An authenticated admin/API surface is publicly exposed over plaintext.
+- The exposure becomes active token leakage the moment anyone "fixes" the
+  unreachability the obvious way — by pointing `PROVISION_BASE_URL` at
+  `http://158.220.123.254:8000`. That naive fix is exactly what the P0 above
+  invites, which is why the transport fix and the TLS fix must land together.
+
+**Do not set `PROVISION_BASE_URL` to a plaintext public URL as an interim
+measure.** Doing so would trade a broken feature for a leaked control-plane
+credential.
+
+### Required remediation sequence (single combined fix for the P0 and P1)
+
+Ordered so no window of plaintext token transmission is ever opened. Steps
+1–3 and 6 require VPS/DNS/NPM access this harness cannot reach; see handoff.
+
+1. **DNS** — create an A record `provision.getstaffai.com` → `158.220.123.254`.
+   It currently resolves to Vercel IPs (216.198.79.1 / 64.29.17.1) via the
+   `getstaffai.com` wildcard, so it must be an explicit, non-proxied A record
+   pointing at the VPS.
+2. **Reverse proxy** — in the already-running `stack-npm-1` NGINX Proxy
+   Manager, add proxy host `provision.getstaffai.com` → `provision-app-1:8000`
+   over the internal Docker network. NPM must be attached to
+   `provision_default` (or the container joined to NPM's network) for that
+   upstream to resolve.
+3. **TLS** — issue a Let's Encrypt certificate for the host and force SSL.
+4. **Verify transport externally** — `curl https://provision.getstaffai.com/up`
+   returns 200 with a valid chain, and `http://` redirects to `https://`.
+5. **Repoint the app** — set Vercel Production `PROVISION_BASE_URL` to
+   `https://provision.getstaffai.com` and redeploy.
+6. **Close the public port** — remove the `0.0.0.0:8000->8000` mapping from
+   `provision-core/docker-compose.yml`, recreate the container, and confirm
+   `http://158.220.123.254:8000/up` no longer answers from outside.
+7. **Rotate** `PROVISION_INTEGRATION_TOKEN` in Provision and in Vercel, only
+   after secure transport is confirmed, then redeploy.
+8. **Re-verify readiness through production** — load a tenant dashboard and
+   confirm the live check now succeeds, rather than trusting any VPS-local
+   script result.
+
+### Bounded task to hand back to AntiGravity
+
+This harness's classifier blocks SSH, production secret pulls, and scripted
+credential submission, so steps 1, 2, 3 and 6 above must be executed by
+AntiGravity. The bounded request is exactly:
+
+> Perform steps 1, 2, 3 and 6 of the remediation sequence in
+> `STATE.md` (DNS A record, NPM proxy host, Let's Encrypt TLS, removal of the
+> public `0.0.0.0:8000` port mapping). Do **not** change
+> `PROVISION_BASE_URL`, do **not** rotate the integration token, and do
+> **not** modify any `provisioning_operations` or `organizations` readiness
+> row. Report the external `curl -v https://provision.getstaffai.com/up`
+> output including certificate issuer and expiry, and the external result for
+> `http://158.220.123.254:8000/up` after the port is closed.
+
+Steps 4, 5, 7 and 8 (Vercel env, redeploy, token rotation, production
+readiness re-verification) are performable from this harness once 1–3 land.
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
@@ -938,35 +1055,42 @@ employee-lifecycle management actions; billing portal; logout and returning
 login; recovery-email delivery end-to-end; EA/GM execution-path isolation
 under a live session.
 
-Open P1 (two): (a) the live EA/GM workforce is not operational for an entitled
-tenant, so the core product promise cannot currently be demonstrated; (b) the
-Provision integration token crosses the public internet in cleartext because
-the Provision host serves no TLS. Open P2: Supabase Auth Site URL still
-`localhost:3000`; dashboard EA thread is static mock copy that reads as live
-product. No known open P0 — all three found this session are fixed and
-deployed. Readiness diagnosability is resolved (logging added).
+Open **P0**: `PROVISION_BASE_URL` is an internal Docker hostname
+(`http://provision-app-1:8000`), so the production application cannot reach
+the workforce execution engine at all (`ENOTFOUND`). The core product is
+non-functional in production. Open **P1**: Provision's authenticated API is
+publicly exposed on `0.0.0.0:8000` with no TLS available on the host; fixing
+the P0 naively would begin leaking the bearer token. Both are resolved by the
+single combined remediation sequence above. Open P2: Supabase Auth Site URL
+still `localhost:3000`; dashboard EA thread is static mock copy that reads as
+live product. The three P0s found earlier this session (signup CEO record,
+dashboard dead-end redirect, dashboard 500) remain fixed and deployed.
+Readiness diagnosability is resolved — failures now name both the failed check
+and the dialled origin, and persist to `provisioning_operations.error`.
 
 Overall gate: **NOT READY / NO-GO.** The customer-facing shell is now sound —
 signup, confirmation, login, onboarding and the dashboard all work, and tenant
 isolation is proven — but the AI workforce that constitutes the actual product
 is not live for an entitled tenant.
 
-Exact next action, in order: (1) **SSH to `158.220.123.254` and restore the
-agent runtime layer** — Provision Core's API is confirmed healthy, so check
-that the tenant runtime (OpenClaw) containers are running, daemon heartbeats
-are fresh, and team/agent `server_id` values match the recorded
-`teamId`/`serverId` above. Alpha's row is still `completed`, so loading
-Alpha's dashboard once will now emit an exact
-`[workforce.readiness] org=… not ready: <specific reason>` line in the Vercel
-runtime logs — use that to target the fix. (2) **Put TLS in front of
-Provision and rotate `PROVISION_INTEGRATION_TOKEN`** (see the P1 security
-finding). (3) Once readiness is genuinely green, drive a harmless task from a
-tenant dashboard and confirm a truthful tenant-specific result, then
-employee/org management, billing, logout and returning login. (4) Re-run the
-cross-tenant execution probe (Beta org + Alpha employee) against the live API.
-(5) Fix the Supabase Auth Site URL / redirect allowlist. (6) Replace or label
-the mock EA dashboard thread. Data-layer isolation does not need re-proving
-unless policies change.
+Exact next action, in order: (1) **Hand the bounded DNS/NPM/TLS/port task
+above to AntiGravity**, then complete steps 4, 5, 7 and 8 from this harness.
+This single sequence clears both the P0 and the P1 and is the gating item for
+everything else. (2) Once production readiness genuinely succeeds through the
+live app, drive a harmless task from a tenant dashboard and confirm a truthful
+tenant-specific result, then employee/org management, billing, logout and
+returning login. (3) Re-run the cross-tenant execution probe (Beta org +
+Alpha employee) against the live API — data-layer isolation is proven and does
+not need re-proving unless policies change, but execution-path isolation has
+never been demonstrated post-repair. (4) Fix the Supabase Auth Site URL /
+redirect allowlist. (5) Replace or clearly label the mock EA dashboard thread.
+(6) Delete the `SYNTHETIC AUDIT COMPANY - SAFE TO DELETE` org
+(`b1972d68-89e3-4530-b833-5777f0e5d534`) and its two employees.
+
+Standing rule, reinforced by three separate catches this session: do NOT
+hand-edit `provisioning_operations.state`, `organizations.workforce_status`,
+or `employees.status` to make a dashboard read ready. Every such row that
+said `ready` this session was false, and the live gate was right each time.
 
 Do NOT restore any `provisioning_operations` row to `completed` by hand to
 make a dashboard look ready. The `retryable` state is the truthful one; the
