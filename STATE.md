@@ -1036,6 +1036,120 @@ AntiGravity. The bounded request is exactly:
 Steps 4, 5, 7 and 8 (Vercel env, redeploy, token rotation, production
 readiness re-verification) are performable from this harness once 1–3 land.
 
+### TLS remediation independently VERIFIED, and the P0 transport defect is RESOLVED, 2026-09-04
+
+Codex's infrastructure checkpoint `1171f65` was independently verified from an
+external host. **All material claims hold:**
+
+- `provision.getstaffai.com` resolves to `158.220.123.254` (no longer the
+  Vercel wildcard).
+- `https://provision.getstaffai.com/up` → **200**, and passes *strict* TLS
+  validation (no `-k` required).
+- Certificate: issuer `C=US, O=Let's Encrypt, CN=YE1`, subject
+  `CN=provision.getstaffai.com`, `notBefore=Sep 4 15:40:06 2026 GMT`,
+  `notAfter=Dec 3 15:40:05 2026 GMT` — matches the reported issuer and expiry
+  exactly.
+- `http://provision.getstaffai.com/up` → **301** to the HTTPS URL (forced SSL).
+- `http://158.220.123.254:8000/up` → connection fails (curl code `000`). The
+  public plaintext port is genuinely closed from outside.
+- The proxy reaches the real Provision application, not a placeholder: `/`
+  returns 302 → `/login` and `/api/integrations/staffai/teams` returns **405**
+  (route exists, POST-only), which is correct Laravel behavior.
+
+**P1 (public plaintext Provision exposure) is RESOLVED** by this work.
+
+`PROVISION_BASE_URL` was then set to `https://provision.getstaffai.com` in
+Vercel Production and the app redeployed (`dpl_Ari6T3GLu4aFEigePTq3ZSfRkyfK`,
+then `dpl_ErShxadrFXx5bkGBcDAnfNDCiMPM`).
+
+**P0 (production could not reach Provision) is RESOLVED, proven by behavior
+change rather than by configuration inspection.** Triggering a real
+provisioning attempt from Alpha's dashboard changed the persisted
+`provisioning_operations.error` from
+`Provision unreachable at http://provision-app-1:8000/... (ENOTFOUND)` to an
+application-level error. Staff AI on Vercel now genuinely completes TLS
+requests to Provision.
+
+### CURRENT BLOCKER (P1): Alpha/Beta hold stale Provision team mappings
+
+With transport working, the live readiness/provision path now fails with an
+application-level guard. Instrumentation added this session reports the exact
+identifiers:
+
+`Provision team ownership mismatch (returned external_id=8388880c-305f-4c9b-842d-c67e18736489, expected 8388880c-305f-4c9b-842d-c67e18736489; returned team=01m1pnjmncvnb9d3be8nexrdkd, mapped 01m1fcybjwq1fx30m3yzw0kj2g)`
+
+Interpretation, and note this is *better* news than the raw message suggests:
+
+- **`external_id` matches exactly.** Provision agrees the team belongs to
+  Acceptance Alpha. This is NOT a cross-tenant binding attempt, and tenant
+  isolation is not implicated.
+- Provision's current team for Alpha is `01m1pnjmncvnb9d3be8nexrdkd`. Staff AI
+  still has the Sept 2 team `01m1fcybjwq1fx30m3yzw0kj2g` mapped in
+  `organizations.provision_team_id`. The original team no longer exists on the
+  Provision side — almost certainly destroyed and recreated during the
+  incident remediation and container rebuilds between Sept 2 and Sept 4.
+- **The endpoint is idempotent.** A second retry returned the *same* team id
+  `01m1pnjmncvnb9d3be8nexrdkd`, not a third one. So repeated retries are NOT
+  leaking orphan teams/runtimes. Idempotency-by-`external_id` is working.
+- Staff AI's guard in `lib/provision.js` (`provisionTeamRuntime` /
+  `syncProvisionTeam`) is therefore behaving **correctly and safely**: it
+  refuses to silently rebind a tenant onto a different Provision team.
+
+**The genuine architectural gap this exposes:** there is no supported recovery
+path when a tenant's Provision team is legitimately recreated. The guard
+blocks rebinding permanently, so any tenant whose runtime is rebuilt is
+stranded in `retryable` forever and cannot self-heal through the product. Both
+Acceptance Alpha and Acceptance Beta are currently in exactly that state.
+
+**This was deliberately NOT "fixed" in this session, and that decision should
+be respected until it is made consciously.** The obvious change — relaxing the
+`provision_team_id !== runtime.id` clause so readiness goes green — is
+precisely the kind of edit the mission forbids: weakening a tenant-binding
+safety check in order to obtain a PASS. The `external_id` equality check is
+strong evidence of correct ownership, but I could not verify from this harness
+whether the previously mapped team is genuinely absent from Provision versus
+still present and owned by something else, and that distinction is what
+separates a safe re-bind from a cross-tenant binding bug.
+
+Recommended fix, smallest and architecture-compatible, once the open question
+below is answered: permit re-binding **only** when (a) the returned
+`external_id` equals the organization id, AND (b) the previously mapped team
+is confirmed absent from Provision, AND (c) the rebinding is written as an
+explicit audited event rather than a silent update. If Provision exposes no
+get-team-by-team-id route, add one, or have it return the prior id as
+`replaces_team_id` so Staff AI can verify the succession authoritatively.
+
+Open question to resolve first (bounded, for AntiGravity/Codex on the VPS):
+> For Acceptance Alpha (`external_id=8388880c-305f-4c9b-842d-c67e18736489`)
+> and Acceptance Beta (`external_id=7dccb353-e6d2-44bc-95e9-1d762b9a4674`):
+> does team `01m1fcybjwq1fx30m3yzw0kj2g` (Alpha) or
+> `01m1gy0adh2n0b6kec6gw16qzq` (Beta) still exist in Provision's database, and
+> if so which `external_id` owns it? Report the current team row for each
+> external_id. Do not delete or modify anything.
+
+Minor, non-blocking: Provision's Laravel app emits `http://` absolute
+redirects behind the proxy (`/` → `http://provision.getstaffai.com/login`),
+indicating `APP_URL`/`TrustProxies` are not set for HTTPS. NPM's 301 corrects
+it, so API calls are unaffected, but it should be set to avoid protocol
+downgrade on any redirect-following client.
+
+### Credential rotation: correctly deferred, not skipped
+
+Rotation was NOT performed this session, deliberately. Secure transport now
+exists, so rotation is safe to do — but doing it without an overlap window
+would break the running integration, and creating a second valid token
+requires Provision-side (VPS) access this harness cannot reach. The exposure
+window that motivated rotation is also now understood to be narrower than
+first believed: because `PROVISION_BASE_URL` was an unresolvable internal
+hostname, **Staff AI never transmitted the token over the public internet**.
+The residual risk is that the authenticated API was publicly reachable on
+plaintext port 8000 for some period, so rotation remains warranted, but it is
+not an emergency and should be done with an overlap:
+1. Provision: issue a second valid integration token (both accepted).
+2. Vercel: update `PROVISION_INTEGRATION_TOKEN`, redeploy, verify readiness
+   path still succeeds over TLS.
+3. Provision: revoke the original token; re-verify.
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
@@ -1055,28 +1169,37 @@ employee-lifecycle management actions; billing portal; logout and returning
 login; recovery-email delivery end-to-end; EA/GM execution-path isolation
 under a live session.
 
-Open **P0**: `PROVISION_BASE_URL` is an internal Docker hostname
-(`http://provision-app-1:8000`), so the production application cannot reach
-the workforce execution engine at all (`ENOTFOUND`). The core product is
-non-functional in production. Open **P1**: Provision's authenticated API is
-publicly exposed on `0.0.0.0:8000` with no TLS available on the host; fixing
-the P0 naively would begin leaking the bearer token. Both are resolved by the
-single combined remediation sequence above. Open P2: Supabase Auth Site URL
-still `localhost:3000`; dashboard EA thread is static mock copy that reads as
-live product. The three P0s found earlier this session (signup CEO record,
-dashboard dead-end redirect, dashboard 500) remain fixed and deployed.
-Readiness diagnosability is resolved — failures now name both the failed check
-and the dialled origin, and persist to `provisioning_operations.error`.
+**Both the earlier P0 (Provision unreachable) and P1 (public plaintext
+exposure) are now RESOLVED and independently verified.** No known open P0.
+
+Open **P1**: Alpha and Beta hold stale `provision_team_id` mappings and there
+is no supported re-binding path after a Provision team is recreated, so both
+acceptance tenants are permanently stranded in `retryable` and live EA/GM
+readiness still cannot be demonstrated. Requires the bounded Provision-side
+question above to be answered before a safe fix is written — do not relax the
+guard to force a green readiness.
+
+Open P2: Supabase Auth Site URL still `localhost:3000`; dashboard EA thread is
+static mock copy that reads as live product; Provision Laravel emits `http://`
+redirects behind the proxy. Deferred: integration token rotation (safe to do
+now, needs an overlap window and VPS access).
+
+The three P0s found earlier this session (signup CEO record, dashboard
+dead-end redirect, dashboard 500) remain fixed and deployed. Readiness
+diagnosability is fully resolved — failures now name the failed check, the
+dialled origin, and the conflicting identifiers, and persist to
+`provisioning_operations.error`, which is how this session's root causes were
+found without host access.
 
 Overall gate: **NOT READY / NO-GO.** The customer-facing shell is now sound —
 signup, confirmation, login, onboarding and the dashboard all work, and tenant
 isolation is proven — but the AI workforce that constitutes the actual product
 is not live for an entitled tenant.
 
-Exact next action, in order: (1) **Hand the bounded DNS/NPM/TLS/port task
-above to AntiGravity**, then complete steps 4, 5, 7 and 8 from this harness.
-This single sequence clears both the P0 and the P1 and is the gating item for
-everything else. (2) Once production readiness genuinely succeeds through the
+Exact next action, in order: (0) **Answer the bounded Provision-side team
+question above**, then implement the audited re-binding fix and retest — this
+is now the single gating item for live EA/GM readiness. (2) Once production
+readiness genuinely succeeds through the
 live app, drive a harmless task from a tenant dashboard and confirm a truthful
 tenant-specific result, then employee/org management, billing, logout and
 returning login. (3) Re-run the cross-tenant execution probe (Beta org +
