@@ -429,3 +429,48 @@ reconciled commit is deployed and the complete live customer lifecycle is
 verified. Exact next action: inspect and preserve the current production
 deployment, deploy the reviewed checkpoint without altering the locked marketing
 site, then resume the labeled synthetic lifecycle from its existing state.
+
+## Reconciliation deployment checkpoint, 2026-09-04
+
+The reconciled P1 repair was deployed to the existing Staff AI application
+service on `158.220.123.254`; the locked `dist` marketing site and its Vercel
+routing were not modified. Before deployment, the active interrupted image was
+tagged `staffai-v2-staffai-web:pre-7d2f8cf-20260904`, and the three replaced
+source files were preserved under
+`/root/staffai-reconcile-7d2f8cf/pre-deploy/lib/`.
+
+Production had been rebuilt from the interrupted September 3 source before this
+checkpoint. It contained the confirmed false-readiness shortcuts, nonexistent
+`op.update()` call, invented readiness-time fallbacks, raw upstream-response
+logging and loss of structured Provision HTTP status. The reviewed canonical
+versions of `lib/initial-workforce.js`, `lib/factory-core.js` and
+`lib/provision.js` replaced those files after SHA256 verification. Production
+source hashes are respectively `39804c6a41caabd44b0f4c6de7801f8d02099d97c4198556035096c2b5817eca`,
+`abaa3ddcfbf2ed09e1c583df12c94586e023d8ca2e6ca904bb0d83d796670191`
+and `b7cf9cd5f8bfbf5b65913e9b703c7881c8c2a553e4a455684579cff5b72f9e50`.
+
+The production Docker build completed successfully and generated image
+`sha256:22b3f5613da7724641e053d7e218ab8bdfa2c13fe0e98d7506e4b210d8cfbd86`.
+`staffai-web` was recreated from that image at `2026-09-04T04:41:37Z` and is
+running. At `2026-09-04T04:43:26Z`, its loopback `/api/health` returned
+`status=ok` with both web and database checks `ok`. This is deployment health,
+not customer-lifecycle acceptance.
+
+Verification completed before deployment: lint zero errors (one existing
+navigation warning); local production build PASS; six focused readiness cases
+PASS; PostgreSQL 17 foundation suite 16/16 PASS; reconciliation diff check PASS.
+The disposable PostgreSQL/Node fixtures and SSH tunnel were removed.
+
+Full mission completion is approximately **40%**. Reconciliation, local gates,
+foundation verification, rollback preservation and P1 deployment are complete.
+The synthetic production-state query was interrupted before returning evidence,
+so entitlement, onboarding, current workforce state and the remaining browser
+customer lifecycle are NOT YET VERIFIED in this checkpoint. No identity, charge,
+subscription or production database mutation was created by this task.
+
+Current verdict: **NOT READY / NO-GO**. Exact next action: rerun the read-only,
+ID-scoped production-state query for the existing Acceptance Alpha/Beta tenants,
+then resume the real browser lifecycle from the existing labeled synthetic
+identity: CTA, authentication, safe trial/checkout, entitlement, onboarding,
+truthful EA/GM readiness and harmless execution, management, billing, logout,
+returning login, recovery and tenant-isolation proof.
