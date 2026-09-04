@@ -1538,6 +1538,119 @@ task through `POST /api/employees/chat`.
 `ALPHA_LIVE_TASK_20260904_OK` through the real production path. Capability is
 not demonstrated until an actual model response returns that token.**
 
+## CURRENT VERDICT: NO-GO — one specific launch blocker, 2026-09-04
+
+**The blocker:** fresh-tenant provisioning writes an unusable model
+configuration, so a new paying customer's workforce reports operational and
+then fails every task. Detailed below. Everything else in the paying-customer
+lifecycle is now demonstrated.
+
+### THE SINGLE CONSOLIDATED VPS HANDOFF (all remaining server-side work)
+
+Do all four in one pass. Items 1–2 are the launch blocker; 3–4 remove the
+dependence on Alpha's hand-mutated container.
+
+> **1. Fix fresh-tenant model configuration — LAUNCH BLOCKER.**
+> Staff AI sends `model: qwen/qwen3.8-flash` when creating an agent
+> (`POST /api/integrations/staffai/teams/{team}/agents`). For Beta's freshly
+> provisioned agents the runtime ended up configured with
+> `openclaw/01m1q5hx0mm41fmcppcckes216` — an OpenClaw-internal agent id used as
+> the model — which 404s at the gateway. Find where the submitted slug is
+> dropped or rewritten when Provision writes the OpenClaw runtime config, and
+> fix it so a normally provisioned agent uses the slug Staff AI sent. Compare
+> Beta's two agents (`01m1q5hx0pxygkm5phesrftnb7`,
+> `01m1q5hxy1cz26k67qcc6kzgx3`, team `01m1q5gk937nvs2kc8kxfm1r92`) against
+> Alpha's hand-edited config to see the difference. **Do not fix this by
+> hand-editing Beta's config** — that would recreate the same masking problem.
+> The fix must make normal provisioning produce a working agent.
+>
+> **2. Also investigate the first-attempt failure.** Beta's first dispatch
+> returned `No query results for model [App\Models\Agent]` (404, no
+> `provision_task_id`) ~30s after the agents were created, then a later attempt
+> resolved the agent. If agents are briefly unresolvable after creation, task
+> dispatch needs to tolerate it or readiness must not report ready until the
+> agent is dispatchable.
+>
+> **3. Apply the deterministic OpenClaw install patches.** They are committed at
+> `StaffAi/infra/provision/patches/` (`0001`, `0002`, `0003` + README), base
+> commit `85ae3fd`. Apply all three in order with `git am` in
+> `/root/provision-core`. All three are required — `0001`+`0002` alone ship an
+> integrity check that misses three of four corruption forms. Report the
+> ProvisionCore test-suite result.
+>
+> **4. Confirm the model that actually served Alpha's task** at
+> 2026-09-04T21:10:39–21:10:54Z from the OpenRouter activity log (Provision task
+> `01m1q44s6sm9ww4vktk7fdr6zm`). Backlog, not a gate — but it closes the one
+> open question on Alpha's success.
+>
+> Do **not** change readiness records, tenant mappings, Vercel config, or the
+> Stripe keys.
+
+**After this returns**, the acceptance sequence is: re-run Beta's harmless task
+(`BETA_LIVE_TASK_20260904_OK`) through `POST /api/employees/chat`, then re-run
+the cross-tenant execution probe, and the launch gate is decided on that.
+
+## ACCEPTANCE MODE CHANGE, 2026-09-04
+
+Findings are now classified as **Launch blocker** (prevents a new paying
+customer signing up, paying, receiving entitlement, provisioning a
+tenant/workforce, executing ordinary work, maintaining tenant isolation, or
+operating safely) or **Backlog** (observability, attribution/analytics,
+hardening, defense-in-depth). Backlog findings are recorded and do not stop the
+mission. Per-task model/token/cost attribution is explicitly **Backlog (P2)**,
+not a launch gate.
+
+Definition of done: *can a new customer safely pay, get their company/workforce,
+and have that workforce actually perform work without crossing tenant
+boundaries?*
+
+### LAUNCH BLOCKER: fresh-tenant provisioning produces an unusable model configuration
+
+**This is the current NO-GO.** Beta was used as the fresh/recovery proof and it
+found a defect that Alpha's hand-repaired container was masking.
+
+Beta recovery through the real production path worked perfectly up to
+execution, with **no manual container repair**:
+
+- New Provision team `01m1q5gk937nvs2kc8kxfm1r92` created (Beta previously had
+  none), `provision_connection_status` progressed `provisioning` → `running`.
+- Both agents provisioned fresh: Sophia `01m1q5hx0pxygkm5phesrftnb7`, Marcus
+  Reid `01m1q5hxy1cz26k67qcc6kzgx3`, both `active`/`active`.
+- 3 succession audit rows (1 team + 2 agents).
+- `workforce_status=ready`, `state=completed`, and a live dashboard load
+  rendered **"Initial EA/GM workforce is operational."**
+
+So the create-then-adopt recovery path and strict readiness both work for a
+fresh tenant. **But the workforce cannot execute.** A harmless task
+(`BETA_LIVE_TASK_20260904_OK`) via `POST /api/employees/chat` failed twice:
+
+1. First attempt — Provision could not resolve the agent at task creation:
+   `No query results for model [App\Models\Agent]`, `provision_task_id` null.
+2. Second attempt — the task reached the gateway and returned:
+   `Gateway returned 404 Not Found: {"id":"resp_…","status":"failed",`
+   **`"model":"openclaw/01m1q5hx0mm41fmcppcckes216"`**`,"output":[],…}`
+
+**The model is `openclaw/<an OpenClaw-internal agent id>`, not
+`openrouter/qwen/qwen3.8-flash`.** That alias does not resolve upstream, so the
+gateway 404s. Staff AI sends `model: qwen/qwen3.8-flash` at agent creation
+(`PROVISION_DEFAULT_MODEL`, verified set), so the value is either ignored or
+rewritten on the Provision/OpenClaw side when the runtime config is written.
+
+Why this was invisible until now: **Alpha only executes because AntiGravity
+manually edited Alpha's runtime OpenClaw config to
+`openrouter/qwen/qwen3.8-flash`.** Beta is the control case that went through
+the normal path, and it produces a non-functional model configuration. This is
+precisely the risk flagged when Alpha was hand-repaired.
+
+**Customer impact: a new paying customer would complete signup and payment, see
+"workforce is operational", and then have every task fail.** Readiness does not
+catch it, because readiness verifies runtime/daemon/heartbeat health, not that
+the configured model resolves upstream.
+
+Not fixable from this repository: Staff AI already sends the correct slug. The
+defect is in how Provision/OpenClaw translates that into runtime config. It is
+in the consolidated handoff below.
+
 ### SUCCESS CONDITION MET: harmless Alpha task executed through the genuine production path, 2026-09-04
 
 Independently executed — **not** AntiGravity's result, which was obtained
@@ -1908,3 +2021,36 @@ Exact next action for Claude: set Vercel Production `PROVISION_BASE_URL` to
 `https://provision.getstaffai.com`, rotate `PROVISION_INTEGRATION_TOKEN` in
 Provision and Vercel, redeploy, then independently verify live workforce
 readiness and the remaining production acceptance path.
+
+## Backlog (recorded, non-blocking) as of 2026-09-04
+
+Recorded under the new operating mode. None of these prevent or compromise the
+paying-customer lifecycle; do not stop acceptance for them.
+
+- **P2 — no per-task model/token/cost attribution.** `execution_logs` has the
+  right shape but is empty; its only writer `lib/engine.js` is orphaned and the
+  live Provision path never writes it. Blocks usage billing and cost-anomaly
+  detection. Explicitly not a launch gate.
+- **P2 — Supabase Auth Site URL is `localhost:3000`.** Confirmation and
+  recovery links resolve to a dead localhost tab; the underlying auth still
+  succeeds server-side and users can navigate back and sign in. Fix is a
+  Supabase dashboard setting.
+- **P2 — EA dashboard panel is honest but not wired.** It now shows real empty
+  states instead of the fabricated briefing, but is not connected to live
+  conversation state.
+- **P2 — Provision Laravel emits `http://` absolute redirects** behind the
+  proxy; NPM's 301 corrects it, so API calls are unaffected. Set `APP_URL` /
+  trusted proxies.
+- **P2 — `vercel env ls` shows creation date, not last-modified.** It reported a
+  freshly rotated `STRIPE_SECRET_KEY` as `175d ago`. Do not use it to judge
+  whether a rotation landed; test behavior.
+- **P2 — OpenClaw is installed into the runtime rather than baked into the
+  digest-pinned image.** The patches make installation deterministic and
+  self-verifying; baking it into `AGENT_RUNTIME_IMAGE` would remove the class
+  entirely.
+- **Cleanup — delete the synthetic audit org** `b1972d68-89e3-4530-b833-5777f0e5d534`
+  ("SYNTHETIC AUDIT COMPANY - SAFE TO DELETE") and its two employees.
+- **Cleanup — Tenant Gamma** (`markdanielphd+staffai-gamma-0904@gmail.com`) has
+  a CEO record, no org, no Stripe customer, no charge.
+- **Credentials note** — Alpha and Beta CEO passwords were administratively
+  reset during acceptance; rotate or reset if that is not desired.
