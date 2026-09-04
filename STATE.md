@@ -773,36 +773,127 @@ evidence than a UI probe. Anyone resuming should expect these same blocks and
 plan to either run those steps manually or grant explicit Bash/browser
 permission rules.
 
+### P0 #3 FIXED: dashboard 500 for any tenant failing readiness, 2026-09-04
+
+After logging in as Acceptance Beta (password administratively reset this
+session via `crypt()`/`gen_salt('bf')` on `auth.users`, because Supabase's
+built-in SMTP hit `email rate limit exceeded`), login succeeded and routed to
+`/portal/dashboard` — which then returned **HTTP 500, digest `3328090875`**.
+
+Vercel runtime log gave the exact cause:
+`TypeError: c.rpc(...).catch is not a function`. In
+`lib/workforce.js` `inspectInitialWorkforce()`, the catch block called
+`db.rpc('invalidate_workforce_readiness', …).catch(() => {})`. A supabase-js
+`rpc()` returns a `PostgrestFilterBuilder`, which is *thenable* but has no
+`.catch()` method. So whenever readiness verification failed, the error
+handler itself threw, escaped, and 500'd the whole dashboard instead of
+returning the intended `{ ready:false, status:'retryable' }`. **Every tenant
+whose workforce readiness check fails would see a dead dashboard** — which is
+precisely the state a customer is in when their workforce needs a retry, i.e.
+the exact moment the retry UI matters most.
+
+Fixed in commit `f0e1c2d`-equivalent (see git log) by replacing `.catch()`
+with a real `try/catch` around the awaited call, with a comment recording why.
+A repo-wide scan for the same builder-`.catch()` mistake found no other
+occurrences. Lint zero errors (same single pre-existing warning), build 42/42.
+Deployed as `dpl_BVRUoNGGbuJsnvWV5XWk6vaC91kt`, aliased to
+`app.getstaffai.com`. **Verified live: `/portal/dashboard` now returns 200**
+(runtime log confirms 500 → 200 across the two deployments) and renders the
+full Command Center: sidebar (Overview, Conversations, AI Workforce, Settings
+& Support), CURRENT PLAN "Launch Tier / Workforce Active / Manage billing",
+Company Pulse for "Test Inc", 2 AI Staff, 0 Urgent Approvals, approval inbox,
+priorities and key updates.
+
+### Truthful readiness is WORKING, and it is reporting the workforce NOT ready
+
+The rendered Beta dashboard states: *"Initial EA/GM workforce is not ready.
+Provisioning may still be running or need a retry."* with a "Resume workforce
+setup" action. This is **correct, truthful behavior, not a defect** — and it
+is the single most important finding of this session:
+
+- The control plane's stored records claim ready: `organizations.workforce_
+  status='ready'`, `provisioning_operations` `initial-workforce:v1`,
+  `hire:initial:ea:v1`, `hire:initial:gm:v1` all `completed`, and both EA
+  "Sophia" and GM "Marcus Reid" employee rows present.
+- The **live** readiness gate in `inspectInitialWorkforce()` — which
+  additionally requires a reachable Provision team runtime, matching
+  `server_id`, `status='active'` employees, and operational agents — evaluates
+  to **not ready**.
+- So the September 2 record of "workforce_status=ready, successful first
+  contact, `ACCEPTANCE_ALPHA_OK`/`ACCEPTANCE_BETA_OK` task results" **no
+  longer reflects the live system.** Records alone were never sufficient, and
+  the gate is correctly refusing to claim readiness from them.
+
+Reachability was probed from outside: `158.220.123.254` answers on port 80
+(200) and port 8000 (302), and `PROVISION_BASE_URL` /
+`PROVISION_INTEGRATION_TOKEN` are both present in Vercel Production env (set
+15h ago). So this is **not** a simple "Vercel cannot reach the VPS" network
+block. The most likely causes, in order, are a stale daemon heartbeat, the
+tenant runtime containers not running after the 2026-09-02 work, or a
+team/agent `server_id` mismatch — all of which require SSH onto
+`158.220.123.254` to inspect container and daemon state. **SSH is hard-blocked
+by this agent harness's permission classifier**, so root-causing this could
+not be completed here. The failure is silently swallowed by the catch in
+`inspectInitialWorkforce()`, so no diagnostic reason is logged — adding a
+narrow server-side log of the caught error would make the next diagnosis far
+cheaper and is worth doing.
+
+### Additional observation: dashboard EA thread is static mock copy
+
+The Executive Assistant panel on the dashboard renders fixed placeholder text
+("Good morning. I've prepared your daily briefing. We have 3 new qualified
+leads from the SDR team, and Finance requires your approval for a $50
+refund." plus a canned CEO reply). This is hardcoded presentation content, not
+a live EA conversation. It is not a P0, but it must not be mistaken for
+evidence of a working EA, and it should be replaced with real conversation
+state before launch, since a customer would reasonably read it as real.
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
 signup/CEO-record defect (fixed live); P0 dashboard dead-end redirect (fixed,
+deployed, live-verified); P0 dashboard 500 on failed readiness (fixed,
 deployed, live-verified); P2 recovery prompt defect (fixed, deployed,
 live-verified); public site → signup → email confirmation → login →
-onboarding form; **tenant isolation at the data layer (full read + write
-cross-tenant denial with a passing control test)**.
+onboarding form; authenticated login as an entitled tenant → Command Center
+renders; **tenant isolation at the data layer (full read + write cross-tenant
+denial with a passing control test)**; **truthful readiness confirmed working
+— it refuses to claim ready from records alone**.
 
-NOT DEMONSTRATED: post-payment entitlement; EA/GM readiness and harmless task
-execution after this session's deploys; billing and employee-lifecycle
-management screens; logout and returning login; recovery-email delivery
-end-to-end (blocked by provider rate limit); EA/GM execution-path isolation
+FAIL / NOT DEMONSTRATED: **live EA/GM workforce readiness (actively reporting
+NOT ready for Acceptance Beta)**; harmless task execution with a truthful
+tenant-specific result; post-payment entitlement for a brand-new tenant;
+employee-lifecycle management actions; billing portal; logout and returning
+login; recovery-email delivery end-to-end; EA/GM execution-path isolation
 under a live session.
 
-Open defects: Supabase Auth Site URL still `localhost:3000`, breaking the
-visible landing of confirmation and recovery links (auth itself still
-succeeds server-side). No known open P0.
+Open P1: the live EA/GM workforce is not operational for an entitled tenant,
+so the core product promise cannot currently be demonstrated. Open P2:
+Supabase Auth Site URL still `localhost:3000`; readiness failure reason is
+silently swallowed (no diagnostic log); dashboard EA thread is static mock
+copy. No known open P0 — all three found this session are fixed and deployed.
 
-Overall gate: **NOT READY / NO-GO** — not because isolation or the repaired
-paths failed, but because the paid CEO lifecycle beyond onboarding has still
-never been demonstrated end-to-end in production after deployment.
+Overall gate: **NOT READY / NO-GO.** The customer-facing shell is now sound —
+signup, confirmation, login, onboarding and the dashboard all work, and tenant
+isolation is proven — but the AI workforce that constitutes the actual product
+is not live for an entitled tenant.
 
-Exact next action, in order: (1) fix the Supabase Auth Site URL / redirect
-allowlist (dashboard setting) so confirmation and recovery links land on
-`https://app.getstaffai.com`; (2) get an authenticated session for Acceptance
-Beta — its password was administratively reset this session, and a human or a
-permission-granted agent can log in directly — then verify EA/GM readiness, a
-harmless task with a truthful tenant-specific result, employee/org management,
-billing screens, logout and returning login; (3) re-run the cross-tenant
-execution probe (Beta org + Alpha employee) through the live API to confirm
-the 503/deny behavior still holds post-deploy. Data-layer isolation does not
+Exact next action, in order: (1) **SSH to `158.220.123.254` and determine why
+Provision readiness fails for Beta** — check the pilot/tenant runtime
+containers are running, the daemon heartbeat is fresh, and team/agent
+`server_id` matches what the control plane recorded; this is the single
+blocking item. (2) Add a narrow server-side log of the caught error in
+`inspectInitialWorkforce()` so this is diagnosable without SSH next time.
+(3) Once readiness is genuinely green, drive a harmless task from Beta's
+dashboard and confirm a truthful tenant-specific result, then employee/org
+management, billing, logout and returning login. (4) Re-run the cross-tenant
+execution probe (Beta org + Alpha employee) against the live API. (5) Fix the
+Supabase Auth Site URL / redirect allowlist. Data-layer isolation does not
 need re-proving unless policies change.
+
+Credentials note for whoever resumes: Acceptance Beta
+(`markdanielphd@gmail.com`, org `7dccb353-e6d2-44bc-95e9-1d762b9a4674`) had
+its password administratively reset this session to a known value held by
+Mark; rotate or reset it again if that is not desired. Tenant Gamma
+(`markdanielphd+staffai-gamma-0904@gmail.com`) exists with a CEO record but
+no org and no Stripe customer, subscription or charge.
