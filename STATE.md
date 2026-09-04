@@ -2157,3 +2157,78 @@ Cosmetic auth fixes made in passing (not blockers, but on the failing page):
 status colours were pale green `#a7f3d0` and pale red `#fca5a5` on their own
 light tinted backgrounds — unreadable in light mode, so a customer could not
 read why login failed. All now use `var(--text-primary)`.
+
+## FUNCTIONAL BUILD SESSION, 2026-09-04 late — BLOCKED on runtime multi-tenancy
+
+I had working SSH to the VPS this session (key `~/.ssh/lynkwe_vps_key`, NOT
+`staffai_hetzner`) and did the server-side work directly. Findings supersede
+earlier guesses.
+
+### Corrections to earlier conclusions (do not re-investigate)
+
+- **The ProvisionCore OpenClaw patches are ALREADY APPLIED** on the VPS
+  (`DIST_INTEGRITY_CHECK` present ×3, `flock` present). `openclaw_version`
+  resolves to `2026.7.1-2`. Rule-7 item is done.
+- **Model routing is NOT broken.** Beta and Gamma agents both carry
+  `model_primary=qwen/qwen3.8-flash`, and `Agent::openclawModel()` returns
+  `openrouter/qwen/qwen3.8-flash`. `qwen/qwen3.8-flash` is present in
+  `LlmProvider::OpenRouter->models()`. My earlier "model config missing from the
+  agent directory" reading was WRONG — Alpha's model strings live in
+  `sessions/*.jsonl` (execution history), which fresh agents simply do not have
+  yet.
+- **OpenRouter team keys are provisioned correctly** for fresh tenants
+  (`TeamApiKey` present, active, same length as Alpha's).
+
+### Fresh-tenant provisioning DOES work up to execution
+
+Created Tenant Gamma end-to-end through the product: login → onboarding →
+`/api/checkout` (org `a842287a-c8df-4955-89cd-7e13da504cf6` created, Stripe
+session returned, no payment) → provisioning. Result: team
+`01m1qajtgd1jm53c6v4be5k7af`, **both employees auto-created and `active`**, a
+Sophia conversation auto-created (`9040c842-5b14-4fc7-83de-c1f81515bcbd`),
+strict readiness earned, dashboard rendered **operational** — with **no manual
+container repair and no database edits**.
+
+Also note: the first task attempt 404s with
+`No query results for model [App\Models\Agent]` because agents are created
+`Deploying` and the task endpoint requires `status=Active`. They flip to Active
+shortly after. Retry succeeds past that point.
+
+### THE BLOCKER: one shared runtime container, one gateway, N tenant tokens
+
+`DockerExecutor` targets a single hardcoded container —
+`config('provision.docker.container')` = **`provision-agent-runtime-1`**. Every
+tenant's OpenClaw setup is written into that same container. There is no
+per-tenant runtime on this path, despite `Server` rows being created per team
+(`name=staffai-runtime-<teamid>`, `ipv4_address=127.0.0.1`,
+`status=running`, `daemon_heartbeat_at=null`) and **no matching container ever
+existing** for them. The three real `provision-runtime-*` containers on the box
+belong to older servers from a previous provisioning path.
+
+Each `Server` gets its own generated `gateway_token`. Verified distinct:
+Alpha `sha1:3d6436608643`, Beta `sha1:8a30eae20a10`, Gamma `sha1:9ba88db32630`
+— against ONE gateway in ONE container that can hold ONE token. They are
+mutually exclusive by construction.
+
+Consequence, and this is the functional blocker: Gamma's real task reached
+Provision (`provision_task_id 01m1qarqywv0qzppc88d88mmzs`) and failed
+`Gateway returned 401 Unauthorized`. Alpha only executes because its gateway
+config is the one currently live in the shared container. **Provisioning a new
+tenant cannot be made to work without either giving each tenant its own runtime
+container, or giving the shared gateway per-agent authentication.**
+
+This is a tenancy-model decision, not a routine reversible fix, so I did not
+pick one unilaterally. It also means runtime-layer isolation does not currently
+exist (data-layer isolation remains proven and unaffected).
+
+### Session state
+
+Auth blockers from Mark's run are fixed and deployed: the already-registered
+signup no longer promises a phantom confirmation email, and auth status colours
+are legible. Email delivery verified working (~2s). Google OAuth is not enabled
+in Supabase; per rule 6 it belongs in the backlog and the button should be
+hidden for V1 — **not yet done, do this first next session** (it is a small
+edit in `components/LoginExtras.js`).
+
+Nothing was faked, no readiness row was hand-edited, and no database edits were
+made to obtain any result above.
