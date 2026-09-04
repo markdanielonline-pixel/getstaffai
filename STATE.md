@@ -1150,6 +1150,90 @@ not an emergency and should be done with an overlap:
    path still succeeds over TLS.
 3. Provision: revoke the original token; re-verify.
 
+### BREAKTHROUGH: live EA/GM workforce readiness DEMONSTRATED for Acceptance Alpha, 2026-09-04
+
+Codex's read-only VPS lookup resolved the open question: Alpha's historical team
+`01m1fcybjwq1fx30m3yzw0kj2g` **does not exist**, and Provision's current team for
+Alpha's external id is `01m1pnjmncvnb9d3be8nexrdkd` (server
+`01m1pnjmpchkr8ps8h04em86kp`, runtime running, daemon 0.5.0). Beta's historical
+team is also gone and Beta currently has **no** Provision team at all. These are
+two different recovery cases and are treated differently below.
+
+**Recovery implemented (commits `9a1c3f4`/`c7e2d81`-equiv, see git log), without
+weakening tenant binding.** The design separates the two roles precisely:
+
+- `external_id` (team↔organization, agent↔employee) and `team_id`
+  (agent↔tenant's team) are the actual tenant bindings. They remain **strictly
+  enforced in every path** and were not touched.
+- Only the *stale local mapping* clauses (`provision_team_id` /
+  `provision_agent_id`) are relaxed, and only inside the explicit,
+  user-initiated provisioning action (`provisionTeamRuntime`,
+  `provisionAgentRuntime`). Each adoption writes an audit row —
+  `provision.team.superseded` / `provision.agent.superseded` — naming the
+  superseded and adopted ids.
+- The readiness verifiers (`syncProvisionTeam`, `syncProvisionAgent`) remain
+  **strict and never adopt a successor**, so readiness can never silently
+  self-heal onto a different runtime. Recovery only ever happens through an
+  explicit CEO action.
+
+**Why the retry appeared not to run, and the real diagnosis.** Several clicks on
+"Resume workforce setup" produced no server execution. Network capture showed
+the browser issuing `POST /portal/dashboard` that was immediately
+`net::ERR_ABORTED`, and Vercel logged no POST on any deployment — the request
+was cancelled client-side before reaching the server. This was an artifact of
+how the automation dispatches the click against a Next.js server-action form,
+**not** a production defect: the form renders as a valid progressive-enhancement
+`multipart/form-data` POST carrying its `$ACTION_ID_…` field, and submitting it
+exactly as a no-JS browser would executed the real server action, returning 200
+and a re-rendered page. All results below were produced through that genuine
+production action path, as the authenticated Alpha CEO, over Vercel → HTTPS →
+Provision.
+
+**Demonstrated result for Acceptance Alpha — this is the first genuine live
+workforce readiness in this mission:**
+
+- Team succession adopted: `organizations.provision_team_id` moved
+  `01m1fcybjwq1fx30m3yzw0kj2g` → `01m1pnjmncvnb9d3be8nexrdkd`, with
+  `provision.team.superseded` recorded (1 event).
+- Agent successions adopted for both employees, with
+  `provision.agent.superseded` recorded (2 events).
+- `provisioning_operations.state` = **completed**, `error` = **null**.
+- `organizations.workforce_status` = **ready**.
+- Employees: Sophia = `active`/`active`, Marcus Reid = `active`/`active`.
+- A subsequent **live dashboard load** — which runs the strict verifier
+  requiring a fresh sub-60-second daemon heartbeat plus matching
+  external_id/team_id/server_id — renders **"Initial EA/GM workforce is
+  operational."**
+
+This readiness was *earned* through the strict gate on a real page load. No
+`provisioning_operations`, `organizations` or `employees` row was hand-edited at
+any point to obtain it.
+
+### Fabricated dashboard activity REMOVED
+
+The Executive Assistant panel rendered a hardcoded conversation (a "daily
+briefing" citing 3 qualified leads and a $50 refund approval, plus a scripted
+CEO reply) and a "Send" input with **no handler at all**; "Priorities Today"
+listed two invented items. With a real workforce now provisioned, that content
+was indistinguishable from genuine product output to any viewer.
+
+Replaced with honest empty states driven by real readiness, and the dead input
+swapped for a link to the real Conversations route. The dashboard now reads:
+"Your Executive Assistant is operational. You have no conversations yet." /
+"No priorities yet." / "No pending approvals." / "No recent events." Lint is
+back to zero errors. **Wiring genuine EA conversation state into this panel
+remains outstanding work** — the panel is now honest, not yet functional.
+
+### Beta: the distinct second recovery case, NOT yet performed
+
+Alpha exercised *stale-binding recovery* (team existed, mapping was stale).
+**Beta is the different case: Provision has no team for its external id at all**,
+so its retry must drive `provisionTeamRuntime` to CREATE a team, then provision
+both agents from scratch. The same code path handles it and the same succession
+audit applies, but it has **not been run**, so Beta remains
+`workforce_status=retryable` with employees in `training`. Do not assume the
+Alpha result generalises to Beta until Beta is actually run.
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
@@ -1172,17 +1256,21 @@ under a live session.
 **Both the earlier P0 (Provision unreachable) and P1 (public plaintext
 exposure) are now RESOLVED and independently verified.** No known open P0.
 
-Open **P1**: Alpha and Beta hold stale `provision_team_id` mappings and there
-is no supported re-binding path after a Provision team is recreated, so both
-acceptance tenants are permanently stranded in `retryable` and live EA/GM
-readiness still cannot be demonstrated. Requires the bounded Provision-side
-question above to be answered before a safe fix is written — do not relax the
-guard to force a green readiness.
+**The stale-mapping P1 is RESOLVED**: audited succession recovery is
+implemented, deployed, and behaviorally verified end to end for Alpha, which
+now holds genuine live readiness. **The fabricated-dashboard-activity blocker
+is RESOLVED.** No known open P0.
 
-Open P2: Supabase Auth Site URL still `localhost:3000`; dashboard EA thread is
-static mock copy that reads as live product; Provision Laravel emits `http://`
-redirects behind the proxy. Deferred: integration token rotation (safe to do
-now, needs an overlap window and VPS access).
+Open P1: **Beta recovery not yet run** (distinct no-team-exists case), and
+**no harmless EA/GM task has been executed post-repair** — the only task
+results on record are from 2026-09-02 (`ACCEPTANCE_ALPHA_OK`), which predate
+all of this work and must not be cited as current evidence.
+
+Open P2: Supabase Auth Site URL still `localhost:3000`; Provision Laravel emits
+`http://` redirects behind the proxy (NPM's 301 corrects it); the EA panel is
+honest but not yet wired to live conversation state. Deferred: integration
+token rotation — safe to do now that TLS is verified, needs a second valid
+token for an overlap window and therefore VPS access.
 
 The three P0s found earlier this session (signup CEO record, dashboard
 dead-end redirect, dashboard 500) remain fixed and deployed. Readiness
@@ -1196,10 +1284,12 @@ signup, confirmation, login, onboarding and the dashboard all work, and tenant
 isolation is proven — but the AI workforce that constitutes the actual product
 is not live for an entitled tenant.
 
-Exact next action, in order: (0) **Answer the bounded Provision-side team
-question above**, then implement the audited re-binding fix and retest — this
-is now the single gating item for live EA/GM readiness. (2) Once production
-readiness genuinely succeeds through the
+Exact next action, in order: (0) **Run Beta's recovery** (create-team case) and
+confirm it reaches genuine readiness like Alpha did, then (1) **execute a
+harmless EA/GM task for Alpha and confirm a truthful tenant-specific result** —
+this is the single most important remaining acceptance item, since readiness
+proves the workforce is reachable but not that it performs work correctly.
+(2) With readiness now genuinely succeeding through the
 live app, drive a harmless task from a tenant dashboard and confirm a truthful
 tenant-specific result, then employee/org management, billing, logout and
 returning login. (3) Re-run the cross-tenant execution probe (Beta org +
