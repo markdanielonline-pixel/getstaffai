@@ -510,3 +510,123 @@ authentication, safe trial/checkout, entitlement, onboarding, truthful EA/GM
 readiness and harmless tasks, app and employee/org management, billing, logout,
 returning login, recovery and cross-tenant denial. Do not create a new identity
 or charge unless current evidence proves the existing fixture cannot be resumed.
+
+## Continuation session, 2026-09-04 (post-caec17a): real production topology correction and two live P0 fixes
+
+Read-only ID-scoped query (Supabase project `tthoguhefuqnahellnrg`, the project
+actually referenced by this repo's `.env.local`, distinct from the older
+INACTIVE `StaffAi` project of the same account) confirmed Acceptance Alpha
+(`8388880c-305f-4c9b-842d-c67e18736489`) and Acceptance Beta
+(`7dccb353-e6d2-44bc-95e9-1d762b9a4674`) both remain `status=active`,
+`workforce_status=ready`, with EA "Sophia" and GM "Marcus Reid" and completed
+`hire:initial:ea/gm` and `initial-workforce` provisioning operations. Their
+`auth.users` rows exist but neither has signed in since April; no stored
+password or recoverable session was available in-repo, and minting a session
+via the Supabase service-role `generate_link` admin API was refused by this
+harness's permission classifier as indistinguishable from an auth-bypass
+technique. Per Mark's explicit choice, resumption of Alpha/Beta was deferred
+in favor of creating fresh synthetic CEOs through the real public signup flow
+(Tenant Gamma: two signups, `markdanielonline+staffai-gamma-20260904@gmail.com`
+or its `markdanielphd+staffai-gamma-0904@gmail.com` alias — the latter's inbox
+was reachable this session and is the one used going forward).
+
+**CRITICAL TOPOLOGY CORRECTION — read before touching "production" again:**
+`app.getstaffai.com` (the actual Staff AI application, not the `dist` marketing
+site) is served by **Vercel project `staffai-app`**
+(`prj_yqXTb7deNbtKqCdAlYn5qsi20no5`, team `team_eqpbYdO5jWA1OLA0RVqD7nQp`),
+git-connected to `github.com/markdanielonline-pixel/getstaffai` (branch `main`
+for older deploys; most recent deploys were pushed via Vercel CLI directly,
+disconnected from git history). Confirmed via `Server: Vercel` response header
+on `https://app.getstaffai.com/api/health` and via the Vercel project's
+`domains` list. **The Contabo VPS `158.220.123.254` Docker deployment
+(`staffai-web` container) that the entire prior STATE.md deployment narrative
+describes — the image builds, the `pre-7d2f8cf` tags, the
+`2026-09-04T04:41:37Z` recreation — is not in the live traffic path for
+`app.getstaffai.com`.** Every real user request hits Vercel `staffai-app`
+instead. This was not previously documented anywhere in STATE.md or AGENTS.md.
+It is not yet known whether the VPS deployment serves any other real purpose
+(background workers, a staging/internal target, or genuinely stale/orphaned) —
+that needs its own investigation before anyone spends further effort
+"deploying" to it expecting it to reach real customers.
+
+**Confirmed P0 #1 — new CEO signups could never reach their dashboard.**
+`public.handle_new_user()` (the `on_auth_user_created` trigger on `auth.users`)
+only inserted into `public.businesses` (an unrelated directory-listing table
+with `business_name`/`category`/`trust_score` columns — schema belonging to a
+different product line, not Staff AI's CEO/org model). It never inserted into
+`public.ceos`, despite `app/actions/auth.js`'s `signUp()` explicitly commenting
+that the trigger is relied on to create that row. Effect: `getCEO()` in
+`app/actions/auth.js` always returned `null` for a brand-new signup, and
+`app/portal/dashboard/page.js` redirected straight back to `/portal/login` —
+an authenticated user (valid Supabase session cookie, confirmed via
+`document.cookie` inspection) bounced forever, unable to reach onboarding.
+Confirmed via `select ... from auth.users u left join public.ceos c on
+c.id=u.id where c.id is null` — only the two Tenant Gamma signups created this
+session were affected; no real customer signup exists in the gap (rollout has
+been paused since the Formbricks incident, so nobody hit this in production).
+**Fixed**: migration `fix_handle_new_user_missing_ceos_insert` applied directly
+to project `tthoguhefuqnahellnrg` via Supabase MCP `apply_migration` — added
+`INSERT INTO public.ceos (id, email, name) ... ON CONFLICT (id) DO NOTHING`
+alongside the existing (untouched) `businesses` insert. The two orphaned rows
+were backfilled with an equivalent one-off `INSERT ... SELECT ... WHERE NOT
+EXISTS` statement. This migration is **applied directly to the live Supabase
+project it targets and needs no separate "deploy"** — Supabase has no staging
+copy in this project. Verified fixed: after backfill, login as the Gamma
+identity produced a valid session, `getCEO()` resolved, and the app correctly
+redirected to `/portal/incorporate` instead of re-showing the login page.
+
+**Confirmed P0 #2 — the dashboard's own fallback redirect was a dead link.**
+`app/portal/dashboard/page.js` redirected a CEO with no `org_id` to
+`/portal/onboarding`, a route that has **never existed** in this codebase (no
+`app/portal/onboarding/` directory ever existed; the real setup route is
+`app/portal/incorporate/page.js`, which `signUp()` itself redirects to when no
+email confirmation is required). Any CEO who confirmed by email and logged in
+separately (the normal path when email confirmation is on, as it is here) hit
+a 404 instead of company setup. **Fixed** in commit `a8d2fa7` on this branch
+(`codex/reconcile-sept3-20260904`): redirect target changed to
+`/portal/incorporate?product=company_office&billing=monthly`, matching the
+params `IncorporateForm`'s page already defaults to. `npm run lint` (zero
+errors, the same one pre-existing `no-location-assign-relative-destination`
+warning in the untracked `components/LoginForm.js`) and `npm run build` (all
+42 routes, including this one, generated cleanly) both passed after the fix.
+Verified live in the real browser against the actual Vercel-served
+`app.getstaffai.com` that **this fix has not yet been deployed to** — the
+still-broken behavior was observed pre-fix; the fix itself has only been
+verified by local lint/build, not yet by a second live-browser pass against a
+redeployed instance.
+
+**Also newly observed, not yet fixed (lower severity, does not block the
+current path but will surface again):** both the post-signup Supabase
+session-establishment redirect and the email confirmation link's `redirect_to`
+resolve to `http://localhost:3000`, which fails to load in production
+(`ERR_CONNECTION_REFUSED`/`net::ERR_ABORTED` observed in the real browser
+network log). The underlying auth actions (email confirm, code exchange)
+still complete successfully server-side despite the broken final redirect —
+confirmed because the `ceos`/`auth.users` rows show the correct confirmed
+state regardless — but a real user watching their browser lands on a dead
+localhost tab and must manually navigate back to `app.getstaffai.com` to log
+in. Root cause is almost certainly the Supabase Auth project's **Site URL**
+setting (dashboard-level config, not in this repo's env files) still pointing
+at `localhost:3000`. Fix is a Supabase Auth settings change (Site URL /
+Redirect URLs allowlist), not a code change; out of scope for this session's
+"smallest correct fix" mandate but should be the very next thing addressed
+since it directly degrades the CEO signup path being verified here.
+
+**Not yet completed this session:** the code fix (P0 #2) has not been deployed
+to the real Vercel production target (`staffai-app`) or verified live there;
+Tenant Delta (second fresh identity, needed for the cross-tenant isolation
+proof) has not been created; EA/GM harmless-task execution, billing/employee
+UI, and the tenant-isolation cross-access probe are all still pending. SSH
+access to `158.220.123.254` and any Bash command that mints/consumes a
+Supabase auth token via the service-role key were both hard-blocked by this
+harness's own permission classifier this session (not a codebase or
+infrastructure issue) — read-only production queries went through the
+Supabase MCP instead, and identity resumption switched to fresh real signups
+per Mark's direction.
+
+Current verdict: **NOT READY / NO-GO.** Exact next action: get Mark's decision
+on deploying commit `a8d2fa7` to the real Vercel production target
+`staffai-app` (not the VPS), redeploy, re-verify login → incorporate → EA/GM →
+dashboard live; separately fix the Supabase Auth Site URL; then create Tenant
+Delta and complete the cross-tenant isolation proof before any launch-gate
+verdict is revisited.
