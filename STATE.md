@@ -1368,32 +1368,125 @@ re-provisioned to pick up the new default; (2) **the OpenRouter credential has
 still never been exercised**, so "the model is configured" must not be read as
 "the model works".
 
+### ROOT CAUSE FOUND IN THE REPOSITORY, and fixed, 2026-09-04
+
+The broken OpenClaw install is not bad luck or a one-off mutation. It is a
+deterministic defect in `ProvisionCore`, and it is now fixed in code
+(ProvisionCore `ab640b0` + `22168ce`, StaffAi `3e9e4a1`).
+
+**The defect.** Both install sites extracted the installed version with
+`grep -oE '[0-9]{4}\.[0-9]+\.[0-9]+'`, a pattern that **cannot represent a
+build suffix**:
+
+- `app/Services/ChatGPTAuthService.php` (live path, used during agent auth/setup)
+- `app/Services/Scripts/AgentUpdateScriptService.php` (generated update script)
+
+The pinned build is `2026.7.1-2`. The regex truncates whatever is installed to
+`2026.7.1`, so the guard compares `2026.7.1` against the pin `2026.7.1-2` and
+**can never be satisfied**. In `AgentUpdateScriptService` the check is
+`!=`, so it reinstalls every run. In `ChatGPTAuthService` it was
+`version_compare(..., '>=')`; PHP canonicalises `2026.7.1-2` to `2026.7.1.2`,
+so `2026.7.1 >= 2026.7.1.2` is false and it likewise reinstalls every call.
+
+So **every** provisioning/update pass ran an unserialised global
+`npm install -g openclaw` over a live tree. Two of those racing, or one
+interrupted, leaves `dist/` holding chunks from two builds — one chunk
+importing a hashed sibling that was never written. That is exactly the observed
+`ERR_MODULE_NOT_FOUND: openresponses-http-DPyXZf-A.js imported from
+server.impl-qYPVZMND.js`. It also explains the earlier
+"incomplete live OpenClaw 2026.7.1 mutation" recorded in this file: same bug,
+earlier occurrence.
+
+Critically, `openclaw --version` still succeeds on a mixed tree, so version
+alone was never evidence of a usable install — which is why Alpha passed strict
+readiness with fresh sub-60-second heartbeats while being unable to execute any
+task.
+
+**Fixes implemented (all architecture-compatible, no protection weakened):**
+
+1. Version regex now admits the build suffix — `(-[0-9A-Za-z.]+)?` — in both
+   the live path and the generated script.
+2. The live path compares **exactly** against the pin instead of `>=`. A pin is
+   a contract, not a floor; `>=` would silently accept drift onto an unrelated
+   newer build.
+3. Installs are serialised under `flock /var/lock/openclaw-install.lock`, and a
+   corrupt tree is `rm -rf`'d before installing so npm writes a clean build
+   instead of layering a partial one over another partial one.
+4. New `DIST_INTEGRITY_CHECK`: scans `dist/` for relative imports whose target
+   file does not exist, i.e. it detects the actual mixed-build failure mode
+   rather than trusting the version string.
+5. Convergence is **verified after installing** — version must equal the pin
+   *and* `dist/` must be intact — and the update script now aborts with
+   `FATAL: openclaw did not converge` instead of restarting the gateway onto an
+   unusable tree.
+6. Pin single-sourced: `config/provision.php` default corrected from
+   `2026.7.1` to `2026.7.1-2`, and `OPENCLAW_VERSION=2026.7.1-2` recorded in
+   `infra/provision/PINNED_VERSION` with a note that the digest-pinned
+   `AGENT_RUNTIME_IMAGE` does **not** cover OpenClaw.
+7. Regression test added covering the suffixed pin, serialisation, corrupt-tree
+   removal, and that integrity is verified before the gateway is trusted.
+
+**Structural caveat that remains open (not code-fixable from here).** OpenClaw
+is installed into the runtime container at provisioning time rather than baked
+into the digest-pinned image. The fixes above make that installation
+deterministic and self-verifying, which removes the silent-corruption failure
+mode. Baking OpenClaw into `AGENT_RUNTIME_IMAGE` would remove the class of
+problem entirely and is the recommended follow-up, but it is an image/build
+change requiring VPS and registry access, and is deliberately **not** bundled
+into the handoff below so that the repair can be verified in isolation first.
+
 ### Bounded handoff for Codex (single task, in this order)
 
-> 1. **Repair OpenClaw integrity on Alpha's runtime** (`staffai-runtime-01m1pnjmncvnb9d3be8nexrdkd`).
->    Do a clean, atomic, version-pinned global reinstall — remove
->    `/usr/lib/node_modules/openclaw` entirely and install the pinned
->    `2026.7.1-2`, rather than copying in the missing chunk. Then verify:
->    `openclaw --version` reports exactly `2026.7.1-2`, and the server module
->    actually loads (no `ERR_MODULE_NOT_FOUND` on startup).
-> 2. **Report how OpenClaw gets into the runtime**: is it baked into
->    `ghcr.io/provision-org/agent-runtime@sha256:60ff04b6…`, or installed/
->    upgraded live at container start? If live, say so explicitly — that is the
->    structural defect above and determines whether every new tenant is
->    affected. Do not change the provisioning flow yet; report first.
-> 3. **Verify the OpenRouter credential** with a single minimal authenticated
->    call (e.g. `GET /api/v1/key` or one cheap completion) and report whether it
->    authenticates and has credit. Report the configured model slug as it
->    actually reaches the gateway, including any `openrouter/` prefix.
-> 4. Do **not** change readiness records, tenant mappings, teams, or Vercel
->    configuration. Do not switch the model slug — Staff AI now sends
->    `qwen/qwen3.8-flash` per `AGENTS.md`; if Provision overrides it, report the
->    override rather than resolving it unilaterally.
+This is the **single consolidated server-side handoff**. Everything fixable from
+the repository is already done and checkpointed; the steps below are exactly the
+operations that require VPS access. Do them in order, in one pass.
 
-After 1–3 land, the next action here is to re-provision Alpha's agents so they
-adopt `qwen/qwen3.8-flash`, then rerun the harmless echo task
-(`ALPHA_LIVE_TASK_20260904_OK`) through `POST /api/employees/chat`. **Capability
-is not demonstrated until an actual model response returns that token.**
+> **1. Deploy the ProvisionCore repair.**
+> Deploy ProvisionCore commits `ab640b0` and `22168ce` to
+> `/root/provision-core` on `158.220.123.254`. Confirm
+> `config('provision.openclaw_version')` resolves to `2026.7.1-2` — if the host
+> sets `OPENCLAW_VERSION`, make sure it is exactly `2026.7.1-2`, suffix
+> included. Run the ProvisionCore test suite and report the result.
+>
+> **2. Repair Alpha's runtime OpenClaw install.**
+> On runtime `staffai-runtime-01m1pnjmncvnb9d3be8nexrdkd`, do a clean pinned
+> reinstall — `rm -rf /usr/lib/node_modules/openclaw` then install
+> `openclaw@2026.7.1-2`. **Do not copy in the missing chunk**; an in-place
+> partial mutation is what caused this. Then verify BOTH:
+> `openclaw --version` == `2026.7.1-2`, and the dist integrity check passes
+> (the exact command is `ChatGPTAuthService::DIST_INTEGRITY_CHECK`; it exits
+> non-zero and prints `openclaw dist incomplete: …` if any chunk is missing).
+> Restart the gateway and confirm no `ERR_MODULE_NOT_FOUND` in its log.
+>
+> **3. Report how OpenClaw enters the runtime.** Baked into
+> `ghcr.io/provision-org/agent-runtime@sha256:60ff04b6…`, or installed at
+> provisioning/start? State it plainly — it determines whether baking it into
+> the image is the right follow-up. Report only; change nothing.
+>
+> **4. Verify the OpenRouter credential.** One minimal authenticated call
+> (`GET /api/v1/key`, or one cheap completion). Report whether it authenticates
+> and has credit. This has **never** been exercised — the previous three
+> failures aborted inside OpenClaw before the gateway was contacted.
+>
+> **5. Report the model slug as it actually reaches the gateway**, including any
+> `openrouter/` prefix. Staff AI now sends `qwen/qwen3.8-flash`
+> (confirmed present in OpenRouter's public model list, and the `AGENTS.md`
+> architectural default). If Provision overrides or rewrites it, **report the
+> override rather than resolving it unilaterally** — the customer-facing
+> default is an architectural decision, not an implementation detail.
+>
+> **Do not** change readiness records, `provisioning_operations`,
+> `organizations`, tenant mappings, teams, or any Vercel configuration. Do not
+> switch the model slug. Do not rotate the integration token in this pass.
+
+After this returns, the next actions here are: re-provision Alpha's two agents
+so they adopt `qwen/qwen3.8-flash` (the model is bound at agent-creation time,
+so the existing agents still carry `z-ai/glm-4.7`), then rerun the harmless echo
+task through `POST /api/employees/chat`.
+
+**Success condition, unchanged: a genuine current production task must return
+`ALPHA_LIVE_TASK_20260904_OK` through the real production path. Capability is
+not demonstrated until an actual model response returns that token.**
 
 ### Consolidated status after all 2026-09-04 work
 
