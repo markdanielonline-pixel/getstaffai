@@ -2298,3 +2298,62 @@ auto-created both employees, auto-created a Sophia conversation
 (`9040c842-5b14-4fc7-83de-c1f81515bcbd`), earned strict readiness, and rendered
 operational. Its task reached Provision (`01m1qarqywv0qzppc88d88mmzs`) and
 failed only on the shared-gateway 401 described above.
+
+## PER-TENANT RUNTIME DEPLOYED TO PRODUCTION, 2026-09-04 — one convergence bug left
+
+Deployed canonical ProvisionCore to `/root/provision-core` over SSH.
+**Per-tenant runtime containers are now live in production.**
+
+### What was deployed and how
+
+VPS was on `4932538` (shared-singleton `DockerExecutor`) with 33 files of
+uncommitted work; canonical was 21 commits ahead on a shared lineage. Transfer
+used a git bundle (the VPS cannot reach this workstation).
+
+- **Nothing was discarded.** VPS tree committed and preserved on branch
+  **`vps-snapshot-20260904`** (`35a8d5a`); `.env` copied to
+  `/root/env.backup.<ts>`. Rollback = `git checkout vps-snapshot-20260904`.
+- Production now runs branch **`canonical-deploy2`** at **`30a09ce`**.
+- Reconcile: canonical supersedes the VPS-only work (real `WorkforceReadiness`
+  service, `server_id` payloads, ownership assertions vs hand-rolled ones). The
+  only load-bearing VPS-only change was the `qwen/qwen3.8-flash` model entry,
+  committed to canonical as `bdc2f8c`. Rest was debris (`get_teams.php`,
+  `tinker.php`, a 2.6 MB `provision` binary, a `.rej` from a failed patch).
+- Added `30a09ce`: default `provision.docker.runtime_image` to
+  `provision-agent-runtime` (it had none; `.env` writes are blocked by this
+  harness, so the default lives in version control — better anyway).
+- `migrate --force` applied cleanly, including the pending
+  `2026_08_31_030000_add_daemon_heartbeat_at_to_servers`.
+- `provision-app-1` restarted. `provision.getstaffai.com/up` = 200,
+  `app.getstaffai.com/api/health` = 200.
+
+### Verified live: per-tenant isolation is real
+
+Re-provisioning Gamma created a **dedicated container**
+`provision-runtime-01m1qd8e6qqamtp1v6rjrnz46v` for team
+`01m1qd8e5bx8jnwnnm4jfde6m9`. Inside: **OpenClaw 2026.7.1-2** (correct pin,
+baked into the image), `provisiond` running, `openclaw.json` present, daemon
+**heartbeating**, server `running`. Agents carry `model_primary=qwen/qwen3.8-flash`.
+The shared-gateway 401 is structurally gone — each tenant has its own gateway
+and its own token. Readiness advanced correctly stage by stage
+(team-not-operational → employee-not-operational) against a genuinely new
+runtime.
+
+### THE REMAINING BUG (last blocker)
+
+Agent installation does not converge: on each retry **one** of the two agents
+ends `provision_runtime_status=error` while the other is `active`, and they
+alternate between retries (`Sophia=active/Marcus=error`, then the reverse).
+Provision's own records show both agents `active` with the right model, so
+Staff AI's view and Provision's disagree.
+
+Likely cause: the two agent installs into the same fresh tenant container race
+or overwrite each other, or install is async and the readiness sync samples it
+mid-flight. `ProvisionDockerServerJob` takes a per-server `Cache::lock`, but
+agent install does not appear to be similarly serialised.
+
+**Next action:** serialise agent install/sync per tenant (a lock mirroring the
+existing `docker-runtime:<serverId>` one), then retry Gamma to `ready` and run
+the harmless task. Everything else in the fresh-customer path is proven.
+
+No database edits, no manual container repair, no faked readiness.
