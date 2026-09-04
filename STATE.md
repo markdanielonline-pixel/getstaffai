@@ -412,15 +412,20 @@ creating information-disclosure and error-handling regressions.
 
 The September 4 continuity facts were merged here without overwriting the newer
 canonical website infrastructure record. No production deployment or mutation
-was performed during reconciliation. `npm run lint` passed and six focused
-readiness cases passed (absent runtime, status-only, runtime-status-only, fresh
-ready, stale ready and fresh unhealthy). The PostgreSQL-backed foundation suite
-was not run because the required dedicated loopback `P1_TEST_DATABASE_URL` was
-not available. The reconciliation diff passed `git diff --check`. The final
-reconciliation commit immediately following this record is the checkpoint.
+was performed during reconciliation. `npm run lint` passed with zero errors and
+one existing internal-navigation warning. Six focused readiness cases passed
+(absent runtime, status-only, runtime-status-only, fresh ready, stale ready and
+fresh unhealthy). The full PostgreSQL-backed foundation suite passed all 16
+tests against a new empty PostgreSQL 17 fixture isolated from production. It
+covered two tenants, idempotent resume, concurrent requests, lease fencing,
+ownership rejection, RLS privilege denial, stale/unhealthy readiness, recovery,
+once-only events and suspension protection. The temporary database, runner and
+SSH tunnel were removed after testing. `npm run build` completed successfully
+with all 42 pages/routes generated, and the reconciliation diff passed
+`git diff --check`.
 
 Current gate remains **NOT READY / NO-GO** for a new production release until the
-PostgreSQL-backed foundation suite passes and the reconciled commit is deployed
-and live lifecycle-tested. Exact next action: provide/start the isolated test
-database on `127.0.0.1:55439`, run `tests/foundation.test.mjs`, then review the
-checkpoint before any deployment.
+reconciled commit is deployed and the complete live customer lifecycle is
+verified. Exact next action: inspect and preserve the current production
+deployment, deploy the reviewed checkpoint without altering the locked marketing
+site, then resume the labeled synthetic lifecycle from its existing state.
