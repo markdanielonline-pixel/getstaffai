@@ -2232,3 +2232,69 @@ edit in `components/LoginExtras.js`).
 
 Nothing was faked, no readiness row was hand-edited, and no database edits were
 made to obtain any result above.
+
+## PER-TENANT RUNTIME: ALREADY BUILT. The blocker is code divergence, not design.
+
+Acting on the approved decision to go with per-tenant containers, I started
+implementing it — then found **it already exists in canonical ProvisionCore**,
+and is more rigorous than what I was about to write. Nothing needed building.
+
+Canonical ProvisionCore HEAD `44bd947` (local working copy) contains:
+
+- `DockerExecutor::__construct(private Server $server)` — server-scoped, and it
+  *refuses* to construct without a persisted Docker Server.
+- Per-tenant container naming `provision-runtime-<serverId>`, matching the
+  legacy containers already on the box.
+- **Runtime ownership enforcement**: containers and volumes are created with
+  `provision.server-id` / `provision.team-id` labels, and `ensureRuntime()`
+  re-inspects those labels and throws `Docker runtime ownership mismatch` if
+  they do not match. It also rejects a target whose name does not belong to the
+  Server, and refuses a mismatched `provider_server_id`.
+- `ensureRuntime()` container lifecycle, per-server volumes, and a
+  `Cache::lock('docker-runtime:<serverId>')` in `ProvisionDockerServerJob` so
+  concurrent provisioning cannot race.
+- Config keys `provision.docker.runtime_image`, `.network`, `.legacy_server_id`.
+- `HarnessManager::resolveExecutor()` returns `new DockerExecutor($server)`.
+
+**Production is running divergent, older code.** `/root/provision-core` is at
+`4932538` ("fix: allow integration team ownership mapping") with a dirty working
+tree, and its `DockerExecutor` is the shared singleton:
+`config('provision.docker.container', 'provision-agent-runtime-1')`. That
+predates the per-tenant work entirely, which is exactly why every tenant landed
+in one container with one gateway and mutually exclusive tokens.
+
+So the 401 blocker is **a deployment/divergence problem**. The fix is to bring
+`/root/provision-core` onto canonical HEAD (`44bd947`, which already includes
+the three OpenClaw determinism commits) rather than to write new code.
+
+**Why I did not do it:** two reasons, both real.
+1. This harness now blocks writes to the VPS (reads succeed; `scp` and
+   remote file writes are refused by the permission classifier). I verified I
+   can diagnose but not modify production there.
+2. It is not a routine reversible change. The VPS tree carries **uncommitted**
+   modifications from the other agent (`LlmProvider.php`,
+   `StaffAiIntegrationController.php`, `ProvisionDockerServerJob.php`,
+   `Agent.php`, `ChatGPTAuthService.php`, `DockerExecutor.php`,
+   `AgentUpdateScriptService.php`, `bootstrap/cache/packages.php`). Deploying
+   canonical HEAD over them discards that work unless it is reconciled first —
+   and some of it is load-bearing right now (the `qwen/qwen3.8-flash` entry in
+   `LlmProvider::OpenRouter->models()` is what makes model resolution work, and
+   the integration-controller readiness payload is what AntiGravity added).
+
+Required next step is a reconcile-then-deploy, not a blind checkout: diff the
+VPS working tree against canonical `44bd947`, carry forward anything genuinely
+newer (at minimum the `qwen` model entry and the integration-controller
+changes), then deploy the merged result and re-run provisioning for a fresh
+tenant. Expect Alpha/Beta/Gamma to need re-provisioning onto their own
+containers afterwards; their current Server rows point at containers that do
+not exist.
+
+### Verified-good state to build on (do not redo)
+
+Fresh-tenant provisioning through the product already works end to end up to
+execution, with no manual repair and no DB edits: Gamma
+(`a842287a-c8df-4955-89cd-7e13da504cf6`, team `01m1qajtgd1jm53c6v4be5k7af`)
+auto-created both employees, auto-created a Sophia conversation
+(`9040c842-5b14-4fc7-83de-c1f81515bcbd`), earned strict readiness, and rendered
+operational. Its task reached Provision (`01m1qarqywv0qzppc88d88mmzs`) and
+failed only on the shared-gateway 401 described above.
