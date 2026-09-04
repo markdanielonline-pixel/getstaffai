@@ -51,7 +51,17 @@ export async function POST(req) {
     });
 
     if (!engineResult.success) {
-      throw new Error(`Engine execution failed: ${engineResult.error || engineResult.reason}`);
+      // pollProvisionTask reports terminal outcomes as `status`/`result`; it never
+      // sets `error`/`reason`, so reading those produced "failed: undefined" and
+      // hid the real cause (e.g. an upstream model-gateway failure).
+      const detail = engineResult.result || engineResult.status || 'unknown terminal state';
+      console.error(`[employees/chat] task ${engineResult.taskId} ended ${engineResult.status}: ${detail}`);
+      return NextResponse.json({
+        error: `${employee.name} could not complete this request.`,
+        detail,
+        taskId: engineResult.taskId,
+        status: engineResult.status,
+      }, { status: 502 });
     }
 
     const responseText = engineResult.result;
