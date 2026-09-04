@@ -9,7 +9,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 export default async function Dashboard() {
   const ceo = await getCEO();
   if (!ceo) redirect('/portal/login');
-  if (!ceo.org_id) redirect('/portal/onboarding'); // Redirect to onboarding if no org is attached
+  if (!ceo.org_id) redirect('/portal/incorporate?product=company_office&billing=monthly'); // Redirect to company setup if no org is attached
 
   const supabase = await createClient();
   
