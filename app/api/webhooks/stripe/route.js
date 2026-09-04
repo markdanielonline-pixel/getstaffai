@@ -7,14 +7,18 @@ import { PLAN_TO_INTELLIGENCE_LEVEL } from '@/lib/billing/tierMap';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  );
+}
 
 const HANDLED_EVENTS = new Set([
   'checkout.session.completed',
+  'customer.subscription.updated',
   'customer.subscription.deleted',
+  'invoice.payment_succeeded',
   'invoice.payment_failed',
 ]);
 
@@ -28,13 +32,13 @@ function assertSupabase(result, operation) {
   return result.data;
 }
 
-async function resolveBillingContext(event) {
+async function resolveBillingContext(event, supabaseAdmin) {
   const object = event.data.object;
 
   let ceoId = event.type === 'checkout.session.completed' ? object.metadata?.ceo_id : null;
 
   if (!ceoId) {
-    const subscriptionId = event.type === 'customer.subscription.deleted'
+    const subscriptionId = event.type.startsWith('customer.subscription.')
       ? object.id
       : (typeof object.subscription === 'string' ? object.subscription : object.subscription?.id);
 
@@ -54,6 +58,7 @@ async function resolveBillingContext(event) {
 }
 
 export async function POST(req) {
+  const supabaseAdmin = getSupabaseAdmin();
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
 
@@ -70,7 +75,7 @@ export async function POST(req) {
   }
 
   try {
-    const billingContext = await resolveBillingContext(event);
+    const billingContext = await resolveBillingContext(event, supabaseAdmin);
     if (!billingContext) throw new Error(`Unable to resolve CEO organization for ${event.type}`);
     const { ceoId, orgId } = billingContext;
 
@@ -111,30 +116,35 @@ export async function POST(req) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        const tier = session.metadata?.tier;
+        const productKey = session.metadata?.product_key;
         const billingPeriod = session.metadata?.billing === 'annual' ? 'annual' : 'monthly';
-        const intelligenceLevel = tier ? PLAN_TO_INTELLIGENCE_LEVEL[tier] : null;
+        const intelligenceLevel = productKey ? PLAN_TO_INTELLIGENCE_LEVEL[productKey] : null;
 
         if (!ceoId || !intelligenceLevel) {
-          console.error('[Stripe Webhook] Missing ceo_id or unrecognised tier on session', session.id, tier);
+          console.error('[Stripe Webhook] Missing ceo_id or unrecognised product on session', session.id, productKey);
           throw new Error(`Missing or invalid checkout metadata for session ${session.id}`);
         }
+
+        const subscription = typeof session.subscription === 'object'
+          ? session.subscription
+          : await stripe.subscriptions.retrieve(session.subscription);
+        const subscriptionId = subscription.id;
+        const subscriptionStatus = subscription.status === 'trialing' ? 'trialing' : 'active';
 
         assertSupabase(await supabaseAdmin.from('ceos').update({
           status: 'active',
           intelligence_level: intelligenceLevel,
           billing_period: billingPeriod,
-          stripe_subscription_id: session.subscription,
+          stripe_subscription_id: subscriptionId,
           incorporated_at: new Date().toISOString(),
         }).eq('id', ceoId), 'Activate CEO after checkout');
 
-        const subscription = await stripe.subscriptions.retrieve(session.subscription);
         assertSupabase(await supabaseAdmin.from('subscriptions').upsert({
           ceo_id: ceoId,
-          stripe_subscription_id: session.subscription,
+          stripe_subscription_id: subscriptionId,
           intelligence_level: intelligenceLevel,
           billing_period: billingPeriod,
-          status: 'active',
+          status: subscriptionStatus,
           access_fee_cents: subscription.items.data[0]?.price?.unit_amount ?? 0,
           current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
           current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
@@ -153,6 +163,28 @@ export async function POST(req) {
         const subscription = event.data.object;
         assertSupabase(await supabaseAdmin.from('ceos').update({ status: 'dissolved' }).eq('id', ceoId), 'Dissolve CEO after cancellation');
         assertSupabase(await supabaseAdmin.from('subscriptions').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('stripe_subscription_id', subscription.id), 'Cancel subscription');
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const status = ['active', 'trialing', 'past_due', 'cancelled'].includes(subscription.status)
+          ? subscription.status
+          : (subscription.status === 'canceled' ? 'cancelled' : 'past_due');
+        assertSupabase(await supabaseAdmin.from('subscriptions').update({
+          status,
+          current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
+          current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+          cancelled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
+        }).eq('stripe_subscription_id', subscription.id), 'Synchronize subscription update');
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+        if (!subId) break;
+        assertSupabase(await supabaseAdmin.from('subscriptions').update({ status: 'active' }).eq('stripe_subscription_id', subId), 'Mark subscription active');
         break;
       }
 

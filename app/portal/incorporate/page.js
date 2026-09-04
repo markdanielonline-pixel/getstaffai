@@ -8,8 +8,8 @@ export default async function Incorporate({ searchParams }) {
   if (ceo.status === 'active') redirect('/portal/dashboard');
 
   const params = await searchParams;
-  const tier = params?.tier || 'Accelerator';
+  const product = params?.product || 'company_office';
   const billing = params?.billing === 'annual' ? 'annual' : 'monthly';
 
-  return <IncorporateForm ceo={ceo} tier={tier} billing={billing} />;
+  return <IncorporateForm ceo={ceo} product={product} billing={billing} />;
 }

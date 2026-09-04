@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import LoginExtras from '@/components/LoginExtras';
-import { signIn } from '@/app/actions/auth';
+import LoginForm from '@/components/LoginForm';
 
 export default async function Login({ searchParams }) {
   const params = await searchParams;
@@ -42,43 +42,14 @@ export default async function Login({ searchParams }) {
               </div>
             )}
 
-            <form action={signIn} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }}
-                  required
-                  placeholder="name@company.com"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  style={{ width: '100%', padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }}
-                  required
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ padding: '1rem', fontSize: '1.1rem', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', color: '#ffffff', border: 'none', cursor: 'pointer', borderRadius: '0.5rem', fontWeight: 'bold', marginTop: '1rem' }}
-              >
-                Sign In
-              </button>
-            </form>
+            <LoginForm />
 
             <LoginExtras />
 
             <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-              Don't have an AI workforce yet?{' '}
+              Ready to establish your Company Office?{' '}
               <Link href="/portal/signup" style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                Start Free Forever
+                Start your 7-day trial
               </Link>
             </div>
           </div>

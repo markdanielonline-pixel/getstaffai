@@ -14,17 +14,17 @@ export default function Header() {
         </Link>
 
         <nav className="nav-links">
-          <Link href="/how-it-works">How It Works</Link>
-          <Link href="/the-talent-pool">The Talent Pool</Link>
-          <Link href="/pricing">Intelligence Levels</Link>
-          <Link href="/why-staffai">Why StaffAI</Link>
-          <Link href="/qa">Q&A</Link>
+          <a href="https://getstaffai.com/how-it-works.html">How It Works</a>
+          <a href="https://getstaffai.com/employees.html">AI Employees</a>
+          <a href="https://getstaffai.com/teams.html">Teams</a>
+          <Link href="/pricing">Pricing</Link>
+          <a href="https://getstaffai.com/about.html">About</a>
         </nav>
 
         <div className="nav-actions">
           <Link href="/portal/login" className="login-link">Login</Link>
           <Link href="/portal/signup" className="btn btn-gold btn-sm">
-            Incorporate Free
+            Establish Your Office
           </Link>
           <button
             className="mobile-menu-btn"
@@ -39,12 +39,11 @@ export default function Header() {
       </div>
 
       <nav className={`mobile-nav ${menuOpen ? 'open' : ''}`}>
-        <Link href="/how-it-works" onClick={() => setMenuOpen(false)}>How It Works</Link>
-        <Link href="/the-talent-pool" onClick={() => setMenuOpen(false)}>The Talent Pool</Link>
-        <Link href="/pricing" onClick={() => setMenuOpen(false)}>Intelligence Levels</Link>
-        <Link href="/industries" onClick={() => setMenuOpen(false)}>Industries</Link>
-        <Link href="/why-staffai" onClick={() => setMenuOpen(false)}>Why StaffAI</Link>
-        <Link href="/qa" onClick={() => setMenuOpen(false)}>Q&A</Link>
+        <a href="https://getstaffai.com/how-it-works.html" onClick={() => setMenuOpen(false)}>How It Works</a>
+        <a href="https://getstaffai.com/employees.html" onClick={() => setMenuOpen(false)}>AI Employees</a>
+        <a href="https://getstaffai.com/teams.html" onClick={() => setMenuOpen(false)}>Teams</a>
+        <Link href="/pricing" onClick={() => setMenuOpen(false)}>Pricing</Link>
+        <a href="https://getstaffai.com/about.html" onClick={() => setMenuOpen(false)}>About</a>
         <Link href="/portal/login" onClick={() => setMenuOpen(false)}>Login</Link>
       </nav>
     </header>

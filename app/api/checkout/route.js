@@ -1,17 +1,10 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { resolvePriceEnvVar } from '@/lib/billing/tierMap';
+import { COMPANY_OFFICE_KEY, getCatalogProduct, priceEnvVar } from '@/lib/billing/catalog';
 import { provisionInitialWorkforce } from '@/lib/workforce';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-const VALID_TIERS = ['Launch', 'Operator', 'Accelerator', 'Authority', 'Dominance'];
-
-const ADDON_RECURRING = {
-  callRecording: 'price_1T2bh1Be48ha5T2sLcSvvXtz',
-  extraNumber: 'price_1T2biqBe48ha5T2s9BYAaSJK',
-};
 
 export async function POST(req) {
   try {
@@ -22,9 +15,8 @@ export async function POST(req) {
     }
 
     const {
-      tierName,
+      productKey = COMPANY_OFFICE_KEY,
       billing = 'monthly',
-      addons = {},
       companyName,
       industry,
       businessDescription,
@@ -33,10 +25,11 @@ export async function POST(req) {
       cultureTone,
       preferredChannel,
     } = await req.json();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.getstaffai.com';
+    const siteUrl = new URL(req.url).origin;
 
-    if (!VALID_TIERS.includes(tierName)) {
-      return NextResponse.json({ error: 'Invalid plan selected' }, { status: 400 });
+    const product = getCatalogProduct(productKey);
+    if (!product || productKey !== COMPANY_OFFICE_KEY || !['monthly', 'annual'].includes(billing)) {
+      return NextResponse.json({ error: 'Invalid Company Office selection' }, { status: 400 });
     }
 
     if (!companyName?.trim()) {
@@ -48,6 +41,15 @@ export async function POST(req) {
     if (ceoResult.error) throw new Error(`Unable to load CEO record: ${ceoResult.error.message}`);
 
     let orgId = ceoResult.data.org_id;
+    const existingSubscription = await admin.from('subscriptions')
+      .select('id, status, stripe_subscription_id')
+      .eq('ceo_id', user.id)
+      .in('status', ['active', 'trialing', 'past_due'])
+      .maybeSingle();
+    if (existingSubscription.error) throw new Error(`Unable to verify subscription state: ${existingSubscription.error.message}`);
+    if (existingSubscription.data) {
+      return NextResponse.json({ error: 'Your Company Office already has a subscription. Manage it from Billing.' }, { status: 409 });
+    }
     if (!orgId) {
       const orgResult = await admin.from('organizations').insert({
         name: companyName.trim(),
@@ -78,38 +80,7 @@ export async function POST(req) {
       }).eq('id', user.id);
     if (ceoUpdate.error) throw new Error(`Unable to save incorporation details: ${ceoUpdate.error.message}`);
 
-    // If Launch tier, bypass Stripe checkout entirely and instantly provision.
-    if (tierName === 'Launch') {
-      const activateResult = await admin.from('ceos').update({
-        status: 'active',
-        intelligence_level: 'free',
-        billing_period: billing,
-        incorporated_at: new Date().toISOString(),
-      }).eq('id', user.id);
-      if (activateResult.error) throw new Error(`Unable to activate CEO: ${activateResult.error.message}`);
-
-      const subscriptionResult = await admin.from('subscriptions').upsert({
-        ceo_id: user.id,
-        intelligence_level: 'free',
-        billing_period: billing,
-        status: 'active',
-        access_fee_cents: 0,
-      }, { onConflict: 'ceo_id' });
-      if (subscriptionResult.error) throw new Error(`Unable to create subscription: ${subscriptionResult.error.message}`);
-
-      const walletResult = await admin.from('wallets').upsert(
-        { ceo_id: user.id, balance_cents: 0 },
-        { onConflict: 'ceo_id', ignoreDuplicates: true }
-      );
-      if (walletResult.error) throw new Error(`Unable to create wallet: ${walletResult.error.message}`);
-
-      await provisionInitialWorkforce(user.id, 'free');
-
-      return NextResponse.json({ url: `${siteUrl}/portal/incorporate/success` });
-    }
-
-    // Resolve the real Stripe Price ID server-side — never trust a client-supplied price ID.
-    const envVar = resolvePriceEnvVar(tierName, billing);
+    const envVar = priceEnvVar(productKey, billing);
     const priceId = process.env[envVar];
     if (!priceId) {
       console.error(`[checkout] Missing env var ${envVar}`);
@@ -117,10 +88,6 @@ export async function POST(req) {
     }
 
     const lineItems = [{ price: priceId, quantity: 1 }];
-    if (billing === 'monthly') {
-      if (addons.callRecording) lineItems.push({ price: ADDON_RECURRING.callRecording, quantity: 1 });
-      if (addons.extraNumber > 0) lineItems.push({ price: ADDON_RECURRING.extraNumber, quantity: addons.extraNumber });
-    }
 
     // Get or create the Stripe customer for this CEO
     const ceo = ceoResult.data;
@@ -143,9 +110,10 @@ export async function POST(req) {
       success_url: `${siteUrl}/portal/incorporate/success`,
       cancel_url: `${siteUrl}/portal/incorporate`,
       allow_promotion_codes: true,
-      metadata: { ceo_id: user.id, org_id: orgId, tier: tierName, billing },
+      metadata: { ceo_id: user.id, org_id: orgId, product_key: productKey, billing },
       subscription_data: {
-        metadata: { ceo_id: user.id, org_id: orgId, tier: tierName, billing },
+        metadata: { ceo_id: user.id, org_id: orgId, product_key: productKey, billing },
+        trial_period_days: 7,
       },
     });
 

@@ -12,7 +12,6 @@ export default function ResetPassword() {
   const [successMsg, setSuccessMsg] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleReset = async (e) => {
     e.preventDefault();
@@ -24,14 +23,15 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters.');
       return;
     }
 
     setLoading(true);
 
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.updateUser({
         password: password,
       });

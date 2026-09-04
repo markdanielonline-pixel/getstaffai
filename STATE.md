@@ -357,3 +357,28 @@ it unless required to fix a verified P0/P1 defect.
 
 Final production-readiness verdict: **READY**. No verified public P0/P1 defect
 was found, so no website code, design, deployment or routing change was made.
+
+## Canonical Staff AI website infrastructure and cleanup audit, 2026-09-02
+
+To permanently prevent obsolete projects or deployments from competing for production, the infrastructure has been locked to a single canonical path:
+
+- **Canonical Website Source**:
+  `C:\Users\Dell Latitude\Documents\Codex\2026-08-24\staffai-deploy-standalone`
+  Contains the verified upgraded static Vite/JS/CSS marketing build (`src/overrides.css`, `src/style.css`, `src/premium-pages.css`, `src/content-pages.js`, `copy/site-positioning.txt`, and `vercel.json` with `cleanUrls: true`).
+- **Canonical Vercel Project**:
+  `dist` (Project ID: `prj_7Telad6sd5SVrAjwnwRWGVjHe1PN`)
+- **Active Canonical Deployment**:
+  `dpl_3FibY8LGFGEzxxi9TJRJd2mEeMcb` (`https://dist-gzazo4iey-markdanielonline-1161s-projects.vercel.app`)
+- **Preserved Production Rollback Path**:
+  `dpl_GzkrUKsk67z3K9dSrKPv7dUyGDfV` (`https://dist-ec9zuzn2h-markdanielonline-1161s-projects.vercel.app`, deployed 2026-09-01T03:20:26Z)
+- **Domain Routing Contract**:
+  `getstaffai.com` and `www.getstaffai.com` are associated EXCLUSIVELY with Vercel project `dist`. Any attempt to assign either domain to `staffai-app` or any other Vercel project is strictly prohibited.
+- **Decommissioning & Cleanup Performed**:
+  - **Local**:
+    - Hazardous `.vercel/` configuration unlinked and removed from `work\vercel-dist-f82ec0d` to prevent accidental CLI deployments over `dist`.
+    - Obsolete static snapshot `staffai-deploy-clean-2` archived to `staffai-deploy-clean-2-archive.zip` and uncompressed copy removed.
+    - Git repository `C:\Users\Dell Latitude\OneDrive\Desktop\staffai-web` preserved intact.
+  - **Vercel**:
+    - `staffai-app`: stripped of all custom domains; restricted to platform backend/application development under its default Vercel preview domain.
+    - Obsolete Vercel projects deleted: `getstaffai-live` (`prj_QEp1fot53kAsQz5SOyWM6SiIzg4N`), `staffai-web` (`prj_U0ADruauzWRYAC4nA0QCosHGwQJA`), and `getstaffai` (`prj_i6w0OayzR8As02Y1vIlulDveIfIa`).
+

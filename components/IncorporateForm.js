@@ -3,15 +3,9 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 
-const TIER_PRICES = {
-  Launch: { monthly: 0, annual: 0 },
-  Operator: { monthly: 97, annual: 970 },
-  Accelerator: { monthly: 297, annual: 2970 },
-  Authority: { monthly: 497, annual: 4970 },
-  Dominance: { monthly: 997, annual: 9970 },
-};
+const OFFICE_PRICES = { monthly: 199, annual: 1990 };
 
-export default function IncorporateForm({ ceo, tier, billing }) {
+export default function IncorporateForm({ ceo, product, billing }) {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [isDiscovered, setIsDiscovered] = useState(false);
   const [discovering, setDiscovering] = useState(false);
@@ -25,7 +19,7 @@ export default function IncorporateForm({ ceo, tier, billing }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const price = TIER_PRICES[tier]?.[billing] ?? '—';
+  const price = OFFICE_PRICES[billing];
 
   const handleDiscover = async (e) => {
     e.preventDefault();
@@ -70,7 +64,7 @@ export default function IncorporateForm({ ceo, tier, billing }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tierName: tier,
+          productKey: product,
           billing,
           companyName,
           industry,
@@ -108,7 +102,7 @@ export default function IncorporateForm({ ceo, tier, billing }) {
             Establish your organisation
           </h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>
-            {tier} tier — ${price}/{billing === 'annual' ? 'yr' : 'mo'}. Tell us about your business so your AI workforce starts working with real context from day one.
+            Company Office — ${price}/{billing === 'annual' ? 'yr' : 'mo'}, with a 7-day trial. Tell us about your business so your Executive Assistant and General Manager start with real context.
           </p>
 
           {errorMsg && (

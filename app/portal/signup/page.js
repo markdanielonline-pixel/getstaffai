@@ -7,6 +7,7 @@ export default async function Signup({ searchParams }) {
   const error = params?.error;
   const confirm = params?.confirm;
   const confirmEmail = params?.email;
+  const billing = params?.billing === 'annual' ? 'annual' : 'monthly';
 
   return (
     <>
@@ -23,10 +24,10 @@ export default async function Signup({ searchParams }) {
 
           <div className="glass-panel" style={{ padding: '3.5rem', background: 'var(--bg-secondary)', borderTop: '3px solid var(--accent-secondary)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)' }}>
             <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
-              Start <span style={{ color: 'var(--accent-secondary)' }}>Free Forever.</span>
+              Establish Your <span style={{ color: 'var(--accent-secondary)' }}>Company Office.</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '2rem' }}>
-              Deploy your AI Revenue Workforce in minutes. No credit card required.
+              Create your secure CEO account, then complete your Company Office setup and 7-day trial.
             </p>
 
             {error && (
@@ -40,7 +41,7 @@ export default async function Signup({ searchParams }) {
                 Almost there — we sent a confirmation link to <strong>{confirmEmail}</strong>. Click it to activate your account, then come back and sign in.
               </div>
             ) : (
-              <form action={signUp} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <form action={signUp.bind(null, billing)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Full Name</label>
                   <input
@@ -93,22 +94,22 @@ export default async function Signup({ searchParams }) {
 
           <div style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
-              What you get today
+              Company Office
             </h2>
 
             <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '1rem', border: '1px solid var(--border-light)', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-secondary)', marginBottom: '0.5rem' }}>Launch Tier ($0/mo)</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-secondary)', marginBottom: '0.5rem' }}>$199/month · 7-day trial</div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                Build and test your workforce before committing to a paid plan.
+                Annual billing is $1,990: pay for 10 months and receive 12.
               </p>
             </div>
 
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Website capture widget</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> 2 appointments</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> 50 AI text conversations</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> 10 AI voice minutes</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Email support</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Executive Assistant</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> General Manager</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Company knowledge and memory</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Approvals and employee management</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><span style={{ color: '#10b981' }}>✓</span> Month-to-month flexibility</li>
             </ul>
           </div>
 

@@ -2,21 +2,25 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
-export async function signUp(formData) {
+export async function signUp(selectedBilling, formData) {
   const supabase = await createClient()
+  const requestHeaders = await headers()
+  const origin = requestHeaders.get('origin') || process.env.NEXT_PUBLIC_SITE_URL
 
   const email = formData.get('email')
   const password = formData.get('password')
   const name = formData.get('name')
+  const billing = selectedBilling === 'annual' ? 'annual' : 'monthly'
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   })
 
@@ -35,7 +39,7 @@ export async function signUp(formData) {
     redirect(`/portal/signup?confirm=1&email=${encodeURIComponent(email)}`)
   }
 
-  redirect('/portal/incorporate')
+  redirect(`/portal/incorporate?product=company_office&billing=${billing}`)
 }
 
 export async function signIn(formData) {

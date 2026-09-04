@@ -1,139 +1,43 @@
-'use client';
-
-import { useState } from 'react';
-import Header from '@/components/Header';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import { BILLING_CATALOG } from '@/lib/billing/catalog';
 
-const TIERS = [
-  {
-    id: 'Launch',
-    name: 'Launch (Free Forever)',
-    monthly: 0,
-    annual: 0,
-    tag: 'START HERE',
-    blurb: 'Getting started and proving the system with real prospects.',
-    features: ['Website widget', '2 appointments', '50 AI text conversations', '10 AI voice minutes', 'Email support'],
-    cta: 'Start Free Forever',
-    href: '/portal/signup',
-  },
-  {
-    id: 'Operator',
-    name: 'Operator',
-    monthly: 97,
-    annual: 970,
-    blurb: 'Deploying your first serious revenue operator.',
-    features: ['Unlimited AI text chat', '60 AI voice minutes', '500 outreach emails', 'Lead Gen & Appointment Setter', 'Calendar booking'],
-    cta: 'Activate Operator',
-  },
-  {
-    id: 'Accelerator',
-    name: 'Accelerator',
-    monthly: 297,
-    annual: 2970,
-    highlight: true,
-    blurb: 'Expanding your workforce and enabling automated closing.',
-    features: ['The Closer Agent', '180 AI voice minutes', '2,000 outreach emails', 'Proposal sending', 'Branded URL', 'AI Closer or human option'],
-    cta: 'Activate Accelerator',
-  },
-  {
-    id: 'Authority',
-    name: 'Authority',
-    monthly: 497,
-    annual: 4970,
-    blurb: 'Established brands with defined voice and complex sales.',
-    features: ['Custom scripts', 'Priority routing', '2,500 lead uploads/mo', '1,000 email verifications', 'Everything in Accelerator'],
-    cta: 'Activate Authority',
-  },
-  {
-    id: 'Dominance',
-    name: 'Dominance',
-    monthly: 997,
-    annual: 9970,
-    blurb: 'Agencies, enterprise, max scale.',
-    features: ['API access', 'White-label', 'Human takeover', '5,000 lead uploads/mo', '10 handoffs included'],
-    cta: 'Activate Dominance',
-  },
-];
+const usd = cents => `$${(cents / 100).toLocaleString('en-US')}`;
 
 export default function Pricing() {
-  const [billing, setBilling] = useState('monthly');
+  const office = BILLING_CATALOG.company_office;
+  const workforce = Object.entries(BILLING_CATALOG).filter(([key]) => key !== 'company_office');
 
   return (
     <>
       <Header />
-      <main style={{ paddingTop: '80px', background: 'var(--bg-primary)', minHeight: '100vh', color: 'var(--text-primary)' }}>
-        <section style={{ padding: '6rem 0 3rem', textAlign: 'center' }}>
-          <div className="container">
-            <h1 className="display-lg" style={{ marginBottom: '1.25rem', maxWidth: '720px', margin: '0 auto 1.25rem auto' }}>
-              Pricing for your AI <span className="text-gradient-gold">Revenue Workforce</span>
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '560px', margin: '1.25rem auto 2.5rem auto', lineHeight: '1.7' }}>
-              Replace three revenue roles for less than the salary of one. Start free, then scale capability as your volume grows.
-            </p>
-
-            <div className="billing-toggle" style={{ margin: '0 auto' }}>
-              <button className={`billing-btn ${billing === 'monthly' ? 'active' : ''}`} onClick={() => setBilling('monthly')}>Monthly</button>
-              <button className={`billing-btn ${billing === 'annual' ? 'active' : ''}`} onClick={() => setBilling('annual')}>
-                Annual
-                <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', fontWeight: 700, background: '#4ade8020', color: '#4ade80', padding: '2px 7px', borderRadius: '999px' }}>2 MONTHS FREE</span>
-              </button>
+      <main style={{ padding: '8rem 1.25rem 5rem', minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+        <section className="container" style={{ maxWidth: 1100 }}>
+          <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 3rem' }}>
+            <p style={{ color: 'var(--accent-secondary)', fontWeight: 800, letterSpacing: '.08em' }}>SIMPLE, TRANSPARENT PRICING</p>
+            <h1 className="display-lg">Start with your Company Office.</h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Every Company Office includes your Executive Assistant and General Manager. Start with a 7-day trial.</p>
+          </div>
+          <div className="glass-panel-vip" style={{ maxWidth: 720, margin: '0 auto 4rem', padding: '2.5rem' }}>
+            <h2>{office.name}</h2>
+            <div style={{ fontSize: '2.75rem', fontWeight: 900 }}>{usd(office.monthly)}<small style={{ fontSize: '1rem' }}>/month</small></div>
+            <p>Annual: {usd(office.annual)}. Pay for 10 months and receive 12.</p>
+            <ul>{office.includes.map(item => <li key={item}>{item}</li>)}</ul>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1.5rem' }}>
+              <Link className="btn btn-primary" href="/portal/signup?billing=monthly">Start monthly trial</Link>
+              <Link className="btn btn-outline" href="/portal/signup?billing=annual">Start annual trial</Link>
             </div>
           </div>
-        </section>
-
-        <section style={{ padding: '2rem 0 6rem' }}>
-          <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem' }}>
-              {TIERS.map(tier => {
-                const price = billing === 'annual' ? Math.round(tier.annual / 12) : tier.monthly;
-                const href = tier.id === 'Launch'
-                  ? tier.href
-                  : `/portal/incorporate?tier=${tier.id}&billing=${billing}`;
-
-                return (
-                  <div
-                    key={tier.id}
-                    className="glass-panel-vip flex flex-col"
-                    style={{
-                      padding: '2.5rem 2rem',
-                      position: 'relative',
-                      borderTop: `4px solid var(--accent-color)`,
-                      transform: tier.highlight ? 'scale(1.04)' : 'none',
-                      boxShadow: tier.highlight ? '0 0 40px rgba(139,92,246,0.35)' : 'none',
-                      zIndex: tier.highlight ? 10 : 1,
-                    }}
-                  >
-                    {tier.tag && (
-                      <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--accent-color)', color: '#fff', fontSize: '0.75rem', padding: '0.35rem 1rem', borderBottomLeftRadius: '0.75rem', fontWeight: 'bold' }}>
-                        {tier.tag}
-                      </div>
-                    )}
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{tier.name}</h3>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1rem' }}>
-                      ${price}<span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/{billing === 'annual' ? 'mo, billed yearly' : 'mo'}</span>
-                    </div>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', minHeight: '3rem', fontSize: '0.95rem' }}>{tier.blurb}</p>
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, flex: 1, marginBottom: '2rem' }}>
-                      {tier.features.map(f => (
-                        <li key={f} style={{ marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                          <span style={{ color: 'var(--accent-color)' }}>✓</span> {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      href={href}
-                      className={tier.highlight ? 'btn btn-primary' : 'btn btn-outline'}
-                      style={{
-                        width: '100%', textAlign: 'center', padding: '1rem', fontSize: '1rem',
-                        ...(tier.highlight ? { background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', border: 'none' } : {}),
-                      }}
-                    >
-                      {tier.cta}
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
+          <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Add employees and teams as your company grows</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(250px,1fr))', gap: '1rem' }}>
+            {workforce.map(([key, item]) => (
+              <article key={key} className="glass-panel" style={{ padding: '1.5rem' }}>
+                <h3>{item.name}</h3>
+                <strong style={{ fontSize: '1.5rem' }}>{usd(item.monthly)}/month</strong>
+                <p style={{ color: 'var(--text-secondary)' }}>Annual {usd(item.annual)}.</p>
+                {item.includes && <p>{item.includes.join(' + ')}</p>}
+              </article>
+            ))}
           </div>
         </section>
       </main>
