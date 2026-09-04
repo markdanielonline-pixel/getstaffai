@@ -1103,3 +1103,56 @@ its password administratively reset this session to a known value held by
 Mark; rotate or reset it again if that is not desired. Tenant Gamma
 (`markdanielphd+staffai-gamma-0904@gmail.com`) exists with a CEO record but
 no org and no Stripe customer, subscription or charge.
+
+## 2026-09-04 targeted Provision infrastructure remediation
+
+Scope was limited to DNS, NGINX Proxy Manager, TLS, and closing Provision's
+public port. No Staff AI application code, Vercel environment variable,
+integration token, database readiness record, or synthetic tenant was changed.
+
+Completed infrastructure state:
+
+- Vercel DNS record `rec_5872a3c1ce9bf56c009b0869` explicitly maps
+  `provision.getstaffai.com` A to `158.220.123.254`. The authoritative Vercel
+  nameserver and public resolvers `1.1.1.1`, `8.8.8.8`, `9.9.9.9`, and
+  `208.67.222.222` all returned that address.
+- Created dedicated Docker bridge `provision_edge` for `stack-npm-1` and
+  `provision-app-1`. `/root/stack/docker-compose.yml` and
+  `/root/provision-core/docker-compose.yml` persist the connections. Both
+  passed `docker compose config -q`.
+- NGINX Proxy Manager proxy host ID 50 maps the hostname to
+  `http://provision-app-1:8000`, with websocket support, exploit blocking,
+  HTTP/2, HSTS, and forced HTTPS enabled. `nginx -t` passed before reload.
+- NPM certificate ID 58 is a Let's Encrypt certificate. Issuer:
+  `C=US, O=Let's Encrypt, CN=YE1`; valid from `2026-09-04 15:40:06 UTC` and
+  expires `2026-12-03 15:40:05 UTC`.
+- External HTTPS verification returned HTTP 200 from openresty for
+  `https://provision.getstaffai.com/up`, with `Application up`, HSTS, and
+  `X-Served-By: provision.getstaffai.com`.
+- Only after HTTPS succeeded, Provision port 8000 was changed to loopback-only
+  `127.0.0.1:${APP_PORT:-8000}:8000`, then only `provision-app-1` was
+  recreated. Port 8086 was intentionally untouched.
+- External direct-port verification failed closed: curl to
+  `http://158.220.123.254:8000/up` returned status `000` / exit 7, and a TCP
+  probe returned `TcpTestSucceeded=False`. HTTPS still returned 200 afterward.
+
+Safety and recovery evidence:
+
+- NPM database backup:
+  `/root/stack/npm/data/database.sqlite.pre-provision-20260904T163818Z`.
+- Compose backups:
+  `/root/provision-core/docker-compose.yml.pre-public-close-20260904T164041Z`
+  and `/root/stack/docker-compose.yml.pre-provision-edge-20260904T164041Z`.
+- No application deployment occurred. Application checkpoint remained
+  `fd97d69` on `codex/reconcile-sept3-20260904` before this documentation
+  checkpoint.
+
+Gate remains **NOT READY / NO-GO** because this bounded task did not change
+Vercel `PROVISION_BASE_URL`, rotate the Provision integration token, redeploy
+the app, or repeat customer-lifecycle acceptance. The infrastructure transport
+endpoint and public-port blockers are now remediated.
+
+Exact next action for Claude: set Vercel Production `PROVISION_BASE_URL` to
+`https://provision.getstaffai.com`, rotate `PROVISION_INTEGRATION_TOKEN` in
+Provision and Vercel, redeploy, then independently verify live workforce
+readiness and the remaining production acceptance path.
