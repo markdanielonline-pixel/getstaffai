@@ -1,4 +1,10 @@
 PROVISION_CORE_COMMIT=9e2a6dc372fa5a052f35be00850ce141e4db797b
 STAFFAI_INTEGRATION_COMMIT=cfc52488ef893839ef9572b044e8b1c4fc3aada6
 PROVISIOND_VERSION=0.5.0
+# The workforce runtime (OpenClaw) is installed into the agent container rather
+# than baked into AGENT_RUNTIME_IMAGE, so the digest pin below does NOT cover
+# it. This pin is the contract; it must match config/provision.php
+# 'openclaw_version' in ProvisionCore and OPENCLAW_VERSION on the host.
+# Exact match is required — the build suffix is significant.
+OPENCLAW_VERSION=2026.7.1-2
 AGENT_RUNTIME_IMAGE=ghcr.io/provision-org/agent-runtime@sha256:60ff04b6c8d258f2600f07e25964e8b240e113452b98a9c10a0c49fd779bd76b
