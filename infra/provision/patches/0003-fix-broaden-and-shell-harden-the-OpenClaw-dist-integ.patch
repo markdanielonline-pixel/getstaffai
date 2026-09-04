@@ -1,0 +1,60 @@
+From 44bd947b1a2b4043744e0688cde6a90d8762ebb4 Mon Sep 17 00:00:00 2001
+From: Mark Daniel <markdanielphd@gmail.com>
+Date: Fri, 4 Sep 2026 14:41:33 -0400
+Subject: [PATCH 3/3] fix: broaden and shell-harden the OpenClaw dist integrity
+ check
+
+Testing the check against synthetic trees showed two gaps.
+
+The regex only matched `from "./chunk.js"` with double quotes, so it
+would certify a tree as healthy while a bare side-effect import,
+`export * from`, or a dynamic import() pointed at a missing chunk. A
+check that misses a corruption form is worse than no check.
+
+Writing the single-quote alternative literally also broke the enclosing
+shell single-quoted argument. It is now \x27, so the emitted script
+contains no literal single quote.
+
+Verified by extracting the exact PHP-produced command from source and
+running it against intact and corrupt trees covering all four import
+forms: passes clean, and reports each missing target.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+---
+ app/Services/ChatGPTAuthService.php | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/app/Services/ChatGPTAuthService.php b/app/Services/ChatGPTAuthService.php
+index a13bd10..f3603c8 100644
+--- a/app/Services/ChatGPTAuthService.php
++++ b/app/Services/ChatGPTAuthService.php
+@@ -273,15 +273,24 @@ private function extractOauthProfile(string $listJson): ?array
+      * succeeds in that state, so version alone is not evidence of a usable
+      * install. Exits non-zero if any relative import target is missing.
+      */
++    // The regex covers every form a bundler emits a local chunk reference in:
++    // `import x from`, bare side-effect `import`, `export * from`, and dynamic
++    // `import(...)`, in either quote style. A check that misses a corruption
++    // form is worse than no check, since it certifies a broken tree as healthy.
++    //
++    // Quote handling matters: the script is wrapped in shell single quotes, so
++    // it must contain no literal single quote. The single-quote alternative in
++    // the character class is written as \x27 for that reason. Verified against
++    // synthetic intact and corrupt trees covering all four import forms.
+     public const DIST_INTEGRITY_CHECK = 'node -e '
+         .'\'const fs=require("fs"),d="/usr/lib/node_modules/openclaw/dist";'
+         .'if(!fs.existsSync(d))process.exit(1);'
+         .'const bad=[];'
+         .'for(const f of fs.readdirSync(d).filter(n=>n.endsWith(".js"))){'
+         .'const s=fs.readFileSync(d+"/"+f,"utf8");'
+-        .'for(const m of s.matchAll(/from\\s*"\\.\\/([A-Za-z0-9._-]+\\.js)"/g))'
++        .'for(const m of s.matchAll(/(?:from|import)\\s*\\(?\\s*["\\x27]\\.\\/([A-Za-z0-9._-]+\\.js)["\\x27]/g))'
+         .'if(!fs.existsSync(d+"/"+m[1]))bad.push(f+" -> "+m[1]);}'
+-        .'if(bad.length){console.error("openclaw dist incomplete: "+bad.slice(0,5).join(", "));process.exit(1);}'
++        .'if(bad.length){console.error("openclaw dist incomplete: "+bad.slice(0,8).join(", "));process.exit(1);}'
+         .'console.log("openclaw dist ok");\'';
+ 
+     private function openclawDistIsIntact(): bool
+-- 
+2.54.0.windows.1
+

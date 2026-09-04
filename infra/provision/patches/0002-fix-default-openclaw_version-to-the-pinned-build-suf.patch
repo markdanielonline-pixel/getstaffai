@@ -1,0 +1,35 @@
+From 22168ceaffd7e5bdbbbd2f112351266bb2199c8b Mon Sep 17 00:00:00 2001
+From: Mark Daniel <markdanielphd@gmail.com>
+Date: Fri, 4 Sep 2026 14:25:46 -0400
+Subject: [PATCH 2/3] fix: default openclaw_version to the pinned build suffix
+
+The default carried no build suffix while the pinned runtime build is
+2026.7.1-2, so any environment without OPENCLAW_VERSION set installed a
+different build than the pin describes. Single-sourced against StaffAi
+infra/provision/PINNED_VERSION.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+---
+ config/provision.php | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/config/provision.php b/config/provision.php
+index 254ae8f..757cc5c 100644
+--- a/config/provision.php
++++ b/config/provision.php
+@@ -22,7 +22,11 @@
+ 
+     'provisiond_version' => env('PROVISIOND_VERSION', '0.5.0'),
+ 
+-    'openclaw_version' => env('OPENCLAW_VERSION', '2026.7.1'),
++    // Must match OPENCLAW_VERSION in StaffAi infra/provision/PINNED_VERSION.
++    // The default carried no build suffix while the pinned runtime build is
++    // 2026.7.1-2, so any environment without the env var set installed a
++    // different build than the one the pin describes.
++    'openclaw_version' => env('OPENCLAW_VERSION', '2026.7.1-2'),
+ 
+     'provision_web_plugin_version' => env('PROVISION_WEB_PLUGIN_VERSION', 'latest'),
+ ];
+-- 
+2.54.0.windows.1
+

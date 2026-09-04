@@ -1,0 +1,228 @@
+From ab640b0135409f32000e17ef81bf6d887daf0d39 Mon Sep 17 00:00:00 2001
+From: Mark Daniel <markdanielphd@gmail.com>
+Date: Fri, 4 Sep 2026 14:25:17 -0400
+Subject: [PATCH 1/3] fix: make runtime OpenClaw installation deterministic and
+ correctly pinned
+
+The version guard extracted the installed version with
+[0-9]{4}\.[0-9]+\.[0-9]+, which cannot represent a build suffix. Against
+a pin of 2026.7.1-2 the token truncated to 2026.7.1, never satisfied the
+guard, and re-ran a global npm install on every call. Unserialised,
+repeated installs are how dist/ ended up holding bundle chunks from two
+builds, producing ERR_MODULE_NOT_FOUND at gateway start -- a runtime
+that passes strict readiness with fresh heartbeats yet cannot execute
+any task.
+
+- Admit the build suffix in the version regex, in both the live path and
+  the generated update script.
+- Compare exactly against the pin instead of >=; a pin is a contract,
+  not a floor, and >= would silently accept drift off the pinned build.
+- Serialise installs with flock and remove a corrupt tree before
+  installing, so npm writes a clean build rather than layering onto a
+  partial one.
+- Add a dist integrity check that detects the real failure mode: a chunk
+  importing a hashed sibling that was never written. openclaw --version
+  succeeds in that state, so version alone is not evidence of a usable
+  install.
+- Verify convergence after installing and fail loudly instead of
+  restarting the gateway on an unusable tree.
+- Regression test covering the suffixed pin, serialisation, and that
+  integrity is verified before the gateway is trusted.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+---
+ app/Services/ChatGPTAuthService.php           | 64 +++++++++++++++++--
+ .../Scripts/AgentUpdateScriptService.php      | 21 +++++-
+ tests/Feature/Api/AgentUpdateScriptTest.php   | 39 +++++++++++
+ 3 files changed, 117 insertions(+), 7 deletions(-)
+
+diff --git a/app/Services/ChatGPTAuthService.php b/app/Services/ChatGPTAuthService.php
+index 06f14a1..a13bd10 100644
+--- a/app/Services/ChatGPTAuthService.php
++++ b/app/Services/ChatGPTAuthService.php
+@@ -266,6 +266,32 @@ private function extractOauthProfile(string $listJson): ?array
+      * is on an older release, upgrade in-place and restart the gateway before
+      * we kick off the flow. Caller already holds an SSH connection.
+      */
++    /**
++     * Detects the exact failure mode that took Alpha's runtime down: dist/
++     * holding bundle chunks from two different builds, where one chunk imports
++     * a hashed sibling that was never written. `openclaw --version` still
++     * succeeds in that state, so version alone is not evidence of a usable
++     * install. Exits non-zero if any relative import target is missing.
++     */
++    public const DIST_INTEGRITY_CHECK = 'node -e '
++        .'\'const fs=require("fs"),d="/usr/lib/node_modules/openclaw/dist";'
++        .'if(!fs.existsSync(d))process.exit(1);'
++        .'const bad=[];'
++        .'for(const f of fs.readdirSync(d).filter(n=>n.endsWith(".js"))){'
++        .'const s=fs.readFileSync(d+"/"+f,"utf8");'
++        .'for(const m of s.matchAll(/from\\s*"\\.\\/([A-Za-z0-9._-]+\\.js)"/g))'
++        .'if(!fs.existsSync(d+"/"+m[1]))bad.push(f+" -> "+m[1]);}'
++        .'if(bad.length){console.error("openclaw dist incomplete: "+bad.slice(0,5).join(", "));process.exit(1);}'
++        .'console.log("openclaw dist ok");\'';
++
++    private function openclawDistIsIntact(): bool
++    {
++        $output = $this->sshService->exec(self::DIST_INTEGRITY_CHECK.' 2>&1 || echo OPENCLAW_DIST_BROKEN');
++
++        return ! str_contains($output, 'OPENCLAW_DIST_BROKEN')
++            && str_contains($output, 'openclaw dist ok');
++    }
++
+     private function ensureOpenclawSupportsDeviceCode(): void
+     {
+         $required = config('provision.openclaw_version');
+@@ -273,11 +299,19 @@ private function ensureOpenclawSupportsDeviceCode(): void
+         // `openclaw --version` prints the bare version ("2026.7.1"); older
+         // builds printed an "OpenClaw x.y.z" banner. Grab the first
+         // version-looking token so both forms parse.
++        //
++        // The suffix group is required: pinned builds carry one ("2026.7.1-2").
++        // Without it the token was truncated to "2026.7.1", never satisfied the
++        // pin, and re-ran a global npm install on EVERY call. Concurrent or
++        // interrupted installs left dist/ holding chunks from two builds, which
++        // surfaced as ERR_MODULE_NOT_FOUND at gateway start.
+         $version = trim($this->sshService->exec(
+-            "openclaw --version 2>/dev/null | grep -oE '[0-9]{4}\\.[0-9]+\\.[0-9]+' | head -1",
++            "openclaw --version 2>/dev/null | grep -oE '[0-9]{4}\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?' | head -1",
+         ));
+ 
+-        if ($version !== '' && version_compare($version, $required, '>=')) {
++        // A pin is an exact contract, not a floor: `>=` would accept an
++        // unrelated newer build and silently drift off the pinned runtime.
++        if ($version === $required && $this->openclawDistIsIntact()) {
+             return;
+         }
+ 
+@@ -285,12 +319,34 @@ private function ensureOpenclawSupportsDeviceCode(): void
+ 
+         // Official updater: stages + doctor-verifies the candidate and rolls
+         // back on failure. Raw npm swap kept as fallback for pre-updater builds.
++        //
++        // flock serialises installs: two provisioning flows racing on the same
++        // global prefix is one of the ways dist/ ends up mixed. If the tree is
++        // already corrupt, remove it first so npm lays down a clean build
++        // instead of layering a partial one over another partial one.
+         $this->sshService->exec(
+-            'openclaw update --tag '.escapeshellarg($required).' --yes --json 2>&1'
+-            .' || npm install -g openclaw@'.escapeshellarg($required).' 2>&1',
++            'flock /var/lock/openclaw-install.lock -c '.escapeshellarg(
++                'set -e; '
++                .'if ! '.self::DIST_INTEGRITY_CHECK.'; then rm -rf /usr/lib/node_modules/openclaw; fi; '
++                .'openclaw update --tag '.escapeshellarg($required).' --yes --json 2>&1'
++                .' || npm install -g openclaw@'.escapeshellarg($required).' 2>&1'
++            ),
+             600,
+         );
+ 
++        // Never trust the install blind: an exit code of 0 has already been
++        // observed alongside a dist/ that cannot load.
++        $installed = trim($this->sshService->exec(
++            "openclaw --version 2>/dev/null | grep -oE '[0-9]{4}\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?' | head -1",
++        ));
++        if ($installed !== $required || ! $this->openclawDistIsIntact()) {
++            throw new \RuntimeException(
++                "OpenClaw install did not converge on the pinned version: wanted {$required}, "
++                ."got ".($installed !== '' ? $installed : 'none')
++                .($this->openclawDistIsIntact() ? '' : ', and dist/ is incomplete')
++            );
++        }
++
+         // No pairing re-seed needed: since 2026.7.1 (#95997) a loopback CLI
+         // call with the gateway token bypasses device pairing entirely.
+         $this->sshService->exec(
+diff --git a/app/Services/Scripts/AgentUpdateScriptService.php b/app/Services/Scripts/AgentUpdateScriptService.php
+index 8825109..c55256c 100644
+--- a/app/Services/Scripts/AgentUpdateScriptService.php
++++ b/app/Services/Scripts/AgentUpdateScriptService.php
+@@ -9,6 +9,7 @@
+ use App\Services\AgentInstallScriptService;
+ use App\Services\AgentScheduleService;
+ use App\Services\ChannelConfigBuilder;
++use App\Services\ChatGPTAuthService;
+ use App\Services\Harness\HermesDriver;
+ use App\Services\OpenClawDefaultsService;
+ use App\Support\OpenClawConfig;
+@@ -359,11 +360,25 @@ public function generateOpenClawScript(Agent $agent): string
+         // The official updater stages + doctor-verifies the candidate and
+         // rolls back on failure, unlike the raw `npm install -g` swap it
+         // replaces (which upstream requires stopping the gateway for).
++        // The version token must include the build suffix: pinned builds carry
++        // one ("2026.7.1-2"). Without the suffix group the token truncated to
++        // "2026.7.1", never matched the pin, and reinstalled globally on every
++        // run — the repetition that let interrupted installs leave dist/ mixed.
+         $lines[] = "PINNED_OPENCLAW_VERSION='{$pinnedVersion}'";
+-        $lines[] = 'CURRENT_OPENCLAW_VERSION=$(openclaw --version 2>/dev/null | grep -oE "[0-9]{4}\\.[0-9]+\\.[0-9]+" | head -1)';
+-        $lines[] = 'if [ "$CURRENT_OPENCLAW_VERSION" != "$PINNED_OPENCLAW_VERSION" ]; then';
++        $lines[] = 'OPENCLAW_DIST_CHECK='.escapeshellarg(ChatGPTAuthService::DIST_INTEGRITY_CHECK);
++        $lines[] = 'CURRENT_OPENCLAW_VERSION=$(openclaw --version 2>/dev/null | grep -oE "[0-9]{4}\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?" | head -1)';
++        $lines[] = 'if [ "$CURRENT_OPENCLAW_VERSION" != "$PINNED_OPENCLAW_VERSION" ] || ! sh -c "$OPENCLAW_DIST_CHECK"; then';
+         $lines[] = '  echo "openclaw binary is ${CURRENT_OPENCLAW_VERSION:-missing}, pinned is $PINNED_OPENCLAW_VERSION — updating"';
+-        $lines[] = '  openclaw update --tag "$PINNED_OPENCLAW_VERSION" --yes --json || npm install -g "openclaw@$PINNED_OPENCLAW_VERSION"';
++        // Serialise against any concurrent install, and clear a corrupt tree so
++        // npm writes a clean build rather than layering onto a partial one.
++        $lines[] = '  flock /var/lock/openclaw-install.lock -c \'sh -c "$OPENCLAW_DIST_CHECK" || rm -rf /usr/lib/node_modules/openclaw; openclaw update --tag "$PINNED_OPENCLAW_VERSION" --yes --json || npm install -g "openclaw@$PINNED_OPENCLAW_VERSION"\'';
++        $lines[] = 'fi';
++        // Verify rather than assume: a zero exit has been observed alongside a
++        // dist/ that cannot load.
++        $lines[] = 'VERIFIED_OPENCLAW_VERSION=$(openclaw --version 2>/dev/null | grep -oE "[0-9]{4}\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.]+)?" | head -1)';
++        $lines[] = 'if [ "$VERIFIED_OPENCLAW_VERSION" != "$PINNED_OPENCLAW_VERSION" ] || ! sh -c "$OPENCLAW_DIST_CHECK"; then';
++        $lines[] = '  echo "FATAL: openclaw did not converge on $PINNED_OPENCLAW_VERSION (got ${VERIFIED_OPENCLAW_VERSION:-none})" >&2';
++        $lines[] = '  exit 1';
+         $lines[] = 'fi';
+         $lines[] = 'systemctl --user restart openclaw-gateway';
+         $lines[] = 'sleep 5';
+diff --git a/tests/Feature/Api/AgentUpdateScriptTest.php b/tests/Feature/Api/AgentUpdateScriptTest.php
+index fcfcda7..ff22418 100644
+--- a/tests/Feature/Api/AgentUpdateScriptTest.php
++++ b/tests/Feature/Api/AgentUpdateScriptTest.php
+@@ -72,6 +72,45 @@
+     expect($pinnedPos)->toBeLessThan($restartPos);
+ });
+ 
++test('openclaw version guard matches a suffixed pinned build and verifies dist integrity', function () {
++    // Regression: the version regex could not capture a build suffix, so a pin
++    // of "2026.7.1-2" was compared against a truncated "2026.7.1", never
++    // matched, and reinstalled globally on every run. Concurrent/interrupted
++    // installs then left dist/ holding chunks from two builds, which surfaced
++    // as ERR_MODULE_NOT_FOUND and a workforce that passed readiness but could
++    // not execute any task.
++    config(['provision.openclaw_version' => '2026.7.1-2']);
++
++    $team = Team::factory()->create();
++    $server = Server::factory()->running()->create(['team_id' => $team->id]);
++    $agent = Agent::factory()->create([
++        'team_id' => $team->id,
++        'server_id' => $server->id,
++        'harness_agent_id' => 'agent-suffix',
++        'harness_type' => HarnessType::OpenClaw,
++        'name' => 'Suffixed',
++        'status' => AgentStatus::Active,
++    ]);
++
++    $script = app(AgentUpdateScriptService::class)->generateOpenClawScript($agent);
++
++    expect($script)->toContain("PINNED_OPENCLAW_VERSION='2026.7.1-2'")
++        // The extraction regex must admit the suffix, or the guard can never
++        // be satisfied by a pinned build.
++        ->toContain('(-[0-9A-Za-z.]+)?')
++        // Installs must be serialised and a corrupt tree cleared, not layered.
++        ->toContain('flock /var/lock/openclaw-install.lock')
++        ->toContain('rm -rf /usr/lib/node_modules/openclaw')
++        // And the result must be verified, not assumed.
++        ->toContain('FATAL: openclaw did not converge');
++
++    // Integrity verification must run before the gateway is restarted and
++    // trusted, otherwise a broken runtime is marked healthy.
++    $checkPos = strpos($script, 'OPENCLAW_DIST_CHECK=');
++    $restartPos = strpos($script, 'systemctl --user restart openclaw-gateway');
++    expect($checkPos)->toBeLessThan($restartPos);
++});
++
+ test('openclaw update repairs the mobile gateway proxy and trusts only local proxies', function () {
+     $team = Team::factory()->create();
+     $server = Server::factory()->running()->create([
+-- 
+2.54.0.windows.1
+
