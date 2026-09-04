@@ -848,6 +848,77 @@ a live EA conversation. It is not a P0, but it must not be mistaken for
 evidence of a working EA, and it should be replaced with real conversation
 state before launch, since a customer would reasonably read it as real.
 
+### Readiness root-cause narrowed, and truthful invalidation PROVEN, 2026-09-04
+
+Added server-side diagnostics (commit `d8a4f1a`-equivalent, see git log):
+`inspectInitialWorkforce()` now logs the caught reason and its thrown errors
+name the specific failed check (team status, team identity mismatch, employee
+status, agent status, agent/team `server_id` mismatch). Readiness semantics
+unchanged. Deployed as `dpl_EcxUbvCGNPbypk7x97zakVPvDhrm`.
+
+Reloading Beta's dashboard produced **no** readiness log, which was itself the
+diagnostic: execution now exits at the early `return` on line 13
+(`op.state !== 'completed'`) rather than reaching the instrumented throw.
+Querying `provisioning_operations` explains why — **Beta's
+`initial-workforce:v1` state is now `retryable`, where it was `completed`
+earlier in this same session.**
+
+This is the truthful-readiness mechanism working end to end, and it is worth
+stating plainly: my first successful dashboard load ran the live check, the
+check failed, the catch called `invalidate_workforce_readiness`, and the
+stale `completed` record was correctly demoted to `retryable`. The system
+detected that its own recorded readiness was no longer true and invalidated
+it, exactly as designed. Alpha's row remains `completed` only because nobody
+has loaded Alpha's dashboard since.
+
+Both rows retain complete data (`ea`, `gm`, `teamId`, `serverId`,
+`verifiedAt`, `dispatcherId`), with `verifiedAt` timestamps of
+2026-09-02T11:27:17Z (Alpha) and 2026-09-02T11:53:14Z (Beta). Alpha team
+`01m1fcybjwq1fx30m3yzw0kj2g` / server `01m1fcybpvhpb420xzn3estc5p`; Beta team
+`01m1gy0adh2n0b6kec6gw16qzq` / server `01m1gy0aec8a7fh1ae88crdf4m`.
+
+**Provision Core itself is UP and reachable from the public internet.**
+`http://158.220.123.254:8000/` returns 302 → `/login` and
+`http://158.220.123.254:8000/up` returns **200** — the Laravel framework
+health endpoint. So this is NOT a network partition and NOT a dead API. The
+failure is in the **agent runtime / daemon layer**: most likely stale daemon
+heartbeats or tenant runtime (OpenClaw) containers not running since the
+2026-09-02 session, or a team/agent `server_id` mismatch. Confirming which
+requires host access.
+
+### NEW P1 SECURITY FINDING: Provision integration token crosses the internet in cleartext
+
+The Provision host serves **no TLS at all**: `https://158.220.123.254/up` and
+`https://158.220.123.254:8000/up` both fail to establish a connection (curl
+exit, HTTP code `000`), while the plain-HTTP endpoints answer normally. Since
+`PROVISION_BASE_URL` must therefore be an `http://` URL, every Vercel →
+Provision call sends `PROVISION_INTEGRATION_TOKEN` as a bearer credential
+**unencrypted over the public internet**, from Vercel's serverless egress to a
+bare IP address. That token controls the entire agent execution plane
+(teams, agents, dispatchers, tasks).
+
+This is a launch-blocking and due-diligence-blocking issue independent of the
+readiness gap. Remediation: terminate TLS in front of Provision (real
+hostname + certificate), or move Provision behind a private network/tunnel so
+the control plane is never exposed over plaintext, then rotate
+`PROVISION_INTEGRATION_TOKEN` because the current value must be treated as
+having been exposed in transit. Note this also means the earlier incident
+response's "unauthenticated Provision probes returned 401" reassurance covers
+authentication, not confidentiality.
+
+### Integrity note for any investor or customer demonstration
+
+The dashboard's Executive Assistant panel renders hardcoded placeholder
+dialogue (a canned "daily briefing" mentioning 3 qualified leads and a $50
+refund approval, plus a scripted CEO reply). With the live EA/GM workforce
+currently NOT ready, a viewer looking at that dashboard would see what appears
+to be a working AI assistant conversation that is in fact static markup.
+**This must not be presented as live product behavior.** Either replace it
+with real conversation state or clearly label it before any demo. Flagged
+here because the combination — convincing mock output plus a non-operational
+workforce — is precisely the kind of thing that becomes a credibility problem
+in technical due diligence.
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
@@ -867,29 +938,40 @@ employee-lifecycle management actions; billing portal; logout and returning
 login; recovery-email delivery end-to-end; EA/GM execution-path isolation
 under a live session.
 
-Open P1: the live EA/GM workforce is not operational for an entitled tenant,
-so the core product promise cannot currently be demonstrated. Open P2:
-Supabase Auth Site URL still `localhost:3000`; readiness failure reason is
-silently swallowed (no diagnostic log); dashboard EA thread is static mock
-copy. No known open P0 — all three found this session are fixed and deployed.
+Open P1 (two): (a) the live EA/GM workforce is not operational for an entitled
+tenant, so the core product promise cannot currently be demonstrated; (b) the
+Provision integration token crosses the public internet in cleartext because
+the Provision host serves no TLS. Open P2: Supabase Auth Site URL still
+`localhost:3000`; dashboard EA thread is static mock copy that reads as live
+product. No known open P0 — all three found this session are fixed and
+deployed. Readiness diagnosability is resolved (logging added).
 
 Overall gate: **NOT READY / NO-GO.** The customer-facing shell is now sound —
 signup, confirmation, login, onboarding and the dashboard all work, and tenant
 isolation is proven — but the AI workforce that constitutes the actual product
 is not live for an entitled tenant.
 
-Exact next action, in order: (1) **SSH to `158.220.123.254` and determine why
-Provision readiness fails for Beta** — check the pilot/tenant runtime
-containers are running, the daemon heartbeat is fresh, and team/agent
-`server_id` matches what the control plane recorded; this is the single
-blocking item. (2) Add a narrow server-side log of the caught error in
-`inspectInitialWorkforce()` so this is diagnosable without SSH next time.
-(3) Once readiness is genuinely green, drive a harmless task from Beta's
-dashboard and confirm a truthful tenant-specific result, then employee/org
-management, billing, logout and returning login. (4) Re-run the cross-tenant
-execution probe (Beta org + Alpha employee) against the live API. (5) Fix the
-Supabase Auth Site URL / redirect allowlist. Data-layer isolation does not
-need re-proving unless policies change.
+Exact next action, in order: (1) **SSH to `158.220.123.254` and restore the
+agent runtime layer** — Provision Core's API is confirmed healthy, so check
+that the tenant runtime (OpenClaw) containers are running, daemon heartbeats
+are fresh, and team/agent `server_id` values match the recorded
+`teamId`/`serverId` above. Alpha's row is still `completed`, so loading
+Alpha's dashboard once will now emit an exact
+`[workforce.readiness] org=… not ready: <specific reason>` line in the Vercel
+runtime logs — use that to target the fix. (2) **Put TLS in front of
+Provision and rotate `PROVISION_INTEGRATION_TOKEN`** (see the P1 security
+finding). (3) Once readiness is genuinely green, drive a harmless task from a
+tenant dashboard and confirm a truthful tenant-specific result, then
+employee/org management, billing, logout and returning login. (4) Re-run the
+cross-tenant execution probe (Beta org + Alpha employee) against the live API.
+(5) Fix the Supabase Auth Site URL / redirect allowlist. (6) Replace or label
+the mock EA dashboard thread. Data-layer isolation does not need re-proving
+unless policies change.
+
+Do NOT restore any `provisioning_operations` row to `completed` by hand to
+make a dashboard look ready. The `retryable` state is the truthful one; the
+workforce genuinely is not operational, and hand-editing it would fabricate
+readiness and defeat the gate that correctly caught this.
 
 Credentials note for whoever resumes: Acceptance Beta
 (`markdanielphd@gmail.com`, org `7dccb353-e6d2-44bc-95e9-1d762b9a4674`) had
