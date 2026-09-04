@@ -51,12 +51,15 @@ export default function LoginExtras({ email }) {
   return (
     <>
       {oauthError && (
-        <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#fca5a5', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.9rem' }}>
+        <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: 'var(--text-primary)', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.9rem' }}>
           {oauthError}
         </div>
       )}
+      {/* Status colours use the theme text colour: the previous pale green
+          (#a7f3d0) and pale red (#fca5a5) were unreadable on their own light
+          tinted backgrounds in light mode. */}
       {resetMsg && (
-        <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', color: '#a7f3d0', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.9rem' }}>
+        <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', color: 'var(--text-primary)', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.9rem' }}>
           {resetMsg}
         </div>
       )}

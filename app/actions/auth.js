@@ -28,6 +28,15 @@ export async function signUp(selectedBilling, formData) {
     redirect(`/portal/signup?error=${encodeURIComponent(error.message)}`)
   }
 
+  // Supabase does not error when the address is already registered — it returns
+  // an obfuscated user with an empty identities array, to avoid leaking which
+  // emails exist. Without this check the UI promised "we sent a confirmation
+  // link" for an existing account and no email was ever sent, stranding the
+  // customer waiting for mail that cannot arrive. Send them to login instead.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    redirect(`/portal/login?notice=${encodeURIComponent('That email already has an account. Please sign in — or use "Forgot password?" if you need a reset.')}&email=${encodeURIComponent(email)}`)
+  }
+
   if (data.user) {
     // Update CEO name after auth user + ceos record created via the handle_new_user trigger
     const admin = await createAdminClient()
