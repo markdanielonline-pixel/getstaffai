@@ -1479,6 +1479,56 @@ operations that require VPS access. Do them in order, in one pass.
 > `organizations`, tenant mappings, teams, or any Vercel configuration. Do not
 > switch the model slug. Do not rotate the integration token in this pass.
 
+> **6. Also deploy ProvisionCore `44bd947`** (broadened + shell-hardened dist
+> integrity check) alongside `ab640b0` and `22168ce`. `44bd947` is the version
+> that was actually tested; deploying the earlier two without it ships a check
+> that misses three of four corruption forms.
+
+**Separate, NOT a VPS action — for Mark directly:** issue a fresh Stripe secret
+key in the StaffAi account (`acct_1JCwmmBe48ha5T2s`) and set
+`STRIPE_SECRET_KEY` in Vercel Production. The configured key is expired
+(`sk_live_…vzA94z`, `api_key_expired`) and the entire revenue path is dead until
+it is replaced. Confirm `STRIPE_WEBHOOK_SECRET` independently.
+
+### Exact post-deployment production verification sequence
+
+Run in this order once the handoff above returns. Each step is a gate: do not
+proceed past a failure, and do not infer any result from stored database state.
+
+1. **Transport still healthy** — `curl https://provision.getstaffai.com/up`
+   returns 200 with a valid certificate, and `http://158.220.123.254:8000/up`
+   still refuses.
+2. **Alpha readiness re-earned through the app** — load
+   `https://app.getstaffai.com/portal/dashboard` as the Alpha CEO. Expect
+   *"Initial EA/GM workforce is operational."* This must come from a live
+   dashboard render, which runs the strict verifier (fresh sub-60s heartbeat
+   plus matching external_id/team_id/server_id) — not from reading
+   `workforce_status`.
+3. **Re-provision Alpha's agents onto the correct model.** The model is bound at
+   agent-creation time, so the existing agents still carry `z-ai/glm-4.7`.
+   Trigger "Resume workforce setup"; confirm new `provision.agent.superseded`
+   rows in `staffai_events` and that the agents request `qwen/qwen3.8-flash`.
+4. **THE SUCCESS CONDITION — harmless task.** `POST /api/employees/chat` for
+   conversation `f93f5567-eb0c-4457-9965-a07e378319f7` with the echo prompt.
+   Requires HTTP 200 **and** the persisted `employee_tasks.result` for that new
+   task equal to `ALPHA_LIVE_TASK_20260904_OK`. A 502 carrying a `detail` string
+   is a failure, not a pass. **Capability is not demonstrated until this exact
+   token is returned by a genuine current task.**
+5. **Beta missing-team recovery** — as the Beta CEO, run "Resume workforce
+   setup"; expect team creation, one `provision.team.superseded` and two
+   `provision.agent.superseded` rows, then `workforce_status=ready` and the
+   operational message on a live dashboard load. Then run step 4's task for Beta
+   with a Beta-specific token and confirm the result is tenant-specific.
+6. **Execution-path tenant isolation** — with Beta authenticated, attempt a task
+   dispatch naming an Alpha employee id; expect denial with no Provision task
+   created and no mutation to Alpha. (Data-layer isolation is already proven and
+   does not need re-proving.)
+7. **Billing** — only after a fresh `STRIPE_SECRET_KEY` is installed:
+   `POST /api/billing/portal` returns 200 with a `billing.stripe.com` URL whose
+   return path is on `app.getstaffai.com`. Do **not** complete a real charge.
+8. **Employee lifecycle** — exercise the employee/org management screens for
+   Alpha and confirm they reflect real state.
+
 After this returns, the next actions here are: re-provision Alpha's two agents
 so they adopt `qwen/qwen3.8-flash` (the model is bound at agent-creation time,
 so the existing agents still carry `z-ai/glm-4.7`), then rerun the harmless echo
@@ -1487,6 +1537,105 @@ task through `POST /api/employees/chat`.
 **Success condition, unchanged: a genuine current production task must return
 `ALPHA_LIVE_TASK_20260904_OK` through the real production path. Capability is
 not demonstrated until an actual model response returns that token.**
+
+### NEW P0: the production Stripe secret key is EXPIRED — the revenue path is dead
+
+Exercising the billing portal as the Acceptance Alpha CEO returned 500. The
+server log gives it unambiguously:
+
+`StripeAuthenticationError: Expired API Key provided: sk_live_…vzA94z`
+`code: api_key_expired`
+
+`app/api/billing/portal/route.js` and `app/api/checkout/route.js` each construct
+`new Stripe(process.env.STRIPE_SECRET_KEY)` from the **same** environment
+variable, so this single expired credential disables **both** subscription
+checkout and billing management. **No customer can subscribe, and no existing
+customer can manage billing.** For a launch or investor review this is the
+most consequential defect found in this mission so far: the product cannot
+take money.
+
+Note the suffix. This file records the previously exposed key as suffix `vwX3`
+(account `acct_1JCwmmBe48ha5T2s`, "Beacon2"), and records that Mark began a
+rotation with a one-hour overlap that Stripe then blocked behind an
+identity-verification prompt. The live key now failing ends `vzA94z` — a
+*different* key. So the rotation appears to have produced a replacement whose
+overlap window has since lapsed, or the old key expired without the replacement
+being written into Vercel. Either way the currently configured value is dead.
+
+This also corrects an assumption I recorded earlier. I previously reasoned that
+Tenant Gamma could not be driven past checkout because production Stripe is in
+live mode and completing it would require entering real card details. That
+remains true in principle, but it was never the binding constraint: with this
+key, **checkout would have failed before any card was involved.**
+
+**Cannot be fixed from this harness.** It requires issuing a fresh secret key in
+Mark's Stripe account and setting `STRIPE_SECRET_KEY` in Vercel Production.
+Issuing/rotating a payment credential is Mark's action, not an agent action.
+Verify `STRIPE_WEBHOOK_SECRET` separately — it is a distinct credential and its
+validity is not established by fixing the secret key.
+
+### OpenClaw deterministic-install repair: reviewed and TESTED, 2026-09-04
+
+The repair was reviewed and its runtime behaviour verified locally (PHP is not
+installed here, so the ProvisionCore test suite itself must run on deployment —
+that is step 1 of the handoff).
+
+Testing found and fixed two real defects in my own first version, before it ever
+reached the VPS:
+
+1. **The integrity regex was too narrow.** It matched only
+   `from "./chunk.js"` with double quotes, so it would have certified a tree as
+   healthy while a bare side-effect `import "./x.js"`, an `export * from`, or a
+   dynamic `import("./x.js")` pointed at a missing chunk. A check that misses a
+   corruption form is worse than no check, because it converts a loud failure
+   into a silent one.
+2. **A literal single quote inside the `node -e '…'` payload broke the
+   enclosing shell quoting.** The single-quote alternative is now written
+   `\x27`, so the emitted script contains no literal single quote.
+
+Verification method: the exact command was **extracted programmatically from
+`ChatGPTAuthService.php`** (applying PHP single-quote unescaping) rather than
+retyped, then executed against synthetic `dist/` trees. Results — intact tree:
+`openclaw dist ok`, exit 0. Corrupt trees: exit 1 with the precise missing
+targets named, across all four import forms, e.g.
+`openclaw dist incomplete: a.js -> present-2.js, a.js -> present-3.js`.
+The intact-tree case also reproduces the real-world signature shape
+(`server.impl-… -> openresponses-http-…`). Committed as ProvisionCore `44bd947`.
+
+### Latent (not active) URL defects found and fixed
+
+Three call sites fell back to the **marketing** host when
+`NEXT_PUBLIC_SITE_URL` is unset: `app/api/billing/portal/route.js`,
+`app/auth/callback/route.js`, `app/actions/account.js`. Verified that
+`https://www.getstaffai.com/portal/dashboard/settings` returns **404** while
+`app.getstaffai.com` serves it, so those fallbacks would break every auth
+redirect and the billing-portal return.
+
+**They are latent, not active.** Probing `GET /auth/callback` with no code shows
+it redirecting to `https://app.getstaffai.com/portal/login?error=auth_callback_failed`,
+which proves `NEXT_PUBLIC_SITE_URL` is correctly set in production today. Fixed
+as defense-in-depth (StaffAi `6b92727`): billing portal now derives origin from
+the request exactly as `/api/checkout` does, and the two remaining fallbacks
+point at the application host. `auth/callback` keeps env precedence by design —
+a comment there records that `request.url` could resolve to an internal IP
+behind the old proxy deployment.
+
+### Beta missing-team recovery: path inspected, ready to run
+
+Beta's case differs from Alpha's and the distinction still holds. Alpha had a
+stale mapping to a team that had been recreated; **Beta has no Provision team at
+all**. Walking the code: `retryInitialWorkforce` → `provisionInitialWorkforce`
+→ `runInitialWorkforce` with `ensureTeam: () => provisionTeamRuntime(organization)`.
+`provisionTeamRuntime` POSTs to `/api/integrations/staffai/teams` with Beta's
+`external_id`, which **creates** the team, returns it, and — because Beta's
+stored `provision_team_id` is a now-dead id — takes the succession branch,
+recording `provision.team.superseded`. Both agents then provision fresh and
+record `provision.agent.superseded`.
+
+So the same code path covers Beta with no further change; it simply exercises
+create-then-adopt rather than adopt-existing. It is **not run yet**, and must
+not be assumed to pass because Alpha did. It is also gated behind the same
+OpenClaw repair: agents cannot reach `active` while the runtime cannot load.
 
 ### Consolidated status after all 2026-09-04 work
 
@@ -1513,7 +1662,11 @@ exposure) are now RESOLVED and independently verified.** No known open P0.
 **The stale-mapping P1 is RESOLVED**: audited succession recovery is
 implemented, deployed, and behaviorally verified end to end for Alpha, which
 now holds genuine live readiness. **The fabricated-dashboard-activity blocker
-is RESOLVED.** No known open P0.
+is RESOLVED.**
+
+Open **P0: the production Stripe secret key is expired**, disabling both
+checkout and billing management. The product cannot take money. Requires Mark
+to issue a new key; not fixable from this harness.
 
 Open **P1 (blocking, single most important item)**: Alpha's live workforce is
 `ready` but **cannot execute any task** — root-caused to a broken/mixed-build
