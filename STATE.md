@@ -1538,6 +1538,84 @@ task through `POST /api/employees/chat`.
 `ALPHA_LIVE_TASK_20260904_OK` through the real production path. Capability is
 not demonstrated until an actual model response returns that token.**
 
+### SUCCESS CONDITION MET: harmless Alpha task executed through the genuine production path, 2026-09-04
+
+Independently executed — **not** AntiGravity's result, which was obtained
+directly against the runtime rather than through the customer path.
+
+Request: `POST /api/employees/chat` at `2026-09-04T21:10:35.639Z`, as the
+authenticated Acceptance Alpha CEO in a real browser session, against
+conversation `f93f5567-eb0c-4457-9965-a07e378319f7`.
+
+Response: **HTTP 200**,
+`{"message":"ALPHA_LIVE_TASK_20260904_OK","messageId":"f82722d8-…","employeeName":"Sophia"}`.
+
+Freshness proven from persisted state, so this cannot be a replay of the
+earlier result:
+
+- New task `6c71c47e-93bd-40b7-989a-be4906b9474a`, `created_at`
+  **21:10:39.670Z — 4 seconds after the request**.
+- New `provision_task_id` `01m1q44s6sm9ww4vktk7fdr6zm`, distinct from every
+  prior task including all three failures.
+- `status=completed`, `provision_status=done`,
+  `result = ALPHA_LIVE_TASK_20260904_OK`.
+- ~14s wall time (21:10:39 → 21:10:54), consistent with real inference rather
+  than a cached or short-circuited response.
+
+The full chain is therefore demonstrated: **CEO → Vercel → HTTPS Provision →
+Alpha runtime → OpenClaw → gateway → response**, on the same endpoint that
+returned `Gateway returned 500` three times earlier today.
+
+**Qwen 3.8 Flash attribution is NOT independently verified.** This is a
+limitation of the evidence available to me, and it should not be glossed:
+
+- Staff AI's `execution_logs` table has a `model` column but is **empty for
+  Alpha**, and for every org.
+- The only writer is `lib/engine.js`, which **nothing imports** — it is an
+  orphaned legacy execution engine. The live Provision-based path
+  (`dispatchTaskToAgent` / `pollProvisionTask`) records no model, no token
+  counts and no cost.
+- Staff AI sends a model only at *agent creation*; Alpha's agents were created
+  under `z-ai/glm-4.7`, and AntiGravity changed the model by editing the
+  runtime's OpenClaw config directly. So Staff AI's own records would still
+  say `z-ai/glm-4.7` regardless.
+
+What is established: the task succeeded where it previously failed, and
+AntiGravity reports it set the runtime to `openrouter/qwen/qwen3.8-flash`.
+What is **not** established: that Qwen specifically served this request.
+Authoritative confirmation must come from the OpenRouter activity log (model
+per request, around 21:10:39–21:10:54Z on 2026-09-04) or from Provision's own
+task record. Asking the model to self-identify is not acceptable evidence —
+models routinely misreport their identity.
+
+**P2 observability gap (new):** the control plane records no model, token usage
+or cost for any executed task. That blocks per-task model auditing, usage
+billing, and cost-anomaly detection, and it is why this acceptance step cannot
+be closed from Staff AI data alone. `execution_logs` already has the right
+shape; the Provision path simply never writes it. Wiring it requires knowing
+Provision's task-result payload shape, so it is recorded rather than guessed at.
+
+### Why the ProvisionCore commits were unavailable, and the deployable path
+
+Root cause: commits `ab640b0`, `22168ce`, `44bd947` exist **only in the local
+ProvisionCore working copy** on this workstation. `git branch -r --contains
+ab640b0` returns empty and the branch `p1-initial-workforce` has no upstream;
+`origin` is `github.com/provision-org/provision-core`, an upstream repository
+we do not push to. AntiGravity works from `/root/provision-core` on the VPS — a
+different checkout — so it had no possible way to see them. Not its error.
+
+Fixed: the three commits are exported as `git am`-able patches, committed to
+this repository at **`infra/provision/patches/`** with a README covering base
+commit (`85ae3fd`), apply order, the defect, and why all three are required.
+They are now version-controlled and reachable by anyone with the workspace.
+
+**Production remains dependent on a manual container mutation until these are
+applied.** Alpha works because its container was hand-repaired; that fix lives
+only in that container's filesystem. Any container recreation, tenant
+reprovision, or new tenant still goes through the unpatched code path and is
+exposed to the identical corruption. Alpha's current success must not be read
+as the provisioning defect being repaired.
+
 ### Stripe P0 RESOLVED and independently verified, 2026-09-04
 
 Mark issued a fresh live secret key, set `STRIPE_SECRET_KEY` in Vercel
@@ -1708,11 +1786,14 @@ is RESOLVED.**
 The Stripe P0 is **RESOLVED and verified** (live portal + checkout sessions
 created, no charge). **No known open P0.**
 
-**THE REMAINING EXECUTION BLOCKER IS THE OPENCLAW VPS DEPLOYMENT** — it is not
-superseded by the Stripe work and must not be lost. Alpha's workforce still
-cannot execute any task until ProvisionCore `ab640b0`, `22168ce` and `44bd947`
-are deployed and the runtime's OpenClaw install is cleanly reinstalled at the
-pin. The consolidated handoff below is still pending and unchanged.
+**Alpha execution now WORKS and is independently proven** through the real
+customer path (see the success-condition section above).
+
+**But the underlying provisioning defect is NOT repaired.** Alpha runs on a
+hand-mutated container; the deterministic-install patches are still undeployed
+and now live at `infra/provision/patches/`. Every new or reprovisioned tenant
+remains exposed to the same silent corruption. Treat this as an open P1, not a
+closed item.
 
 Open **P1 (blocking, single most important item)**: Alpha's live workforce is
 `ready` but **cannot execute any task** — root-caused to a broken/mixed-build
