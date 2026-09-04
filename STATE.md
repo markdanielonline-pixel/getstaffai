@@ -1234,6 +1234,75 @@ audit applies, but it has **not been run**, so Beta remains
 `workforce_status=retryable` with employees in `training`. Do not assume the
 Alpha result generalises to Beta until Beta is actually run.
 
+### Harmless EA task execution attempted on Alpha's live workforce: **FAIL (P1)**, 2026-09-04
+
+Executed through the real production path as the authenticated Alpha CEO:
+`POST /api/employees/chat` → `dispatchTaskToAgent` → Vercel → HTTPS →
+Provision, against Alpha's existing EA conversation
+`f93f5567-eb0c-4457-9965-a07e378319f7` (employee Sophia,
+`fde17db3-1eb0-4a2f-8277-01ef125d0806`). Message asked only for an echo token,
+`ALPHA_LIVE_TASK_20260904_OK` — harmless and unambiguously verifiable.
+
+**What works (genuinely proven end to end):** task correlation row created,
+task accepted by Provision with a real `provision_task_id`
+(`01m1prce4f3edgnne5v4mw0p01`), polling, terminal-state detection, and
+**truthful** result persistence. The Staff AI ↔ Provision integration over the
+new TLS path is functioning.
+
+**What fails:** the agent cannot produce a result. Three consecutive attempts
+(17:45:07, 17:46:17, and one post-fix) all terminated `status=failed` /
+`provision_status=failed` with the identical persisted result:
+
+`Gateway returned 500 Internal Server Error: Internal Server Error`
+
+This is the **model gateway**, downstream of Provision — not Staff AI, not
+transport, not tenant binding. It is reproducible, not transient. Note the
+identical error appears on 2026-09-02 (task `fce6c3dc`) immediately before the
+one historical success (`b8e837db` → `ACCEPTANCE_ALPHA_OK`), so this failure
+mode predates today's work and the Sept 2 "success" was evidently a retry that
+happened to land.
+
+**This is the concrete separation between readiness and capability that the
+mission was right to insist on.** Alpha's workforce is genuinely `ready` — it
+holds a live team, live agents, and fresh sub-60-second heartbeats — and still
+cannot perform any work. Readiness must not be read as proof the product
+functions.
+
+Leading hypothesis, unverified: `lib/provision.js` sends
+`process.env.PROVISION_DEFAULT_MODEL || 'z-ai/glm-4.7'`. `AGENTS.md` states the
+architectural default customer-facing model is Qwen 3.8 Flash and records that
+code alignment is incomplete. A retired or unrecognised model slug, or an
+exhausted/invalid OpenRouter credential, would produce exactly this upstream
+500. Confirming requires Provision-side gateway configuration and credentials,
+which this harness cannot reach.
+
+Bounded task for AntiGravity/Codex (read-mostly, no destructive action):
+> On the VPS, inspect the Provision → model-gateway configuration for the
+> Acceptance Alpha runtime. Report: the exact model slug being requested, the
+> gateway/OpenRouter endpoint, whether the API credential authenticates, and
+> the upstream response body behind
+> `Gateway returned 500 Internal Server Error` for Provision task
+> `01m1prce4f3edgnne5v4mw0p01`. Do not change readiness records, tenants, or
+> mappings. If the model slug is invalid or the credential is exhausted, report
+> it rather than silently switching models — the customer-facing default is an
+> architectural decision recorded in `AGENTS.md`.
+
+### P1 diagnosability defect found and FIXED during the above
+
+`app/api/employees/chat/route.js` reported a failed task as
+`Engine execution failed: ${engineResult.error || engineResult.reason}` and
+returned a bare `500 {"error":"Internal server error"}`. `pollProvisionTask`
+never sets `error` or `reason` — it returns `status` and `result` — so the
+message rendered literally as `Engine execution failed: undefined` and the real
+cause was invisible to the customer and nearly invisible in logs.
+
+Fixed: the route now returns `502` with a truthful customer-facing message plus
+the terminal `status`, the persisted `detail`, and the `taskId`, and logs the
+same server-side. **Verified live**: the endpoint now returns
+`{"error":"Sophia could not complete this request.","detail":"Gateway returned
+500 Internal Server Error: Internal Server Error","taskId":"682e6884-…","status":"failed"}`.
+This is how the gateway root cause above became visible at all.
+
 ### Consolidated status after all 2026-09-04 work
 
 PASS: read-only Alpha/Beta state; production topology identification; P0
@@ -1261,10 +1330,11 @@ implemented, deployed, and behaviorally verified end to end for Alpha, which
 now holds genuine live readiness. **The fabricated-dashboard-activity blocker
 is RESOLVED.** No known open P0.
 
-Open P1: **Beta recovery not yet run** (distinct no-team-exists case), and
-**no harmless EA/GM task has been executed post-repair** — the only task
-results on record are from 2026-09-02 (`ACCEPTANCE_ALPHA_OK`), which predate
-all of this work and must not be cited as current evidence.
+Open **P1 (blocking, and now the single most important item)**: Alpha's live
+workforce is `ready` but **cannot execute any task** — reproducible upstream
+model-gateway 500. The product's core function is unproven and currently
+non-working. Open P1: **Beta recovery not yet run** (distinct no-team-exists
+case). Billing/employee lifecycle acceptance also not yet performed.
 
 Open P2: Supabase Auth Site URL still `localhost:3000`; Provision Laravel emits
 `http://` redirects behind the proxy (NPM's 301 corrects it); the EA panel is
