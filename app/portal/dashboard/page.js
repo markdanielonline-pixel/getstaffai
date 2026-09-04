@@ -65,20 +65,19 @@ export default async function Dashboard() {
                 Executive Assistant
               </h3>
               
-              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border-light)', alignSelf: 'flex-start', maxWidth: '80%' }}>
-                  <p style={{ margin: 0, color: 'var(--text-primary)' }}>Good morning. I've prepared your daily briefing. We have 3 new qualified leads from the SDR team, and Finance requires your approval for a $50 refund.</p>
-                </div>
-                <div style={{ background: 'rgba(201,168,76,0.1)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--accent-color)', alignSelf: 'flex-end', maxWidth: '80%' }}>
-                  <p style={{ margin: 0, color: 'var(--text-primary)' }}>Thanks. Approve the refund and draft follow-ups for the leads.</p>
-                </div>
+              {/* Real state only. This panel must never display fabricated
+                  assistant activity: an empty workspace shows as empty. */}
+              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                  {workforce.ready
+                    ? 'Your Executive Assistant is operational. You have no conversations yet.'
+                    : 'Your Executive Assistant is not operational yet, so there is nothing to show here.'}
+                </p>
               </div>
 
-              {/* Chat Input Placeholder */}
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input type="text" placeholder="Command your team..." style={{ flex: 1, padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none' }} />
-                <button className="btn btn-primary" style={{ padding: '0 2rem', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold' }}>Send</button>
-              </div>
+              <a href="/portal/dashboard/conversations" className="btn btn-primary" style={{ display: 'block', textAlign: 'center', padding: '1rem', background: 'linear-gradient(135deg, var(--accent-color), var(--accent-secondary))', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', textDecoration: 'none' }}>
+                Open Conversations
+              </a>
             </div>
           </div>
 
@@ -99,10 +98,8 @@ export default async function Dashboard() {
             {/* Priorities Today */}
             <div className="glass-panel" style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '0.5rem', border: '1px solid var(--border-light)' }}>
               <h3 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem', textTransform: 'uppercase' }}>Priorities Today</h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                <li>• Review Q3 SDR performance</li>
-                <li>• Finalize brand tone settings</li>
-              </ul>
+              {/* Real state only: no invented priorities. */}
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>No priorities yet.</p>
             </div>
 
             {/* Event Stream */}
