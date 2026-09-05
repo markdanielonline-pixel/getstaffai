@@ -23,6 +23,10 @@ export default async function Dashboard() {
   
   const orgId = ceo.org_id;
   const workforce = await inspectInitialWorkforce(orgId);
+  // The active organization is the source of truth for what company the CEO is
+  // currently operating. ceos.company_name is only the most recently entered
+  // name, so a founder who switched companies saw the wrong one here.
+  const { data: activeOrganization } = await supabase.from('organizations').select('name').eq('id', orgId).maybeSingle();
 
   // Fetch v2 stats
   const { data: employeesData } = await supabase.from('employees').select('*').eq('org_id', orgId);
@@ -49,7 +53,7 @@ export default async function Dashboard() {
               <div>
                 <h1 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', margin: 0 }}>Company Pulse</h1>
                 <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                  {ceo.company_name || 'Acme Corp'}
+                  {activeOrganization?.name || ceo.company_name || 'Your company'}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '1.5rem' }}>
