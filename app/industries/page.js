@@ -11,7 +11,7 @@ export default function Industries() {
             Built for Businesses That Need <br/><span className="text-gradient-vibrant">Consistent Conversion</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 3rem auto' }}>
-            If leads come in and money leaks out, an AI Revenue Workforce fixes the system.
+            If work piles up and follow-through slips, an AI workforce closes the gap.
           </p>
           <Link href="/portal/signup" className="btn btn-primary btn-pulse" style={{ padding: '1rem 3rem', fontSize: '1.1rem', background: 'var(--accent-color)', color: 'var(--text-primary)', fontWeight: '700' }}>
             Start Free Forever
@@ -89,7 +89,7 @@ export default function Industries() {
 
         {/* CTA */}
         <section className="container text-center" style={{ paddingBottom: '8rem' }}>
-          <h2 style={{ fontSize: '3.5rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Deploy your AI Revenue Workforce today.</h2>
+          <h2 style={{ fontSize: '3.5rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Establish your Company Office today.</h2>
           <Link href="/portal/signup" className="btn btn-primary btn-pulse" style={{ padding: '1.2rem 3rem', fontSize: '1.2rem', background: 'var(--text-primary)', color: 'var(--bg-primary)', fontWeight: '800' }}>
             Free Forever
           </Link>

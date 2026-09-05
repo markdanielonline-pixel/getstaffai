@@ -11,7 +11,7 @@ export default function QA() {
             Questions & Answers.
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 4rem auto', lineHeight: '1.6' }}>
-            How the AI Revenue Workforce operates.
+            How your AI workforce operates.
           </p>
         </section>
 

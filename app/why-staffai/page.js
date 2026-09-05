@@ -45,7 +45,7 @@ export default function WhyStaffAi() {
           <div className="glass-panel-vip animate-fade-in-up delay-300" style={{ padding: '4rem', textAlign: 'center', background: 'rgba(59,130,246,0.05)', marginBottom: '4rem' }}>
             <h3 style={{ fontSize: '2.5rem', color: 'var(--accent-color)', marginBottom: '1rem', fontStyle: 'italic' }}>Volume without decay.</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', lineHeight: '1.7', maxWidth: '600px', margin: '0 auto' }}>
-              Humans are incredible at relationship building, but they fail at scale. An AI Revenue Workforce maintains 100% urgency, 100% accuracy, and 100% conversion behavior whether it is handling 10 leads or 10,000 leads.
+              Humans are incredible at relationship building, but they fail at scale. An AI workforce keeps the same urgency and accuracy on the hundredth task of the day as it did on the first.
             </p>
           </div>
 

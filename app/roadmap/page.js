@@ -9,7 +9,7 @@ const PHASES = [
     color: '#10b981',
     items: [
       { title: 'AI Chat Widget', desc: 'Live on-site agents for Lead Gen, Appointment Setting, and Closing.' },
-      { title: 'Stripe Subscriptions', desc: '5 tiers (Launch → Dominance) with monthly & annual billing, 2 months free on annual plans.' },
+      { title: 'Stripe Subscriptions', desc: 'Company Office plus individual employees and teams, monthly & annual billing, annual priced at ten months for twelve.' },
       { title: 'Lead Capture & Email Enrollment', desc: 'AI automatically captures name & email and enrolls the lead into a nurture campaign instantly.' },
       { title: 'Targeted Lead Import', desc: 'Pull targeted business leads from Google Maps by niche and city, ready for outreach.' },
       { title: 'SMS Outreach', desc: 'Send AI-drafted SMS messages to leads directly from the dashboard.' },

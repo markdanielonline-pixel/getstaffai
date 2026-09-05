@@ -15,7 +15,7 @@ export default function Contact() {
           </p>
           <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)', display: 'inline-block', marginBottom: '4rem' }}>
             <span style={{ color: 'var(--accent-secondary)', fontWeight: 'bold' }}>Note: </span>
-            <span style={{ color: 'var(--text-secondary)' }}>We prefer you try the Launch Tier first, but if you need to speak with sales, we're here.</span>
+            <span style={{ color: 'var(--text-secondary)' }}>Most questions are answered fastest by starting the 7-day free trial, but if you need to speak with sales, we're here.</span>
           </div>
         </section>
 

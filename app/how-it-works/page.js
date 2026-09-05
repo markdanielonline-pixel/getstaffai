@@ -8,7 +8,7 @@ export default function HowItWorks() {
       <main style={{ paddingTop: '100px' }}>
         <section className="section container text-center animate-fade-in-up">
           <h1 style={{ fontSize: '4.5rem', fontWeight: '800', marginBottom: '1.5rem', letterSpacing: '-0.04em' }}>
-            How StaffAi Deploys Your <br/><span className="text-gradient-vibrant">AI Revenue Workforce</span>
+            How StaffAi Establishes Your <br/><span className="text-gradient-vibrant">Company Office</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 3rem auto' }}>
             A clear, engineered system designed to capture, nurture, book, and close without human bottlenecks.
