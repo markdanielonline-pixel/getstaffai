@@ -164,3 +164,14 @@ investigate these further in this session.
 - **Delta is a real paying tenant.** It carries a live Stripe subscription
   (`sub_1UC9IJBe48ha5T2sbvqmizEV`, trialing, 7-day trial). Cancel it before the
   trial converts if Delta is not meant to be kept.
+
+## Added 2026-09-05 (auth email)
+
+- **The production `RESEND_API_KEY` is invalid.** The Resend API rejects it
+  outright (`API key is invalid`), so every path through `lib/email.js` is
+  failing: reminder emails, the EA onboarding email, and any future auth mail.
+  This is separate from the Supabase Site URL problem and blocks the recorded
+  plan to move auth email off Supabase's rate-limited built-in SMTP. Needs a
+  fresh key and a verified `getstaffai.com` sending domain; the only verified
+  domain on the connected Resend account is `caribbeacon.com`, which is
+  Beacon's and must not be borrowed.

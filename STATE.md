@@ -2667,3 +2667,35 @@ Also proved the second half of the billing chain on real Stripe traffic:
 `customer.subscription.deleted` arrived and completed, taking the CEO to
 `dissolved` and the subscription to `cancelled` three seconds after the API call.
 ProvisionCore production is now `64bd416` on `canonical-deploy2`.
+
+## Supabase Site URL: cannot be fixed from here, 2026-09-05
+
+Mark asked for this to be fixed directly. It cannot be, and both routes were
+exhausted rather than assumed:
+
+- **Supabase Management API** needs a personal access token (`sbp_...`). None
+  exists on this machine: the CLI is installed (2.116.0) but not logged in,
+  `~/.supabase/access-token` is absent, and no token appears in the workspace.
+  The connected Supabase MCP exposes SQL, migrations, branches and advisors but
+  no auth-configuration tool, and on hosted Supabase GoTrue reads its config
+  from the platform, not from the project database, so SQL cannot reach it.
+- **Routing around the allow-list** was tested against six candidate targets
+  (app/apex/www getstaffai.com, two vercel.app hosts, localhost). Every one is
+  substituted with `http://localhost:3000`; only `localhost:3000` is accepted.
+  There is no reachable URL to redirect to.
+- **Sending the mail ourselves via Resend** is also unavailable: the production
+  `RESEND_API_KEY` is **invalid** (`API key is invalid` from the Resend API),
+  and the only verified domain on the connected Resend account is
+  `caribbeacon.com`, which belongs to Beacon and must not be used here.
+
+What was done instead: the product no longer lies about it. Password reset runs
+through a server action that asks Supabase what it would actually do with our
+redirect (`generateLink` sends no mail, so the probe is free) and only claims a
+link was sent when the answer can complete the reset. Otherwise it says reset is
+unavailable and points at support. Unknown addresses still get the same neutral
+response, so account existence is not leaked. Verified live on
+`app.getstaffai.com/portal/login`.
+
+This is self-correcting: adding `https://app.getstaffai.com/**` to the redirect
+allow-list makes the real reset mail start going out with no further code or
+configuration change.
