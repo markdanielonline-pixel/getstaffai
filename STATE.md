@@ -2735,3 +2735,61 @@ Also observed twice, and worth knowing before debugging auth links: Gmail's link
 scanner prefetches these one-time URLs and consumes the token, so a confirmation
 or recovery link can read as `otp_expired` before anyone clicks it. Both signup
 and recovery hit this during testing.
+
+## SESSION CLOSED — accepted state tagged, 2026-09-05
+
+The functional completion session is closed. No forensic, security, reliability,
+architecture or polish work was started; everything non-blocking is in
+`FORENSIC-BACKLOG.md` and stays there for a separate session.
+
+### Tagged accepted state
+
+Both repositories are tagged **`functional-acceptance-2026-09-05`**:
+
+- StaffAi — branch `main`, at the commit this section is part of. Deployed to
+  Vercel production and aliased to `app.getstaffai.com`.
+- ProvisionCore — `64bd416`, branch `canonical-deploy2`. The production tree at
+  `/root/provision-core` is on the same commit and branch, verified. Rollback of
+  last resort remains `git checkout vps-snapshot-20260904`.
+
+### What the tag represents
+
+A brand-new customer completing the whole journey unaided: signup, real
+confirmation email, login, onboarding, live Stripe checkout, webhook,
+entitlement, provisioning to ready in one unattended pass, real tasks executed
+by the AI employees, hiring an additional employee, and dismissing them with the
+runtime torn down. Cross-tenant boundaries probed at the application,
+integration and runtime layers with two live tenants. Password reset verified
+end to end after the redirect configuration was corrected. Tenant teardown
+verified, including the container and its volumes.
+
+Eight defects were found and fixed across the session, every one of them by
+running the product rather than by reading it:
+
+1. Readiness sampled ~10s after an install that takes ~51s, so one of the two
+   employees was always recorded as `error`, alternating between retries.
+2. The Docker gateway restart never restarted anything — the pkill pattern
+   never matched the gateway's real process title. Silently broken since the
+   per-tenant runtime work landed.
+3. Both enabled Stripe webhook endpoints pointed at the marketing site and
+   404'd, which is why no tenant had ever been entitled.
+4. The AI Workforce page rendered employees only inside departments and had no
+   working buttons at all; add/manage/remove did not exist.
+5. Portal chrome invented a name, a plan and a permanently green workforce
+   indicator that contradicted the dashboard beside it.
+6. A gateway-restart blip permanently demoted healthy employees — surfaced only
+   once fix 2 made restarts actually happen.
+7. Employee dismissal could never succeed: the wrong tenant binding was sent to
+   Provision.
+8. Tenant teardown could never succeed either: `DestroyTeamJob` had no Docker
+   arm, so per-tenant containers and volumes leaked permanently.
+
+Plus one defect introduced and removed inside the session: an automatic resume
+that re-provisioned healthy tenants in a loop.
+
+### Known-open, non-blocking
+
+Recorded in `FORENSIC-BACKLOG.md`, not fixed here. The one that is actively
+broken in production today is the **invalid `RESEND_API_KEY`**, which silently
+fails reminder and onboarding email. The rest are isolation, billing-completeness,
+observability and hygiene items.
