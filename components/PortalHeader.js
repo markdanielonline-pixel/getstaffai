@@ -1,7 +1,12 @@
 "use client";
 import React from 'react';
+import { usePortalIdentity, initials } from './PortalIdentity';
 
 export default function PortalHeader({ title = "Dashboard" }) {
+  const identity = usePortalIdentity();
+  // No invented name: an unknown viewer is shown as unknown.
+  const name = identity?.name || 'Your account';
+  const planLabel = identity?.planLabel || 'No active plan';
   return (
     <header style={{
       height: '80px',
@@ -57,11 +62,11 @@ export default function PortalHeader({ title = "Dashboard" }) {
             fontWeight: 'bold',
             fontSize: '1.1rem'
           }}>
-            A
+            {initials(identity?.name)}
           </div>
           <div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>Alex Smith</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Launch Tier Admin</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>{name}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{planLabel}</div>
           </div>
         </div>
       </div>

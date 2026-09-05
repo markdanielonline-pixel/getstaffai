@@ -1,6 +1,5 @@
 import { redirect, notFound } from 'next/navigation';
 import PortalHeader from '@/components/PortalHeader';
-import PortalSidebar from '@/components/PortalSidebar';
 import ConversationsView from '@/components/ConversationsView';
 import { getCEO } from '@/app/actions/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -39,7 +38,6 @@ export default async function ConversationPage({ params }) {
     <>
       <PortalHeader title="Conversations & Transcripts" />
       <main style={{ paddingTop: '80px', height: '100vh', display: 'flex' }}>
-        <PortalSidebar />
         <div style={{ flex: 1, marginLeft: '280px' }}>
           <ConversationsView
             ceo={ceo}

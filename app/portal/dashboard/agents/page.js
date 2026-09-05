@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import PortalHeader from '@/components/PortalHeader';
-import PortalSidebar from '@/components/PortalSidebar';
 import WorkforceRoster from '@/components/WorkforceRoster';
 import { getCEO } from '@/app/actions/auth';
 import { hireEmployeeAction, dismissEmployeeAction } from '@/app/actions/workforce';
@@ -28,8 +27,6 @@ export default async function AIWorkforce() {
     <>
       <PortalHeader title="Org Chart" />
       <main style={{ padding: '7rem 2.5rem 2.5rem 2.5rem', minHeight: '100vh', display: 'flex', background: 'var(--bg-primary)' }}>
-        <PortalSidebar />
-
         <div style={{ flex: 1, marginLeft: '2rem' }}>
           <div style={{ marginBottom: '2.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '1rem' }}>
             <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>Your AI Workforce</h2>

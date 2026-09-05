@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import PortalHeader from '@/components/PortalHeader';
-import PortalSidebar from '@/components/PortalSidebar';
 import WorkforceProvisioningStatus from '@/components/WorkforceProvisioningStatus';
 import { getCEO } from '@/app/actions/auth';
 import { retryInitialWorkforce } from '@/app/actions/workforce';
@@ -35,8 +34,6 @@ export default async function Dashboard() {
     <>
       <PortalHeader title="Command Center" />
       <main style={{ padding: '7rem 2.5rem 2.5rem 2.5rem', minHeight: '100vh', display: 'flex', background: 'var(--bg-primary)' }}>
-        <PortalSidebar />
-
         <div style={{ flex: 1, marginLeft: '2rem', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
           
           {/* Main Column: Pulse & EA Thread */}

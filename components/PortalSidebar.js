@@ -1,9 +1,12 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { usePortalIdentity, workforceIndicator } from './PortalIdentity';
 
 export default function PortalSidebar() {
   const pathname = usePathname();
+  const identity = usePortalIdentity();
+  const workforce = workforceIndicator(identity?.workforceStatus);
 
   const links = [
     { name: 'Overview', href: '/portal/dashboard', icon: '📊' },
@@ -68,10 +71,10 @@ export default function PortalSidebar() {
         marginTop: 'auto'
       }}>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Current Plan</div>
-        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Launch Tier</div>
+        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{identity?.planLabel || 'No active plan'}</div>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
-          Workforce Active
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: workforce.colour, boxShadow: `0 0 8px ${workforce.colour}` }}></div>
+          {workforce.text}
         </div>
         <Link href="/portal/dashboard/settings" style={{ fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>
           Manage billing →
