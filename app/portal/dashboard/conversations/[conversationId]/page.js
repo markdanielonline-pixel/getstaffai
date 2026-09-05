@@ -3,19 +3,24 @@ import PortalHeader from '@/components/PortalHeader';
 import ConversationsView from '@/components/ConversationsView';
 import { getCEO } from '@/app/actions/auth';
 import { createClient } from '@/lib/supabase/server';
+import { isEntitled } from '@/lib/entitlement';
 
 export default async function ConversationPage({ params }) {
   const ceo = await getCEO();
   if (!ceo) redirect('/portal/login');
-  if (ceo.status === 'provisional') redirect('/portal/incorporate');
+  if (!isEntitled(ceo)) redirect('/portal/incorporate');
 
   const { conversationId } = await params;
   const supabase = await createClient();
 
+  // Scoped to the active organization, and to employees who are still here:
+  // an inner join on employees also drops threads whose employee was dismissed.
   const { data: conversations } = await supabase
     .from('conversations')
-    .select('*, employees(id, name, role, employee_type, avatar_initials, avatar_color, status, grade)')
+    .select('*, employees!inner(id, name, role, title, employee_type, avatar_initials, avatar_color, status, grade, org_id)')
     .eq('ceo_id', ceo.id)
+    .eq('employees.org_id', ceo.org_id)
+    .neq('employees.status', 'alumni')
     .order('updated_at', { ascending: false });
 
   const { data: conversation } = await supabase
