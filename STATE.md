@@ -2931,7 +2931,7 @@ rewritten.
   real rather than advertised.
 
 Fact worth knowing before wiring it: the cal.com container on the box is named
- but is configured with
- - it serves **Beacon**.
+`lynkwe-calcom` but is configured with
+`NEXT_PUBLIC_WEBAPP_URL=https://booking.caribbeacon.com` - it serves **Beacon**.
 Staff AI must not borrow it. Staff AI needs its own cal.com instance or account,
 in line with the workspace rule that projects never share infrastructure.
