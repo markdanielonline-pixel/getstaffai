@@ -1,8 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function AIChatWidget() {
+  // The public pre-login agent sells; the authenticated agent supports an
+  // existing customer and knows their account. They are different employees
+  // with different jobs, so the widget routes to the right one.
+  const pathname = usePathname();
+  const isCustomerArea = (pathname || '').startsWith('/portal/dashboard');
+  const endpoint = isCustomerArea ? '/api/support/agent' : '/api/chat';
   const [isOpen, setIsOpen]     = useState(false);
   const [phase, setPhase]       = useState('form'); // 'form' | 'chat'
   const [lead, setLead]         = useState({ name: '', email: '' });
@@ -30,13 +37,13 @@ export default function AIChatWidget() {
     setMessages(prev => [...prev, { id: aiId, role: 'assistant', content: '' }]);
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: abortRef.current.signal,
         body: JSON.stringify({
           messages: history,
-          agentType: 'lead_gen',
+          agentType: isCustomerArea ? 'customer_success' : 'lead_gen',
           leadName: lead.name,
           leadEmail: lead.email,
         }),
@@ -48,7 +55,7 @@ export default function AIChatWidget() {
         throw new Error(data.error || `Server error ${res.status}`);
       }
 
-      const aiText = data.content || '';
+      const aiText = data.text || data.content || '';
 
       setMessages(prev =>
         prev.map(m => m.id === aiId ? { ...m, content: aiText } : m)
