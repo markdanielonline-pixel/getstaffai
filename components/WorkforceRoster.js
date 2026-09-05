@@ -24,7 +24,12 @@ function money(cents) {
 export default function WorkforceRoster({ employees, roles, canHire, hireAction, dismissAction }) {
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState(null);
-  const [roleKey, setRoleKey] = useState(roles[0]?.key || '');
+  // A role is offered only when Staff AI can actually deliver its advertised
+  // outcome. The rest are named as coming soon rather than hidden, so the
+  // catalogue stays honest without pretending the role does not exist.
+  const sellable = roles.filter(role => role.status !== 'coming_soon');
+  const comingSoon = roles.filter(role => role.status === 'coming_soon');
+  const [roleKey, setRoleKey] = useState(sellable[0]?.key || '');
 
   const current = employees.filter(e => e.status !== 'alumni');
   const alumni = employees.filter(e => e.status === 'alumni');
@@ -75,7 +80,7 @@ export default function WorkforceRoster({ employees, roles, canHire, hireAction,
               onChange={event => setRoleKey(event.target.value)}
               style={{ padding: '0.7rem', minWidth: '20rem', borderRadius: '0.4rem', border: '1px solid var(--border-light)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
             >
-              {roles.map(role => (
+              {sellable.map(role => (
                 <option key={role.key} value={role.key}>{role.name} - {money(role.monthly)}</option>
               ))}
             </select>
@@ -91,6 +96,11 @@ export default function WorkforceRoster({ employees, roles, canHire, hireAction,
         ) : (
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
             Complete your Company Office subscription to hire additional employees.
+          </p>
+        )}
+        {comingSoon.length > 0 && (
+          <p style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Coming soon: {comingSoon.map(role => role.name).join(', ')}.
           </p>
         )}
       </section>
