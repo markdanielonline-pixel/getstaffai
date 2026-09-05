@@ -94,50 +94,38 @@ export async function getCEO() {
 }
 
 
-// Supabase rejects any redirect target that is not in its project allow-list and
-// silently substitutes the Site URL instead. On this project that is still
-// http://localhost:3000, so a recovery link carries its token to a dead page on
-// the customer's own machine and the reset page never receives it. Promising
-// "we sent you a link" in that state is a false promise.
+// The recovery link is delivered by Supabase, so redirectTo has to be a URL the
+// project's allow-list actually accepts; anything else is silently replaced with
+// the Site URL and the token never reaches the reset page.
 //
-// generateLink does not send mail, so it is a safe way to ask Supabase what it
-// would actually do. When the allow-list is corrected this starts working on its
-// own, with no further code or configuration change.
+// This deliberately makes exactly one call. An earlier version probed the
+// configuration with generateLink first, which cost an email-rate-limit slot,
+// got the real send refused with 429, and still told the customer a link was on
+// its way. A send failure is now reported as a send failure.
+//
+// resetPasswordForEmail does not distinguish unknown addresses, so the success
+// message stays neutral on its own and cannot leak which addresses have accounts.
 export async function requestPasswordReset(email) {
   const target = String(email || '').trim();
   if (!target) return { ok: false, message: 'Enter your email address above, then select Forgot password.' };
 
   const requestHeaders = await headers();
-  const origin = requestHeaders.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || '';
-  const redirectTo = `${origin}/auth/confirm?next=/portal/reset-password`;
-  const neutral = 'If that address has an account, a password reset link is on its way.';
+  const origin = requestHeaders.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://app.getstaffai.com';
 
-  try {
-    const admin = await createAdminClient();
-    const { data, error } = await admin.auth.admin.generateLink({
-      type: 'recovery', email: target, options: { redirectTo },
-    });
-    // An unknown address errors here. Stay neutral rather than confirming which
-    // addresses have accounts.
-    if (error || !data?.properties?.action_link) return { ok: true, message: neutral };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(target, {
+    redirectTo: `${origin}/auth/callback?next=/portal/reset-password`,
+  });
 
-    const honoured = new URL(data.properties.action_link).searchParams.get('redirect_to') || '';
-    if (origin && !honoured.startsWith(origin)) {
-      console.error(`[auth.reset] Supabase substituted redirect_to=${honoured} for ${redirectTo}; password reset cannot complete.`);
-      return {
-        ok: false,
-        message: 'Password reset is temporarily unavailable. Please contact support and we will restore your access.',
-      };
-    }
-  } catch (probeFailure) {
-    console.error('[auth.reset] Could not verify reset configuration:', probeFailure?.message || probeFailure);
-    return { ok: true, message: neutral };
+  if (error) {
+    console.error('[auth.reset] resetPasswordForEmail failed:', error.status, error.message);
+    return {
+      ok: false,
+      message: error.status === 429
+        ? 'Too many reset requests just now. Please wait a minute and try again.'
+        : 'We could not send a reset link just now. Please try again shortly.',
+    };
   }
 
-  // The allow-list accepts our origin, so Supabase's own recovery mail will land
-  // somewhere that can complete the reset.
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(target, { redirectTo });
-  if (error) console.error('[auth.reset] resetPasswordForEmail failed:', error.message);
-  return { ok: true, message: neutral };
+  return { ok: true, message: 'If that address has an account, a password reset link is on its way.' };
 }
