@@ -2357,3 +2357,185 @@ existing `docker-runtime:<serverId>` one), then retry Gamma to `ready` and run
 the harmless task. Everything else in the fresh-customer path is proven.
 
 No database edits, no manual container repair, no faked readiness.
+
+## FUNCTIONAL BUILD, 2026-09-05 — convergence and gateway fixed; blocked on two console settings
+
+Continuation of the 2026-09-04 functional session. Everything below was done
+through the product, over SSH, or through provider APIs. No database edits, no
+manual container repair, no fabricated readiness.
+
+Checkpoints: StaffAi `925d79a` → `8d6fcaf` (+ chrome commit), branch `main`.
+ProvisionCore production `/root/provision-core` on `canonical-deploy2` at
+`d5b13c6`. Rollback for Provision remains `git checkout vps-snapshot-20260904`.
+
+### The alternating agent-install bug: it was never a race
+
+`ProvisionDockerServerJob` and `CreateAgentOnServerJob` both already take
+`Cache::lock('docker-runtime:<serverId>')`, so agent installs were serialised
+all along. The alternation came from Staff AI's side.
+
+`runEmployeeFactory` called `inspect(employee)` — a single `syncProvisionAgent`
+sample — the instant `provisionAgentRuntime` returned, and threw
+`provision_runtime_status=error` if that one sample was not operational. Real
+production timings: **agent install takes ~51 seconds** (Sophia created 23:52:13,
+active 23:53:04; Marcus created 23:54:24, active 23:55:16). Staff AI sampled
+Marcus at 23:54:34 — **10 seconds after creating him**. Whichever agent was
+still installing when its sample landed was recorded as `error`, which is why
+Provision showed both agents active while Staff AI showed one broken, and why
+the failing one alternated between retries.
+
+Fix (`925d79a`): `awaitProvisionAgentOperational` / `awaitProvisionTeamOperational`
+poll the existing strict verifiers until operational or a budget expires
+(agent 180s, team 240s, sized against the measured timings). Readiness evidence
+is unchanged and just as strict — only *when* it is sampled changed. Ownership
+mismatches still throw immediately and are never retried. `maxDuration = 300` was
+added to the routes that can trigger provisioning, and the dashboard now resumes
+provisioning on a 30s interval instead of asking the customer to keep pressing a
+button; the provisioning lease rejects overlapping resumes harmlessly.
+
+**Verified live.** Gamma re-provisioned through the dashboard from
+`gm:v1=retryable` to `initial-workforce:v1=completed`, both employees
+`active/active`, in about four minutes with no intervention.
+
+### The second bug: the Docker gateway restart never restarted anything
+
+With provisioning converged, Gamma's first real task still failed:
+`Gateway returned 400 Bad Request: Unknown agent '01m1qdckh7v31byr51rhkc0ekf'`.
+
+The gateway process runs with the process title **`openclaw-gateway`**. Both
+Docker restart paths killed it with `pkill -f "openclaw gateway"` — a pattern
+that matches neither that title nor anything else. **Every gateway restart
+inside a runtime container has always been a silent no-op.** Evidence: the
+gateway process in Gamma's container started at 23:50:05, before either agent
+existed, and had never restarted; `openclaw health` listed only the default
+`main` agent while `openclaw.json` and `openclaw agents list` both listed Sophia
+and Marcus.
+
+This also explains why `WorkforceReadiness` reported the agents installed: it
+reads the config file, not the live gateway. Config, CLI and Provision all
+agreed; only the running gateway disagreed.
+
+Fix (ProvisionCore `88649c9`): broaden the pattern to `openclaw[- ][g]ateway`
+in `OpenClawDriver::restartGateway` and `AgentInstallScriptService`. The `[g]`
+stops it matching the issuing command's own cmdline. Deployed, then proved by
+dispatching `RestartGatewayJob` for Gamma's server: old PID 36 replaced by PID
+10046, and the live gateway then reported both agent ids.
+
+### Acceptance result: real task through the product
+
+`POST /api/employees/chat` as the Gamma CEO returned **`GAMMA_FRESH_TENANT_OK`**
+in 21.9s. Provision task `01m1qgfx1wkp9d21gwrb0cj1tj`, local task
+`d8d11083-9a99-4f47-8778-ec9b961bf916`, status `completed` / `done`, persisted as
+an employee message in conversation `9040c842-5b14-4fc7-83de-c1f81515bcbd`.
+
+The full lineage is on the record in `employee_tasks`: 401 (shared gateway) →
+400 Unknown agent (stale gateway) → done.
+
+### Employee add / manage / remove: built, was entirely non-functional
+
+The AI Workforce page rendered employees only inside departments, so Gamma —
+which has none — saw an empty org chart while paying for two employees. Its
+"+ Hire Employee", "Profile", "Promote" and "Fire" buttons had no handlers at all.
+
+- Provision gained `DELETE /api/integrations/staffai/agents/{externalId}`
+  (`d5b13c6`), requiring and checking `team_external_id`, dispatching the
+  existing `RemoveAgentFromServerJob`, and idempotent when the agent is already
+  gone. Without it Staff AI could only ever grow a workforce.
+- Staff AI gained `lib/hiring.js`, `hireEmployeeAction` / `dismissEmployeeAction`
+  and `components/WorkforceRoster.js`. Hire installs a real agent through the
+  existing factory and is gated on the same entitlement check Conversations
+  uses. Dismiss tears the Provision agent down *first*, then records the
+  departure as `alumni`, so nobody is marked departed while their agent is still
+  installed. The EA and GM are what Company Office pays for and are not
+  dismissable. The buttons that did nothing are gone.
+- The roster shows real lifecycle status and real runtime status per employee.
+
+Verified live: the roster lists both Gamma employees as Active / Runtime active,
+and the hire panel correctly refuses a provisional CEO. **The hire and dismiss
+round-trip has not yet been executed** — it needs an entitled tenant, which needs
+the checkout below.
+
+### Portal chrome was fabricating identity
+
+Every dashboard page rendered a hardcoded "Alex Smith", "Launch Tier Admin",
+"Launch Tier", and a permanently green "Workforce Active" dot — the last of
+which contradicted the dashboard's own status on a broken tenant. The dashboard
+layout now loads the real CEO, plan and organization workforce status once per
+request and feeds the header and sidebar; unknown values read as unknown. The
+duplicate `PortalSidebar` each page stacked on top of the layout's was removed.
+
+### Cross-tenant execution probe
+
+Application layer, as an authenticated Gamma CEO against three foreign
+conversations (Beta, Alpha, synthetic audit org): all **404 Conversation not
+found**. The agents page contains no foreign employee ids.
+
+Provision integration layer: deleting another tenant's agent while naming
+Gamma's team is a no-op (`already_absent`, nothing deleted); task dispatch with
+mismatched team/agent is 404; unauthenticated and wrong-token reads are 401.
+
+Runtime layer: each tenant has its own container, its own named volumes for
+`/root/.openclaw` and `/etc/provisiond`, `provision.server-id` /
+`provision.team-id` ownership labels, and its own gateway token. The gateway
+binds loopback and is **not** reachable from a neighbouring container.
+
+One real exposure was found and is recorded in the backlog: every runtime shares
+the `provision_default` Docker network, and each container's unauthenticated
+noVNC on port 6080 **is** reachable from its neighbours (HTTP 200 confirmed).
+
+Note: only Gamma currently has a Provision team with an `external_id`. Alpha's
+and Beta's agents no longer exist in Provision, so the two-tenant probe should be
+re-run once a second live tenant exists.
+
+### Billing: the reason no tenant has ever been entitled
+
+The Stripe live key is valid (`acct_1JCwmmBe48ha5T2s`, "StaffAi"). The webhook
+handler is deployed and verifying signatures — an unsigned POST to
+`https://app.getstaffai.com/api/webhooks/stripe` returns 400 "No signatures
+found matching the expected signature".
+
+**But both enabled Staff AI webhook endpoints in Stripe point at the marketing
+site**, and both 404:
+
+- `https://getstaffai.com/api/webhooks/stripe` → 404
+- `https://getstaffai.com/api/billing/webhook` → 404
+
+Nothing has ever been delivered to the handler. A successful checkout would take
+the customer's money and never grant entitlement. This is the direct cause of
+every tenant sitting at `status=provisional`.
+
+`STRIPE_WEBHOOK_SECRET` in Vercel is a well-formed `whsec_` value but remains
+**unverified** — the harness blocks both creating Stripe endpoints and forging
+signatures, so only a real Stripe-delivered event can prove it matches.
+
+### Second blocker found: Supabase auth redirects go to localhost
+
+The project's Site URL is `http://localhost:3000` and
+`https://app.getstaffai.com/**` is not in the redirect allow-list. Confirmed by
+generating recovery links: every `redirectTo` under `app.getstaffai.com` comes
+back as `redirect_to=http://localhost:3000`.
+
+Consequences for a brand-new customer:
+- Signup confirmation confirms the account, then dumps them on a dead
+  `http://localhost:3000` page.
+- **Password reset is a dead end** — the recovery token lands on localhost, so
+  the reset page never receives it.
+
+### Human-only blockers (both console-only, neither is code)
+
+1. **Stripe** — point the Staff AI webhook at
+   `https://app.getstaffai.com/api/webhooks/stripe` and supply its signing
+   secret so it can be set in Vercel.
+2. **Supabase** — Authentication → URL Configuration: Site URL
+   `https://app.getstaffai.com`, redirect allow-list
+   `https://app.getstaffai.com/**`.
+3. **The card** — a real checkout, which is the only thing that can prove
+   webhook → entitlement and unlock the hire/dismiss round-trip.
+
+Everything else in the fresh-customer path is built, deployed and verified.
+
+### Credentials note
+
+The Tenant Gamma CEO (`markdanielphd+staffai-gamma-0904@gmail.com`) had its
+password administratively set this session to drive the product through the real
+UI. Rotate it if that is not desired.

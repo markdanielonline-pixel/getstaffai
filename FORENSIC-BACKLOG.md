@@ -56,3 +56,73 @@ investigate these further in this session.
   no org, no Stripe customer, no charge.
 - Alpha and Beta CEO passwords were administratively reset during acceptance;
   rotate or reset if that is not desired.
+
+## Added 2026-09-05 (functional session, not investigated further)
+
+### Isolation
+
+- **Tenant runtimes can reach each other's noVNC.** Every
+  `provision-runtime-*` container sits on the shared `provision_default` Docker
+  network, and each runs an unauthenticated noVNC/websockify on port 6080
+  (`x11vnc ... -nopw`). From inside Gamma's container,
+  `http://172.24.0.2:6080/` and `/vnc.html` both return **HTTP 200** — that is
+  a neighbouring tenant's virtual display. The OpenClaw gateway itself is
+  correctly bound to loopback and is *not* reachable, and volumes, tokens and
+  ownership labels are properly per-tenant; this is the one hole. Fix by giving
+  each runtime its own network, binding 6080 to loopback, or dropping VNC from
+  the production image. Confirmed exposure, not a functional blocker.
+
+- **`WorkforceReadiness` trusts the config file, not the live gateway.** It
+  checks `openclaw.json`'s agent list, which is why it reported both Gamma
+  agents installed while the running gateway answered "Unknown agent". The
+  underlying restart bug is fixed, so config and gateway now agree, but
+  readiness would not catch a recurrence.
+
+### Billing
+
+- **Two dead Stripe webhook endpoints remain enabled** pointing at
+  `getstaffai.com` (`/api/webhooks/stripe` and `/api/billing/webhook`); both
+  404. They will accumulate delivery failures and Stripe may auto-disable them.
+  Disable or delete once the correct endpoint is live.
+
+- **Hiring does not add a Stripe subscription item.** `hireEmployeeAction`
+  installs a real agent and stores `seat_fee_cents` from the catalog, but no
+  seat is added to the customer's subscription, so an extra employee is not
+  billed. Gated behind the entitlement check, so it cannot be reached by a
+  provisional CEO, but it is revenue leakage the moment a tenant is entitled.
+
+- **`vercel env pull` returns empty values for env vars marked sensitive.**
+  `PROVISION_BASE_URL`, `PROVISION_INTEGRATION_TOKEN`,
+  `STRIPE_PRICE_COMPANY_OFFICE` and the per-role price ids all read as `""`
+  locally while working fine in production. Reads exactly like "the variable is
+  missing". Related to the existing `vercel env ls` date trap below.
+
+### Provisioning efficiency
+
+- **`runInitialWorkforce` re-runs the whole sequence when readiness evidence
+  ages out.** `operational()` requires `checked_at` within 60s, and each hire
+  takes ~51s, so the EA's evidence has usually expired by the time the GM
+  finishes — the run throws "Readiness evidence expired" and the dashboard's
+  auto-resume starts over. It converges (Gamma took about four minutes and three
+  passes) but does two to three times the necessary work. Either widen the
+  freshness window for the final all-clear or re-sample only the stale ones.
+
+- **`CreateAgentOnServerJob` skips deploy entirely when the agent is already
+  `Active`.** Correct for idempotency, but it means re-provisioning can never
+  repair a runtime whose config drifted — which is why Gamma needed an explicit
+  `RestartGatewayJob` after the pkill fix rather than another retry.
+
+### Data hygiene
+
+- **`role_templates` holds 14 rows that are the same two roles seeded once per
+  org**, with no `org_id` column to scope them. `lib/hiring.js` deliberately
+  bypasses the table and supplies templates inline. The table should either be
+  properly org-scoped or dropped.
+
+### Auth
+
+- **Supabase Site URL is `http://localhost:3000`** and
+  `https://app.getstaffai.com/**` is not in the redirect allow-list, so signup
+  confirmation lands on a dead page and password reset is a dead end. Recorded
+  here as well as in STATE because it is a *blocker*, not a backlog item — it
+  needs a console change only Mark can make.
