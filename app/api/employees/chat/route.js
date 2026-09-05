@@ -44,11 +44,23 @@ export async function POST(req) {
 
     // 2. Dispatch the message to the employee's real Provision workforce runtime.
     const idempotencyKey = `chat_${conversationId}_${Date.now()}`;
-    const engineResult = await dispatchTaskToAgent(employee.id, message.trim(), {
-      idempotencyKey,
-      title: `CEO message to ${employee.name}`,
-      waitForResult: true,
-    });
+    // A pre-flight failure here (runtime not active, organization runtime
+    // unavailable) used to fall through to the bare 500 below, which told the
+    // customer nothing and hid a diagnosable cause.
+    let engineResult;
+    try {
+      engineResult = await dispatchTaskToAgent(employee.id, message.trim(), {
+        idempotencyKey,
+        title: `CEO message to ${employee.name}`,
+        waitForResult: true,
+      });
+    } catch (dispatchError) {
+      console.error(`[employees/chat] dispatch to ${employee.id} failed:`, dispatchError?.message || dispatchError);
+      return NextResponse.json({
+        error: `${employee.name} is not available right now.`,
+        detail: dispatchError?.message || 'Runtime unavailable',
+      }, { status: 409 });
+    }
 
     if (!engineResult.success) {
       // pollProvisionTask reports terminal outcomes as `status`/`result`; it never
