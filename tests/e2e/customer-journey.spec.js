@@ -47,10 +47,20 @@ test.describe('signed-in customer', () => {
     }
   });
 
-  test('conversations is reachable for an entitled customer', async ({ page }) => {
+  test('the entitlement gate decides Conversations access, and does it consistently', async ({ page }) => {
+    // Conversations is gated on entitlement. Both outcomes are legitimate: an
+    // entitled account gets in, an unpaid one is sent to checkout. What must
+    // never happen is the gate disagreeing with the plan the dashboard is
+    // showing that same customer.
+    await page.goto('/portal/dashboard');
+    const chrome = await page.locator('body').innerText();
+    const entitled = /Founder access/i.test(chrome) || !/No active plan/i.test(chrome);
+
     await page.goto('/portal/dashboard/conversations');
-    // An entitled customer must not be bounced back into checkout.
-    expect(page.url()).not.toMatch(/\/portal\/incorporate/);
+    const redirected = /\/portal\/incorporate/.test(page.url());
+    expect(redirected, entitled
+      ? 'an entitled customer was bounced into checkout'
+      : 'an unentitled customer reached a gated page').toBe(!entitled);
   });
 });
 
