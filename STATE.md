@@ -2918,3 +2918,20 @@ An earlier commit in this session claimed a UI-triggered password reset
 "delivered nothing, verified against the live inbox". The email had in fact been
 sent and simply was not indexed when the search ran. Recorded rather than
 rewritten.
+
+## Architectural direction from Mark, 2026-09-05
+
+- **Lynkwe is Staff AI's social media manager**, not an unrelated business. Its
+  current infrastructure is outdated and will be retired once Staff AI is up;
+  **OutReply becomes the engine behind Lynkwe** at that point. Nothing is to be
+  decommissioned before then - Lynkwe is still live and serving.
+- **Cal.com is the booking engine for Staff AI everywhere appointments are
+  booked.** Staff AI builds the client-facing experience; cal.com runs behind
+  it. This is what makes the Receptionist and appointment-setting capability
+  real rather than advertised.
+
+Fact worth knowing before wiring it: the cal.com container on the box is named
+ but is configured with
+ - it serves **Beacon**.
+Staff AI must not borrow it. Staff AI needs its own cal.com instance or account,
+in line with the workspace rule that projects never share infrastructure.
