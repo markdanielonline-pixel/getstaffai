@@ -175,3 +175,67 @@ investigate these further in this session.
   fresh key and a verified `getstaffai.com` sending domain; the only verified
   domain on the connected Resend account is `caribbeacon.com`, which is
   Beacon's and must not be borrowed.
+
+## Added 2026-09-05, from the Launch Employee Certification pass
+
+### Blocking a role from sale
+
+1. **Bookkeeper has no ledger.** ERPNext/Frappe runs on the host and
+   `lib/frappe.js` can provision sites and users, but production has no
+   `FRAPPE_*` or `INFISICAL_*` configuration, so nothing connects. The running
+   stack is also not Staff AI's: its sites are on `dev.caribbeacon.com` and the
+   provisioner container runs with `FRAPPE_PROVISION_WEBHOOK_SECRET=dummy-secret`
+   and Beacon's database password. Staff AI needs its own Frappe configuration
+   and its own tenant domain before the Bookkeeper is real. Needs Mark: a
+   decision on whether Staff AI gets its own Frappe deployment or a separate
+   site namespace on the existing one.
+2. **Receptionist has no calendar and no phone.** Staff AI has no Cal.com
+   instance or API key of its own (the `lynkwe-calcom` container serves Beacon at
+   `booking.caribbeacon.com` and must not be borrowed), and
+   `TELNYX_MESSAGING_PROFILE_ID` is set in production without a
+   `TELNYX_API_KEY`. Needs Mark: a Cal.com account or instance for Staff AI and
+   a Telnyx API key.
+3. **Social Media Manager cannot publish.** No OutReply credentials in
+   production, and no employee path publishes to a social account. Needs Mark:
+   OutReply credentials.
+4. **Sales Representative cannot send or record anything.** `lib/tools/send_email`
+   (Resend) and `lib/crm/moxie.js` both exist and `MOXIE_API_KEY` is set, but
+   `lib/engine.js` - the only module that registers a tool for an employee - is
+   imported by nothing. The employee runtime reaches neither. This one is
+   engineering only, no credentials needed: wire a tool bridge the OpenClaw agent
+   can call.
+
+### Reliability, found by running the product
+
+5. **Provision rate-limits the Staff AI integration.** Dispatching to five
+   employees at once returned five `409 Too Many Attempts` from
+   `/api/integrations/staffai/tasks`. The customer is told their employees are
+   unavailable. Needs either a higher limit for the integration token or
+   client-side queueing in `lib/provision.js`.
+6. **Concurrent tasks on one tenant runtime fail.** Of five simultaneous tasks,
+   two ended `fetch failed` and one returned the runtime's own `LLM request
+   timed out` text. The same tasks run one at a time all succeeded.
+7. **A provider error is presented as the employee's answer.** OpenClaw reports
+   a model timeout as a *successful* task whose `result_summary` is the raw error
+   text, and Staff AI writes it into the conversation verbatim. The customer sees
+   "increase `models.providers.<id>.timeoutSeconds`" from their Administrative
+   Assistant. Terminal results that look like runtime errors should be caught
+   before they reach a customer.
+8. **Employee names are not unique within a company.** Two hires in the same
+   organization were both generated as "Taylor (AI)".
+9. **The pricing page is bot-walled.** `www.getstaffai.com/pricing` serves
+   Vercel's Security Checkpoint to non-browser clients, so an agent (including a
+   customer's own Administrative Assistant) cannot read it directly.
+10. **`capabilities` and `required_tools` are decorative.** Both are recorded on
+    the Provision agent and neither provisions or restricts anything. Any tool
+    gating in future has to be built, not assumed.
+11. **`role_templates` holds only two roles, duplicated seven times each.** Every
+    real role brief now comes from `lib/roles/playbooks.js`; the table is dead
+    seed data and should be removed or rebuilt.
+
+### Still not started from the launch-readiness mission
+
+Observability (OpenTelemetry/Grafana Alloy), the DeepSeek V4 Pro reliability
+engineer (`deepseek/deepseek-v4-pro`, $0.85/$1.70 per M, confirmed available),
+the executive integration API, the AI-guided sales experience, lead email
+verification, and dispatching sales follow-up to Staff AI's own workforce.

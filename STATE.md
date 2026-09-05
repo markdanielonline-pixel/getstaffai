@@ -2935,3 +2935,127 @@ Fact worth knowing before wiring it: the cal.com container on the box is named
 `NEXT_PUBLIC_WEBAPP_URL=https://booking.caribbeacon.com` - it serves **Beacon**.
 Staff AI must not borrow it. Staff AI needs its own cal.com instance or account,
 in line with the workspace rule that projects never share infrastructure.
+
+## LAUNCH EMPLOYEE CERTIFICATION, 2026-09-05 — runtime fix proven, five roles certified
+
+### 1. The OpenClaw blocker: root cause found, fixed, proven on a fresh tenant
+
+The image pin was never the whole problem, and pinning it alone could never have
+held. `AgentUpdateScriptService` set the pinned version and the dist integrity
+check as plain shell variables and then referenced them from inside
+`flock /var/lock/openclaw-install.lock -c '...'`. `flock -c` runs its payload in
+a **new shell**, and neither variable was exported, so the payload saw both as
+empty:
+
+```
+npm install -g "openclaw@"     ->  npm resolves this to the newest release
+sh -c ""                       ->  always succeeds, so a corrupt tree was
+                                   never cleared before installing over it
+```
+
+Every agent install and every agent update therefore upgraded the tenant runtime
+off the pin and layered the new build over the old one. That single defect
+produced both symptoms chased separately all week: runtimes drifting from
+2026.7.1-2 to 2026.9.x no matter what the image carried, and the mixed `dist/`
+that makes the gateway return 500 with ENOENT.
+
+Confirmed on a live tenant runtime before fixing it: the npm debug log for the
+Certification Co container records `verbose argv "install" "--global"
+"openclaw@"`, and its `package.json` read 2026.9.2 while Provision's own
+database recorded 2026.7.1-2 for that same server.
+
+Both values are now interpolated as literals, matching the already-correct path
+in `ChatGPTAuthService`, and an empty pin raises rather than emitting an
+unpinned install. The regression test had asserted the broken form, so it
+enshrined the bug; it now asserts the literal version and rejects the variable
+form.
+
+**Proof, on a genuinely fresh tenant, not a repaired one.** The failed "Cert Two"
+tenant was destroyed outright rather than repaired. A brand-new organization,
+**Pinned Runtime Proof**, was created through the product UI:
+
+| Step | Time (UTC) | Evidence |
+|---|---|---|
+| Organization created in the UI | 21:15:09 | `987b514f-bf18-4709-9d2b-fda6da67650f` |
+| Runtime container created | 21:16 | image `sha256:986c1f50…`, the pinned digest |
+| Workforce ready | 21:19:45 | EA and GM both active, ~4.5 minutes end to end |
+| Real task executed | 21:33:41 | fetched example.com -> "Example Domain", ran `uname -r` -> `6.8.0-137-generic`, returned `PINNED_RUNTIME_PROOF_OK` |
+
+After six agent installs on that runtime (EA, GM and four specialist hires) the
+container still reports `OpenClaw 2026.7.1-2 (0790d9f)` with an intact 5,493-file
+`dist/`, and its npm logs contain **zero** `openclaw@` install attempts. The pin
+holds under exactly the operation that used to break it.
+
+Hiring is also no longer the flapping mess it was: six consecutive hires each
+reached active in about 90 seconds, with no manual container repair.
+
+### 2. Launch Employee Certification matrix
+
+Certified against real production tasks on the fresh tenant, on the customer
+default model (`qwen/qwen3.8-flash`), through the product's own chat path.
+
+| Role | Status | Real toolset it needs | Production test performed | Evidence | Remaining blocker |
+|---|---|---|---|---|---|
+| **Company Office** (EA + GM) | **READY** | web, shell, files | Fetch a live page and run a shell command | Returned `Example Domain` and `6.8.0-137-generic` | - |
+| **Administrative Assistant** | **READY** | web, documents | Extract every plan and price published on the pricing page | Returned all twelve products at the correct prices, matching `lib/billing/catalog.js`; saved raw evidence; flagged that the page is bot-walled | - |
+| **Lead Generation Specialist** | **READY** | web research | Find three real, operating Austin bookkeeping firms | Ameen & Momin CPA, Financial Foothold, and Bargsley Totaro Andrews & Steinbach - real URLs opened, with addresses, phone numbers and quoted services from the sites | - |
+| **Marketing Manager** | **READY** | web research, documents | Positioning brief on Staff AI versus a named competitor | Read the rendered SPA with headless Chrome, chose Lindy, wrote the brief to a file, cited four URLs, and named a real gap (Staff AI publishes no integrations or trust page) | - |
+| **Marketing Specialist** | **READY** | web research, copywriting | Write a 120-word landing page section using only on-site claims | Delivered publishable copy drawn from the rendered homepage, with the URL used | - |
+| **Customer Service Representative** | **READY** | web research, company material | Answer what the Company Office includes and costs | $199/month with the exact inclusion list, terms and trial, and an explicit statement of the three things the site does not say | - |
+| **Bookkeeper** | **COMING SOON** | ERPNext/Frappe ledger | Not run - no ledger to operate | ERPNext runs on the host (9 containers) and `lib/frappe.js` can provision sites, but production carries no `FRAPPE_*` or `INFISICAL_*` configuration | Staff AI needs its own Frappe configuration. The running stack is Beacon's: its sites are on `dev.caribbeacon.com` and its provisioner runs with `FRAPPE_PROVISION_WEBHOOK_SECRET=dummy-secret` |
+| **Receptionist** | **COMING SOON** | Cal.com, telephony | Not run - cannot book or answer | No Cal.com instance or key of Staff AI's own; `TELNYX_MESSAGING_PROFILE_ID` is set but `TELNYX_API_KEY` is not | A Staff AI Cal.com instance and a Telnyx key, then an employee-reachable path to both |
+| **Social Media Manager** | **COMING SOON** | OutReply publishing | Not run - cannot publish | No OutReply credentials in production, and no employee path publishes to a social account | OutReply credentials and a publish tool the employee can call |
+| **Sales Representative** | **COMING SOON** | outbound email, CRM | Not run - cannot send or record | `lib/tools/send_email` and `lib/crm/moxie.js` both exist and `MOXIE_API_KEY` is set, but `lib/engine.js`, the only module that registers them for an employee, is imported by nothing | Wire the tool registry into the employee execution path |
+
+Sales Team and Marketing Team are bundles of the roles above and follow them.
+
+The five certified roles are on sale today. The four that are not are shown in
+the roster as "Coming soon", and `hireAdditionalEmployee` refuses them, so the
+product cannot take money for a role that would deliver a chat window.
+
+### 3. What certification exposed
+
+**Roles were only ever a job title.** `role_templates.required_tools` and the
+`capabilities` array sent to Provision are stored and never provision anything.
+Every employee has exactly the same runtime toolset, and a specialist hire got
+two generic lines of prompt. A Bookkeeper and a Marketing Specialist were the
+same worker wearing different labels. `lib/roles/playbooks.js` now holds one real
+brief per advertised role and is the single source for what a role is, what it
+needs, and whether it can be sold.
+
+**Finished work was being thrown away.** The chat route dispatches a task and
+then polls for it inside the customer's own HTTP request, and nothing else ever
+wrote the answer back. A task that outlived that request was lost: the employee
+did the work, the result stayed in the runtime, and the customer saw an empty
+thread. Found by running it - five research tasks dispatched, five executed, none
+delivered - and confirmed in the production logs as
+`Vercel Runtime Timeout Error: Task timed out after 300 seconds`. `employee_tasks`
+now records the conversation at dispatch, and `reconcileConversationTasks`
+delivers anything the originating request could not. Opening a conversation runs
+it, so no cron and no webhook. Proven live twice: two answers reached their
+threads with `delivered_by: reconcile`.
+
+**A done task with no result yet returned 500 and lost the work.** Provision can
+mark a task done a moment before its result summary is written. The route wrote
+a null message body - rejected by the column, with the error never checked - then
+crashed on `responseText.substring`, having already stamped the task delivered.
+1,812 characters of finished copy were sitting in the runtime while the
+customer's thread stayed empty and the request returned 500. A null result is now
+202 and stays undelivered until the summary lands, and the message write is
+checked.
+
+### 4. Reliability findings recorded, not yet fixed
+
+- **Provision rate-limits Staff AI.** Five employees dispatched at once returned
+  five `409 Too Many Attempts` from the integration API. A customer whose
+  workforce is busy will be told their employees are unavailable.
+- **Concurrent tasks on one tenant runtime fail.** Of five simultaneous tasks,
+  two ended `fetch failed` and one came back with the runtime's own
+  `LLM request timed out` text as its answer. Run one at a time they all
+  succeeded. Provider errors are also surfaced to the customer verbatim as if
+  the employee had written them.
+- **Two employees were both named "Taylor (AI)".** Name generation does not
+  check what the company already has.
+- **The pricing page is bot-walled.** `www.getstaffai.com/pricing` serves
+  Vercel's Security Checkpoint to non-browser clients; the employee had to fall
+  back to the page's own content source.
