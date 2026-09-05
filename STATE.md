@@ -2699,3 +2699,39 @@ response, so account existence is not leaked. Verified live on
 This is self-correcting: adding `https://app.getstaffai.com/**` to the redirect
 allow-list makes the real reset mail start going out with no further code or
 configuration change.
+
+## Password reset: RESOLVED and verified end to end, 2026-09-05
+
+Mark corrected the redirect configuration. The trap worth recording: there are
+**two** Staff AI Supabase projects in the same org — `StaffAi`
+(`vrophknoancgiutaokwb`, paused, unused) and `StaffAi2`
+(`tthoguhefuqnahellnrg`, ACTIVE_HEALTHY, the one the app actually runs on). The
+obvious name is the wrong one. Always confirm against `NEXT_PUBLIC_SUPABASE_URL`
+before changing anything in that dashboard.
+
+Verified live, the whole way through: request from the login page → Supabase
+recovery mail delivered to a real inbox → link carries
+`redirect_to=https://app.getstaffai.com/auth/callback?next=/portal/reset-password`
+with a `pkce_` token → `/auth/callback` exchanges the code for a session →
+`/portal/reset-password` → new password saved → signed in with the new password
+→ dashboard. The Gamma CEO password is now `Gm-ResetProof-20260905!`; rotate it
+if that is not desired.
+
+The reset action was simplified once the allow-list was correct: it makes one
+call and reports a send failure as a send failure (naming the rate limit when
+that is the cause) instead of logging it and claiming success. `redirectTo`
+targets `/auth/callback`, which exchanges the PKCE code the SSR client actually
+returns; `/auth/confirm` only reads `token_hash`.
+
+**Correction to that commit message.** It states the UI-triggered reset
+"delivered nothing", verified against the live inbox. That is wrong: the email
+had been sent at 03:58:13 and simply had not been indexed by the mail search
+when it was checked a minute earlier. The probe was not blocking delivery. The
+change is still the right one for the reasons above, but it was not diagnosing
+the failure it claimed to. Recorded rather than rewritten so the history stays
+honest.
+
+Also observed twice, and worth knowing before debugging auth links: Gmail's link
+scanner prefetches these one-time URLs and consumes the token, so a confirmation
+or recovery link can read as `otp_expired` before anyone clicks it. Both signup
+and recovery hit this during testing.
