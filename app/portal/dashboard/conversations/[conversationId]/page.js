@@ -4,6 +4,7 @@ import ConversationsView from '@/components/ConversationsView';
 import { getCEO } from '@/app/actions/auth';
 import { createClient } from '@/lib/supabase/server';
 import { isEntitled } from '@/lib/entitlement';
+import { reconcileConversationTasks } from '@/lib/provision';
 
 export default async function ConversationPage({ params }) {
   const ceo = await getCEO();
@@ -12,6 +13,14 @@ export default async function ConversationPage({ params }) {
 
   const { conversationId } = await params;
   const supabase = await createClient();
+
+  // Any task that finished after the request which started it had gone is
+  // written into its conversation here. Without this the employee does the
+  // work, the result sits in the runtime, and the customer sees an empty
+  // thread. Failures here are never fatal to reading the conversation.
+  await reconcileConversationTasks(ceo.org_id).catch(error => {
+    console.error('[conversation] task reconcile failed:', error?.message || error);
+  });
 
   // Scoped to the active organization, and to employees who are still here:
   // an inner join on employees also drops threads whose employee was dismissed.

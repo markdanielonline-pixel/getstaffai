@@ -64,6 +64,9 @@ export async function POST(req) {
         idempotencyKey,
         title: `CEO message to ${employee.name}`,
         waitForResult: true,
+        // If this request dies before the task finishes, the conversation load
+        // path delivers the answer instead of losing it.
+        conversationId,
       });
     } catch (dispatchError) {
       console.error(`[employees/chat] dispatch to ${employee.id} failed:`, dispatchError?.message || dispatchError);
@@ -99,6 +102,8 @@ export async function POST(req) {
     }).select().single();
 
     await admin.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);
+    // Delivered in-request, so the catch-up path must not deliver it again.
+    await admin.from('employee_tasks').update({ delivered_at: new Date().toISOString() }).eq('id', engineResult.taskId);
 
     // 5. Update Employee Recent Memory (Optional lightweight tracking)
     const currentMemory = employee.memory ?? { core: [], recent: [], ceo_preferences: {} };
