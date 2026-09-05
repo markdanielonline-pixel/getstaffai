@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { hasValidWorkerAuthorization } from '@/lib/worker-auth';
 import { provisionInitialWorkforce } from '@/lib/workforce';
 
+// Provisioning waits on real runtime installs (~1 min per agent, ~2 min for a
+// fresh tenant container). The operation is leased and resumable, so an
+// overrun is safe, but this budget lets a normal run finish in one pass.
+export const maxDuration = 300;
 const requestSchema = z.object({
   ceoId: z.string().uuid(),
   intelligenceLevel: z.enum(['free', 'venture', 'executive', 'prestige']),

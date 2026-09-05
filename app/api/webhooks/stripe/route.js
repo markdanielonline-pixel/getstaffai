@@ -5,6 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 import { provisionInitialWorkforce } from '@/lib/workforce';
 import { PLAN_TO_INTELLIGENCE_LEVEL } from '@/lib/billing/tierMap';
 
+// Provisioning waits on real runtime installs (~1 min per agent, ~2 min for a
+// fresh tenant container). The operation is leased and resumable, so an
+// overrun is safe, but this budget lets a normal run finish in one pass.
+export const maxDuration = 300;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function getSupabaseAdmin() {

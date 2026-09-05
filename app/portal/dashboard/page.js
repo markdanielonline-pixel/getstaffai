@@ -2,11 +2,16 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import PortalHeader from '@/components/PortalHeader';
 import PortalSidebar from '@/components/PortalSidebar';
+import WorkforceProvisioningStatus from '@/components/WorkforceProvisioningStatus';
 import { getCEO } from '@/app/actions/auth';
 import { retryInitialWorkforce } from '@/app/actions/workforce';
 import { inspectInitialWorkforce } from '@/lib/workforce';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
+// Provisioning waits on real runtime installs (~1 min per agent, ~2 min for a
+// fresh tenant container). The operation is leased and resumable, so an
+// overrun is safe, but this budget lets a normal run finish in one pass.
+export const maxDuration = 300;
 export default async function Dashboard() {
   const ceo = await getCEO();
   if (!ceo) redirect('/portal/login');
@@ -37,8 +42,7 @@ export default async function Dashboard() {
           {/* Main Column: Pulse & EA Thread */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <section role="status">
-              <p>{workforce.ready ? 'Initial EA/GM workforce is operational.' : 'Initial EA/GM workforce is not ready. Provisioning may still be running or need a retry.'}</p>
-              {!workforce.ready && <form action={retryInitialWorkforce}><button type="submit">Resume workforce setup</button></form>}
+              <WorkforceProvisioningStatus ready={workforce.ready} resumeAction={retryInitialWorkforce} />
             </section>
             {/* Top Bar: Pulse */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '0.5rem', borderLeft: '4px solid var(--accent-color)' }}>
