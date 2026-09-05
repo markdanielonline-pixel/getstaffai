@@ -92,14 +92,33 @@ export async function POST(req) {
 
     const responseText = engineResult.result;
 
+    // Provision can report a task as done a moment before its result summary is
+    // persisted, so a successful poll can still hand back a null result. Writing
+    // that inserted a null message body, which the insert rejected silently, and
+    // then crashed on responseText.substring below - a 500 for the customer and a
+    // task marked delivered with nothing delivered. Leave it undelivered instead;
+    // opening the conversation picks the answer up once the summary lands.
+    if (!responseText) {
+      console.warn(`[employees/chat] task ${engineResult.taskId} reported ${engineResult.status} with no result yet`);
+      return NextResponse.json({
+        pending: true,
+        message: `${employee.name} is still writing this up. It will appear in this conversation shortly.`,
+        taskId: engineResult.taskId,
+      }, { status: 202 });
+    }
+
     // 4. Save the Engine's response back to the chat history
-    const { data: savedMsg } = await admin.from('messages').insert({
+    const { data: savedMsg, error: saveError } = await admin.from('messages').insert({
       conversation_id: conversationId,
       ceo_id: user.id,
       role: 'employee',
       content: responseText,
       metadata: { employee_id: employee.id, employee_name: employee.name, task_id: engineResult.taskId, provision_task_id: engineResult.provisionTaskId },
     }).select().single();
+
+    // A failed write here used to pass unnoticed: the customer got a 200 with the
+    // answer in the response body and an empty thread on reload.
+    if (saveError) throw saveError;
 
     await admin.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);
     // Delivered in-request, so the catch-up path must not deliver it again.
