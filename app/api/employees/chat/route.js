@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { dispatchTaskToAgent } from '@/lib/provision';
+import { dispatchTaskToAgent, awaitProvisionAgentOperational } from '@/lib/provision';
+
+// Real work takes minutes, and the route polls Provision until the task is done.
+export const maxDuration = 300;
 
 export async function POST(req) {
   try {
@@ -44,6 +47,14 @@ export async function POST(req) {
 
     // 2. Dispatch the message to the employee's real Provision workforce runtime.
     const idempotencyKey = `chat_${conversationId}_${Date.now()}`;
+    // Installing or dismissing an employee restarts the tenant's shared gateway,
+    // which briefly takes the whole workforce offline. Without this the customer
+    // just gets "not available right now" for about a minute after any hire, and
+    // any message they send in that window is lost rather than delayed.
+    await awaitProvisionAgentOperational(employee.id, employee.org_id, {
+      timeoutMs: 90_000, intervalMs: 5_000, demote: false,
+    }).catch(() => { /* dispatch reports the real reason below */ });
+
     // A pre-flight failure here (runtime not active, organization runtime
     // unavailable) used to fall through to the bare 500 below, which told the
     // customer nothing and hid a diagnosable cause.
