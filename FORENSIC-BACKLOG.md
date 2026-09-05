@@ -126,3 +126,41 @@ investigate these further in this session.
   confirmation lands on a dead page and password reset is a dead end. Recorded
   here as well as in STATE because it is a *blocker*, not a backlog item — it
   needs a console change only Mark can make.
+
+## Added 2026-09-05 from the acceptance run itself
+
+- **`seat_fee_cents` is silently dropped on hire.** `hireAdditionalEmployee`
+  passes `seat_fee_cents` and `billing_type` in the persona, but
+  `reserve_provisioning_employee` inserts a fixed column list, so Casey was
+  created with `seat_fee_cents = 0`. Compounds the unbilled-seat gap already
+  recorded: neither the Stripe subscription item nor the local price survives a
+  hire.
+
+- **Cross-tenant DELETE answers `{"deleted": true, "already_absent": true}`.**
+  Deleting an agent while naming the wrong tenant's organization correctly does
+  nothing — verified, both agents survived — but the 200 response reads like
+  success. It should be a 404, matching the task endpoint, so a client cannot
+  mistake a refused cross-tenant call for a completed one.
+
+- **Every agent install and removal restarts the tenant gateway**, which briefly
+  makes the tenant's *other* employees read non-operational. The 20s confirm
+  window absorbs it, but each hire and dismissal still visibly flaps the roster
+  for a minute. Suppressing readiness demotion while a restart is known to be in
+  flight (the `gateway_restart:<serverId>` cache key already exists) would remove
+  the flap entirely.
+
+- **The new Stripe endpoint is missing two handled events.**
+  `app.getstaffai.com/api/webhooks/stripe` sends `checkout.session.completed`,
+  `customer.subscription.deleted` and `invoice.payment_failed`. The handler also
+  handles `customer.subscription.updated` and `invoice.payment_succeeded`, so
+  renewals and plan changes are not reaching it. Two checkboxes in the Stripe
+  dashboard.
+
+- **Orphan unconfirmed auth user** `markdanielonline+staffai-delta-20260905@gmail.com`
+  (`eb775249-43cb-49d2-9628-e2f491b04fda`), created when the first acceptance
+  signup used a mailbox that turned out not to be the connected one. Delete
+  alongside the other cleanup entries.
+
+- **Delta is a real paying tenant.** It carries a live Stripe subscription
+  (`sub_1UC9IJBe48ha5T2sbvqmizEV`, trialing, 7-day trial). Cancel it before the
+  trial converts if Delta is not meant to be kept.

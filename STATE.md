@@ -2539,3 +2539,101 @@ Everything else in the fresh-customer path is built, deployed and verified.
 The Tenant Gamma CEO (`markdanielphd+staffai-gamma-0904@gmail.com`) had its
 password administratively set this session to drive the product through the real
 UI. Rotate it if that is not desired.
+
+## FUNCTIONAL ACCEPTANCE COMPLETE, 2026-09-05
+
+A brand-new customer went through the front door with no database edits, no
+manual container repair and no engineering shortcuts. Tenant **Delta**
+(`markdanielphd+staffai-delta-20260905@gmail.com`, CEO
+`39980c46-d52b-4d05-b5e1-f5f9a33696f2`, org
+`ae30b768-360e-49fe-9bb0-d21885bd807f`, Provision team
+`01m1qp5bcjje7k6qbkf8ng6za6`, server `01m1qp5beqafxhkj7rmwyp8118`).
+
+### The run, in order, all through the product
+
+1. **Signup** at `app.getstaffai.com/portal/signup`. Real Supabase confirmation
+   email delivered to a real inbox (02:24:57Z), link confirmed the account.
+2. **Login** with the chosen password, landing on onboarding.
+3. **Onboarding** completed, organization created, Stripe customer
+   `cus_VCXSb9eEXDqm04`.
+4. **Checkout** — Mark paid the live Company Office session
+   (`cs_live_b1SJq7Df…`, $0 today under the 7-day trial).
+5. **Webhook → entitlement.** Stripe delivered `checkout.session.completed` to
+   `app.getstaffai.com/api/webhooks/stripe`. CEO went `provisional` → **active**,
+   `intelligence_level=executive`, subscription `sub_1UC9IJBe48ha5T2sbvqmizEV`
+   recorded as `trialing`. **This is the first tenant ever entitled**, and it is
+   what finally proved `STRIPE_WEBHOOK_SECRET` against real Stripe behaviour.
+6. **Provisioning** ran to `workforce_status=ready` in ~3 minutes, in a single
+   pass, unattended — both employees `active/active`.
+7. **Real task**: `POST /api/employees/chat` returned **`DELTA_FRONT_DOOR_OK`**
+   (Provision task `01m1qq…`), and later **`DELTA_ACCEPTANCE_FINAL_OK`**
+   (`01m1qr3wnjks753y1ef34ghyj7`) as a final check.
+8. **Hire**: a Bookkeeper ("Casey (AI)",
+   `37b45d44-6927-4e4f-821d-52bdede171e0`) hired from the roster UI, real
+   Provision agent `01m1qq5skfvwfknvsa04rn59jv`, `active/active` in ~75s.
+9. **Dismiss**: dismissed from the same UI. Employee became `alumni` with
+   `departed_at` and reason; Provision's agent row removed; the agent directory
+   gone from the tenant container; the live gateway no longer lists it. Only
+   Sophia, Marcus and the dispatcher remain.
+10. **Stable** afterwards: `ready` with both employees `active` across five
+    consecutive checks with the dashboard open.
+
+### What the acceptance run itself found and fixed
+
+Three further defects surfaced only because this was a real run, and all three
+are fixed and deployed:
+
+- **A gateway-restart blip tore down a healthy tenant.** Installing the second
+  agent restarts the gateway — which only started actually happening once the
+  pkill fix landed. The single-sample readiness verifier caught that window and
+  demoted a healthy employee to `training`, permanently, because only the
+  factory ever writes `active` back. `syncProvisionAgent` now takes
+  `options.demote`; pollers read without demoting and record the verdict once,
+  and `inspectInitialWorkforce` uses a 20s confirm window.
+- **Dismissal never worked.** `decommissionAgentRuntime` sent Provision's team
+  id as `team_external_id`, but Provision keys teams by the organization UUID.
+  Every dismissal was rejected with "The team external id field must be a valid
+  UUID" — surfaced honestly in the UI, with the employee left fully intact.
+- **The automatic resume re-provisioned healthy tenants forever.** Claiming the
+  operation resets the organization to `provisioning`, so re-running a completed
+  operation made the dashboard non-ready, which triggered the next resume 30s
+  later. `retryInitialWorkforce` now checks readiness before resuming, and the
+  loop is bounded at 20 automatic attempts.
+
+`/api/employees/chat` also no longer hides a dispatch pre-flight failure behind
+a bare 500; it returns 409 with the reason.
+
+### Cross-tenant execution probe, two live tenants
+
+With Delta and Gamma both live and both mapped by `external_id`:
+
+- App layer, as the Delta CEO into Gamma's conversation: **404**. Gamma's
+  employee ids do not appear in Delta's roster HTML.
+- Provision integration layer: deleting either tenant's agent while naming the
+  other tenant's organization is a no-op — both agents verified still present
+  afterwards. Cross-tenant task dispatch is **404** in both directions.
+- Runtime layer: per-tenant containers, per-tenant volumes, ownership labels,
+  per-tenant gateway tokens, gateway bound to loopback and unreachable from a
+  neighbouring container.
+
+The one confirmed hole remains the shared `provision_default` network exposing
+each container's unauthenticated noVNC on 6080 to its neighbours. Recorded in
+the backlog; it is an isolation weakness, not a functional blocker.
+
+### Still open, deliberately not done in this session
+
+- **Supabase Site URL is still `http://localhost:3000`.** Signup survives it —
+  the confirmation link confirms the account and only the post-confirm landing
+  is dead, as this run demonstrated end to end — but **password reset is a dead
+  end** until it is changed. Console-only, and it did not block acceptance.
+- Hiring installs a real agent but does not add a Stripe subscription item, so
+  an extra seat is not billed.
+
+### Checkpoints
+
+StaffAi `main`; ProvisionCore production `/root/provision-core` on
+`canonical-deploy2` at `d5b13c6`. Provision rollback remains
+`git checkout vps-snapshot-20260904`.
+
+**FUNCTIONAL ACCEPTANCE COMPLETE.** The forensic/hardening phase is a separate
+session and was not started.
