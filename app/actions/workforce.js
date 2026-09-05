@@ -2,6 +2,7 @@
 
 import { getCEO } from './auth';
 import { provisionInitialWorkforce, inspectInitialWorkforce } from '@/lib/workforce';
+import { createAdminClient } from '@/lib/supabase/server';
 import { hireAdditionalEmployee, dismissEmployee } from '@/lib/hiring';
 import { isEntitled } from '@/lib/entitlement';
 import { revalidatePath } from 'next/cache';
@@ -15,6 +16,20 @@ export async function retryInitialWorkforce() {
   // dashboard re-provisioned a healthy tenant every 30 seconds, flapping its
   // employees between active and training. A resume must first establish that
   // there is actually something to resume.
+  // Never resume on top of a provisioning run that is already in flight.
+  // Installs on one runtime are serialised by a per-server lock, so a second
+  // run's jobs queue up behind the first, contend for that lock, and burn each
+  // other's retry budget until the agents are marked failed. Observed live: a
+  // dashboard left open re-provisioned every 30 seconds and starved its own
+  // installs; with the loop stopped the identical install succeeded in about
+  // seventy seconds.
+  const admin = await createAdminClient();
+  const { data: inFlight } = await admin.from('provisioning_operations')
+    .select('state').eq('org_id', ceo.org_id).eq('operation_key', 'initial-workforce:v1').maybeSingle();
+  if (inFlight?.state === 'running') {
+    return { ready: false, resumed: false, reason: 'already-provisioning' };
+  }
+
   const current = await inspectInitialWorkforce(ceo.org_id);
   if (current.ready) {
     revalidatePath('/portal/dashboard');

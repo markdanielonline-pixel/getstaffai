@@ -8,7 +8,10 @@ import { useEffect, useState, useTransition } from 'react';
 // leaving the customer to keep pressing a button, resume automatically on an
 // interval until the workforce reports ready. The action itself is leased, so
 // a resume that arrives while one is already running is rejected harmlessly.
-const RESUME_INTERVAL_MS = 30_000;
+// A provisioning run takes minutes, so polling every 30 seconds only created
+// contention. This is a backstop for a run that genuinely stopped, not a
+// progress poller.
+const RESUME_INTERVAL_MS = 60_000;
 // Bounded so a resume that never succeeds cannot poll forever. About ten
 // minutes, after which the manual button remains.
 const MAX_AUTOMATIC_RESUMES = 20;
