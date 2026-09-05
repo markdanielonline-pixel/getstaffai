@@ -14,7 +14,10 @@ export const maxDuration = 300;
 export default async function Dashboard() {
   const ceo = await getCEO();
   if (!ceo) redirect('/portal/login');
-  if (!ceo.org_id) redirect('/portal/incorporate?product=company_office&billing=monthly'); // Redirect to company setup if no org is attached
+  // A customer without an organization has not incorporated yet and belongs in
+  // checkout. A founder does not buy Staff AI from himself, so he creates his
+  // company from the switcher in the sidebar instead.
+  if (!ceo.org_id && !ceo.is_founder) redirect('/portal/incorporate?product=company_office&billing=monthly');
 
   const supabase = await createClient();
   

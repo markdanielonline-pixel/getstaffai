@@ -2,8 +2,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePortalIdentity, workforceIndicator } from './PortalIdentity';
+import OrganizationSwitcher from './OrganizationSwitcher';
 
-export default function PortalSidebar() {
+export default function PortalSidebar({ organizations = [], activeOrgId = null, canCreateOrganization = false, switchOrganizationAction, createOrganizationAction }) {
   const pathname = usePathname();
   const identity = usePortalIdentity();
   const workforce = workforceIndicator(identity?.workforceStatus);
@@ -70,6 +71,15 @@ export default function PortalSidebar() {
         border: '1px solid rgba(139,92,246,0.2)',
         marginTop: 'auto'
       }}>
+        {switchOrganizationAction && (
+          <OrganizationSwitcher
+            organizations={organizations}
+            activeOrgId={activeOrgId}
+            canCreate={canCreateOrganization}
+            switchAction={switchOrganizationAction}
+            createAction={createOrganizationAction}
+          />
+        )}
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Current Plan</div>
         <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{identity?.planLabel || 'No active plan'}</div>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

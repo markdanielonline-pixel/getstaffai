@@ -3,6 +3,7 @@
 import { getCEO } from './auth';
 import { provisionInitialWorkforce, inspectInitialWorkforce } from '@/lib/workforce';
 import { hireAdditionalEmployee, dismissEmployee } from '@/lib/hiring';
+import { isEntitled } from '@/lib/entitlement';
 import { revalidatePath } from 'next/cache';
 
 export async function retryInitialWorkforce() {
@@ -34,7 +35,7 @@ export async function hireEmployeeAction(formData) {
   if (!ceo?.org_id) return { error: 'An authenticated organization is required' };
   // The same entitlement gate Conversations uses: a provisional CEO has not
   // completed checkout, so there is nothing to bill an extra seat against.
-  if (ceo.status === 'provisional') return { error: 'Complete your Company Office subscription before hiring.' };
+  if (!isEntitled(ceo)) return { error: 'Complete your Company Office subscription before hiring.' };
   try {
     const employee = await hireAdditionalEmployee({
       ceo,

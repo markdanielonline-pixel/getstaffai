@@ -2,11 +2,12 @@ import { redirect } from 'next/navigation';
 import PortalHeader from '@/components/PortalHeader';
 import { getCEO } from '@/app/actions/auth';
 import { createClient } from '@/lib/supabase/server';
+import { isEntitled } from '@/lib/entitlement';
 
 export default async function Conversations() {
   const ceo = await getCEO();
   if (!ceo) redirect('/portal/login');
-  if (ceo.status === 'provisional') redirect('/portal/incorporate');
+  if (!isEntitled(ceo)) redirect('/portal/incorporate');
 
   const supabase = await createClient();
   const { data: conversation } = await supabase

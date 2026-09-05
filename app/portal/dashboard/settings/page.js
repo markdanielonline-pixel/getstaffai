@@ -4,11 +4,12 @@ import AccountSettingsForm from '@/components/AccountSettingsForm';
 import SupportForm from '@/components/SupportForm';
 import { getCEO, getUser } from '@/app/actions/auth';
 import { createAdminClient } from '@/lib/supabase/server';
+import { isEntitled } from '@/lib/entitlement';
 
 export default async function SettingsPage() {
   const [ceo, user] = await Promise.all([getCEO(), getUser()]);
   if (!ceo || !user) redirect('/portal/login');
-  if (ceo.status === 'provisional') redirect('/portal/incorporate');
+  if (!isEntitled(ceo)) redirect('/portal/incorporate');
 
   const admin = await createAdminClient();
   const { data: subscription } = await admin
