@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { requestPasswordReset } from '@/app/actions/auth';
 
 // Google OAuth is not enabled on the Supabase project, so the button can only
 // ever fail. It stays in the codebase behind an explicit opt-in flag rather
@@ -32,23 +33,16 @@ export default function LoginExtras({ email }) {
   };
 
   const handleForgotPassword = async () => {
-    const targetEmail = (email || '').trim();
-    if (!targetEmail) {
-      setResetMsg('Enter your email address above, then select Forgot password.');
-      return;
-    }
     setResetLoading(true);
     setResetMsg(null);
-
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-        redirectTo: `${window.location.origin}/portal/reset-password`,
-      });
-      if (error) throw error;
-      setResetMsg('Password reset link has been dispatched to your email.');
+      // The server decides what is truthful to say here: it checks whether
+      // Supabase will honour our redirect before claiming a link was sent.
+      const result = await requestPasswordReset(email);
+      setResetMsg(result.message);
     } catch (err) {
       console.error('Reset error:', err);
-      setResetMsg(err.message || 'Failed to dispatch reset email.');
+      setResetMsg('Could not start a password reset. Please try again.');
     } finally {
       setResetLoading(false);
     }
