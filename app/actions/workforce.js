@@ -1,19 +1,31 @@
 'use server';
 
 import { getCEO } from './auth';
-import { provisionInitialWorkforce } from '@/lib/workforce';
+import { provisionInitialWorkforce, inspectInitialWorkforce } from '@/lib/workforce';
 import { hireAdditionalEmployee, dismissEmployee } from '@/lib/hiring';
 import { revalidatePath } from 'next/cache';
 
 export async function retryInitialWorkforce() {
   const ceo = await getCEO();
   if (!ceo?.org_id) throw new Error('An authenticated organization is required');
+  // Claiming the provisioning operation resets the organization to
+  // 'provisioning', so re-running one that already succeeded makes the
+  // dashboard non-ready, which makes the automatic resume fire again: an open
+  // dashboard re-provisioned a healthy tenant every 30 seconds, flapping its
+  // employees between active and training. A resume must first establish that
+  // there is actually something to resume.
+  const current = await inspectInitialWorkforce(ceo.org_id);
+  if (current.ready) {
+    revalidatePath('/portal/dashboard');
+    return { ready: true, resumed: false };
+  }
   try {
     await provisionInitialWorkforce(ceo.id, ceo.intelligence_level || 'free');
   } catch {
     // Durable operation stores the failure; the UI stays non-ready and offers retry.
   }
   revalidatePath('/portal/dashboard');
+  return { ready: false, resumed: true };
 }
 
 

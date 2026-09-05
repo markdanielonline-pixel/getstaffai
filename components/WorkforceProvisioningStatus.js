@@ -9,13 +9,16 @@ import { useEffect, useState, useTransition } from 'react';
 // interval until the workforce reports ready. The action itself is leased, so
 // a resume that arrives while one is already running is rejected harmlessly.
 const RESUME_INTERVAL_MS = 30_000;
+// Bounded so a resume that never succeeds cannot poll forever. About ten
+// minutes, after which the manual button remains.
+const MAX_AUTOMATIC_RESUMES = 20;
 
 export default function WorkforceProvisioningStatus({ ready, resumeAction }) {
   const [pending, startTransition] = useTransition();
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
-    if (ready) return undefined;
+    if (ready || attempts >= MAX_AUTOMATIC_RESUMES) return undefined;
     const timer = setInterval(() => {
       startTransition(async () => {
         await resumeAction();
@@ -23,7 +26,7 @@ export default function WorkforceProvisioningStatus({ ready, resumeAction }) {
       });
     }, RESUME_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [ready, resumeAction]);
+  }, [ready, attempts, resumeAction]);
 
   if (ready) return <p>Initial EA/GM workforce is operational.</p>;
 
