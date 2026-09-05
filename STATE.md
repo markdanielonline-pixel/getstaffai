@@ -2637,3 +2637,33 @@ StaffAi `main`; ProvisionCore production `/root/provision-core` on
 
 **FUNCTIONAL ACCEPTANCE COMPLETE.** The forensic/hardening phase is a separate
 session and was not started.
+
+## Delta teardown, 2026-09-05 — and the teardown bug it exposed
+
+Delta was fully removed at Mark's request after acceptance: Stripe subscription
+cancelled (no charge, cancelled inside the trial), then the tenant torn down.
+
+**The teardown itself was broken.** `DestroyTeamJob::destroyCloudResources`
+matched on every cloud provider except Docker, so tearing down any per-tenant
+runtime threw `UnhandledMatchError`, logged a generic failure and retained the
+team. Tenants could be created but never removed, leaking a container and two
+volumes each. Fixed in ProvisionCore `64bd416`:
+`DockerExecutor::destroyRuntime()` is the counterpart to `ensureRuntime()` and
+enforces the same ownership rule — a container or volume whose
+`provision.server-id`/`provision.team-id` labels do not name this Server is
+never touched — refuses the shared legacy container, and treats absence as
+success so a retry converges.
+
+Verified removed: container `provision-runtime-01m1qp5beqafxhkj7rmwyp8118`,
+both its volumes, the server, all three agents and the team; then every Staff AI
+row (organization, CEO, 3 employees, 1 conversation, 6 messages, 2 tasks, 4
+provisioning operations, 8 events, notification, subscription, wallet) and both
+Delta auth users, including the orphan from the first signup attempt.
+
+Gamma was verified untouched throughout: `workforce_status=ready`, both
+employees `active/active`, its container and the three legacy runtimes intact.
+
+Also proved the second half of the billing chain on real Stripe traffic:
+`customer.subscription.deleted` arrived and completed, taking the CEO to
+`dissolved` and the subscription to `cancelled` three seconds after the API call.
+ProvisionCore production is now `64bd416` on `canonical-deploy2`.
