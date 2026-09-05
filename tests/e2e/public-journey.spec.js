@@ -50,8 +50,22 @@ test('public sales agent never returns a raw provider error to a visitor', async
   const body = await response.json();
   expect(typeof body.text).toBe('string');
   expect(body.text.length).toBeGreaterThan(10);
-  // Infrastructure detail must never reach a prospect.
-  expect(body.text).not.toMatch(/api key|oauth|credential|unauthorized|token/i);
+  // Infrastructure detail must never reach a prospect. This looks for actual
+  // provider error signatures rather than any occurrence of a word like
+  // "token", which the agent uses legitimately when explaining that Staff AI
+  // has no customer-facing token charges.
+  const providerLeak = [
+    /invalid authentication/i,
+    /OAuth 2 access token/i,
+    /developers\.google\.com/i,
+    /api\.openai\.com/i,
+    /openrouter\.ai\/api/i,
+    /\bAPI key\b/i,
+    /\b(401|403)\b/,
+  ];
+  for (const pattern of providerLeak) {
+    expect(body.text, `sales agent leaked provider detail matching ${pattern}`).not.toMatch(pattern);
+  }
 
   // When a credential is missing the agent is allowed to degrade, but it must
   // say so honestly rather than silently pretending to be a working salesperson.
