@@ -2793,3 +2793,128 @@ Recorded in `FORENSIC-BACKLOG.md`, not fixed here. The one that is actively
 broken in production today is the **invalid `RESEND_API_KEY`**, which silently
 fails reminder and onboarding email. The rest are isolation, billing-completeness,
 observability and hygiene items.
+
+## LAUNCH-READINESS SESSION, 2026-09-05 — substantial repair, one blocker open
+
+Continuation after FUNCTIONAL ACCEPTANCE COMPLETE. Baseline tag
+`functional-acceptance-2026-09-05` preserved in both repositories.
+
+### Delivered and verified in production
+
+**Security.** The cross-tenant noVNC exposure is closed at the image level:
+x11vnc and websockify now bind to loopback, so a tenant can no longer open a
+neighbour's unauthenticated display. Verified by running a container from the
+new image and confirming connection refused from another tenant.
+
+**Founder / Customer Zero.** Mark reaches the product through the same
+onboarding, organization, provisioning, workforce and employee paths a paying
+customer uses, with no Stripe object involved. `lib/entitlement.js` is the single
+source of truth for entitlement and accepts exactly two origins: a real Stripe
+subscription, or an explicit founder grant. `organization_members` gives
+multi-organization access with membership as the tenant boundary;
+`organizations.model_policy` is an explicit per-organization model routing policy
+read at every agent creation. Proven live on a phone-sized viewport: founder
+access without billing, two organizations created and switched, and a real task
+returning `FOUNDER_CUSTOMER_ZERO_OK` on `openrouter/openai/gpt-5-nano`.
+
+**Model economics, corrected.** `openai/gpt-5-nano` is not free. It is
+$0.05/M input and $0.40/M output on OpenRouter, which is *cheaper* than the
+customer default `qwen/qwen3.8-flash` ($0.15/M, $0.47/M). Founder routing
+therefore reduces cost rather than adding it.
+
+**Sales.** The public agent was selling a product that no longer exists - a
+five-tier "AI Revenue Workforce" at $0/$97/$297/$497/$997 - and was dead in
+production behind an invalid Google credential whose raw auth error was returned
+to visitors. It now derives its knowledge from `lib/billing/catalog.js`, states
+what is not ready rather than implying it exists, captures durable leads in
+`sales_leads`, and runs on `openrouter:openai/gpt-5-nano`. A separate
+authenticated Customer Success agent at `/api/support/agent` knows the customer's
+real organization and escalates by opening a support ticket itself.
+
+**Product consistency, verified three ways.** www.getstaffai.com,
+`lib/billing/catalog.js` and live Stripe prices match exactly across all twelve
+products, monthly and annual. Retired product language was removed from six
+app-served marketing pages and from `lib/billing/tierMap.js`.
+
+**Email.** The replaced Resend key is valid and getstaffai.com is verified on it.
+Real delivery proven, not configuration: an email sent through the live support
+workflow reached the inbox. This exposed that `sales@getstaffai.com` did not
+exist - every support notification Staff AI had ever sent was hard bouncing with
+`550 No Such User Here`. Mark created the mailbox; Resend had already
+blocklisted it after the bounce, so the suppression was cleared and delivery
+re-verified.
+
+**Disk.** 147 GB of Docker build cache reclaimed. 82% to 62% used, 149 GB free.
+No container stopped, no volume removed, no project deleted.
+
+**Permanent QA.** Playwright is installed as the synthetic customer with desktop
+and mobile projects, covering the public journey, the signed-in customer, the
+founder, and product-price consistency. It fails the build if any public page
+serves retired product language, if the catalog stops matching the live site, or
+if the sales agent quotes a price the catalog does not contain.
+
+### Reliability defects found and fixed
+
+All found by running the product, not by reading it:
+
+1. **The readiness reader demoted healthy employees.** Any transient failure
+   demoted them to `training`, which only the provisioning path can undo, so a
+   routine gateway restart left a healthy tenant needing a full re-provision.
+   Readers now observe without mutating.
+2. **Waiting for the runtime lock counted as failing.** `release()` consumes an
+   attempt, so with the queue default of three tries a second agent exhausted its
+   budget in ~30 seconds while the first was still installing normally. Budget
+   raised well past the install timeout; lock lease reduced from 900s to 360s.
+3. **The automatic resume starved its own installs.** Resuming every 30 seconds
+   while a run takes minutes queued competing installs that contended for the
+   same lock. Measured directly: with a dashboard open the founder EA cycled for
+   twenty-five minutes; with the loop stopped the identical install succeeded in
+   seventy seconds. Resume now refuses to run while one is already in flight.
+4. **The Docker gateway restart never restarted anything**, and once fixed, the
+   replacement gateway died with the exec session that started it. Now detached
+   with `setsid`.
+
+### THE OPEN BLOCKER: OpenClaw 2026.9 runtimes cannot authenticate
+
+Rebuilding the runtime image to close the noVNC hole also picked up a newer
+OpenClaw from the `:latest` base, so containers created today run **2026.9.1**
+while the previously provisioned tenant runs **2026.7.1-2**.
+
+Two consequences were found and fixed: 2026.9 stores agents in `agents.entries`
+rather than `agents.list`, which made `WorkforceReadiness` and the post-install
+verification report every agent on a new runtime as not installed. Both now
+accept either shape.
+
+The third is unresolved. On the 2026.9 runtime every model call fails with
+`401 User not found` from OpenRouter, even though:
+
+- the runtime's `.env` holds the correct key and a direct `curl` from inside that
+  same container to `openrouter/openai/gpt-5-nano` returns 200,
+- the agent's auth store contains only the new key,
+- `openclaw models auth paste-api-key` reports success and `auth list` shows a
+  single `openrouter:manual` profile,
+- the gateway has been restarted cleanly since.
+
+The tenant on 2026.7.1-2 executes real work correctly with the same key
+(`GAMMA_EXEC_OK`). The image that produced 2026.7.1-2 was reclaimed during the
+disk cleanup and is no longer available locally to pin against.
+
+**Consequence: a newly provisioned tenant reaches ready but cannot execute
+tasks.** Existing tenants on 2026.7.1-2 are unaffected. This is a launch blocker
+and is the next thing to fix.
+
+### Not started
+
+Observability, the DeepSeek reliability engineer, the executive integration API,
+the guided sales demo, OutReply social wiring, email verification, telephony, and
+the Bookkeeper-on-ERPNext connection. ERPNext infrastructure is running (9
+containers) and `provisionFrappeSite`/`createFrappeUser` exist, but Staff AI
+production has no Frappe configuration and hiring requests no tools, so the
+Bookkeeper has no accounting system attached yet.
+
+### Correction
+
+An earlier commit in this session claimed a UI-triggered password reset
+"delivered nothing, verified against the live inbox". The email had in fact been
+sent and simply was not indexed when the search ran. Recorded rather than
+rewritten.
