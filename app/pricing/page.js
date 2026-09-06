@@ -16,7 +16,7 @@ export default function Pricing() {
           <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 3rem' }}>
             <p style={{ color: 'var(--accent-secondary)', fontWeight: 800, letterSpacing: '.08em' }}>SIMPLE, TRANSPARENT PRICING</p>
             <h1 className="display-lg">Start with your Company Office.</h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Every Company Office includes your Executive Assistant and General Manager. Start with a 7-day trial.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Every Company Office includes your Executive Assistant and General Manager, working from day one. Backed by a 30-day money-back guarantee.</p>
           </div>
           <div className="glass-panel-vip" style={{ maxWidth: 720, margin: '0 auto 4rem', padding: '2.5rem' }}>
             <h2>{office.name}</h2>
@@ -24,8 +24,8 @@ export default function Pricing() {
             <p>Annual: {usd(office.annual)}. Pay for 10 months and receive 12.</p>
             <ul>{office.includes.map(item => <li key={item}>{item}</li>)}</ul>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1.5rem' }}>
-              <Link className="btn btn-primary" href="/portal/signup?billing=monthly">Start monthly trial</Link>
-              <Link className="btn btn-outline" href="/portal/signup?billing=annual">Start annual trial</Link>
+              <Link className="btn btn-primary" href="/portal/signup?billing=monthly">Start monthly</Link>
+              <Link className="btn btn-outline" href="/portal/signup?billing=annual">Start annual</Link>
             </div>
           </div>
           <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Add employees and teams as your company grows</h2>

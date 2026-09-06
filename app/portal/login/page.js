@@ -53,7 +53,7 @@ export default async function Login({ searchParams }) {
             <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
               Ready to establish your Company Office?{' '}
               <Link href="/portal/signup" style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                Start your 7-day trial
+                Establish your Company Office
               </Link>
             </div>
           </div>

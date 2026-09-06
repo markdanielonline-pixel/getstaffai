@@ -54,7 +54,7 @@ document.querySelector('#app').innerHTML = `
         <a class="button gold" href="/pricing.html">Establish Your Company Office &rarr;</a>
         <a class="link" href="#workflow">See how it works &darr;</a>
       </div>
-      <div class="proof">&check; 7-day free trial &nbsp;&middot;&nbsp; &check; Month-to-month &nbsp;&middot;&nbsp; &check; 30-day guarantee</div>
+      <div class="proof">&check; 30-day money-back guarantee &nbsp;&middot;&nbsp; &check; Month-to-month &nbsp;&middot;&nbsp; &check; Working from day one</div>
     </div>
   </section>
 

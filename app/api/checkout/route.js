@@ -113,7 +113,10 @@ export async function POST(req) {
       metadata: { ceo_id: user.id, org_id: orgId, product_key: productKey, billing },
       subscription_data: {
         metadata: { ceo_id: user.id, org_id: orgId, product_key: productKey, billing },
-        trial_period_days: 7,
+        // No trial. The Company Office is paid from day one, and the promise
+        // is the 30-day money-back guarantee instead: the customer gets a
+        // working company immediately rather than a countdown, and can have
+        // their money back if it does not earn its place.
       },
     });
 

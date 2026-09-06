@@ -131,9 +131,10 @@ compliance@getstaffai.com
 Paid subscriptions renew automatically according to the billing interval selected at checkout unless cancelled.
 The Customer authorizes StaffAi and its payment processors to charge the payment method provided for recurring subscription fees, applicable taxes, authorized capacity upgrades, and other charges expressly accepted by the Customer.
 StaffAi may use Stripe and additional payment processors.
-StaffAi currently offers a 7-day free trial with limited usage, where displayed at signup.
-A valid payment method may be required.
-Unless cancelled before the end of the trial, the subscription automatically converts to the paid plan disclosed during signup and the payment method will be charged.
+StaffAi does not offer a free trial. Subscriptions are charged from the first day.
+A valid payment method is required at signup.
+The subscription renews automatically at the interval disclosed during signup until the Customer cancels.
+StaffAi offers a 30-day money-back guarantee on the Company Office, as described in the Refund Policy.
 The price, billing frequency, trial duration, and automatic-conversion terms must be presented before enrollment.
 Subscription cancellation should remain straightforward. Current FTC enforcement continues to focus on informed consent and avoiding obstructive cancellation practices. 
 Monthly subscriptions may be cancelled before the next renewal.
@@ -389,9 +390,9 @@ StaffAi therefore combines AI capability with defined responsibilities, access c
 Customers remain responsible for determining the appropriate level of autonomy for their organization and for consequential decisions requiring human or professional judgment.
 StaffAi does not warrant that AI outputs are always accurate, complete, original, or appropriate.
 AI Employees are software-based services, not natural persons or legal employees.
-Eligible Customers receive a seven-day free trial with limited usage.
-A payment method may be required.
-The trial automatically converts to the selected paid subscription unless cancelled before the trial expires.
+Subscriptions are paid from the first day. There is no free trial.
+A payment method is required at signup.
+The subscription renews automatically until cancelled, and is covered by the 30-day money-back guarantee described in the Refund Policy.
 The applicable price and renewal interval will be disclosed before enrollment.
 Monthly subscriptions can be cancelled before the next renewal.
 Access ordinarily continues through the current paid billing period.
@@ -520,4 +521,4 @@ StaffAi is a service of Studio9 LLC.
 1012 Marquez Place, Santa Fe, NM 87505, USA
 compliance@getstaffai.com
 There are three things I would not let Codex silently improvise during implementation.
-First, signup needs an affirmative checkbox accepting the Terms and Privacy Policy, with the accepted document versions, timestamp, user/account, and ideally IP/event evidence recorded. Trial checkout must clearly show $0 today, 7-day trial, exact amount charged afterward, billing frequency, and automatic renewal before authorization. That matte
+First, signup needs an affirmative checkbox accepting the Terms and Privacy Policy, with the accepted document versions, timestamp, user/account, and ideally IP/event evidence recorded. Checkout must clearly show the amount charged today, the billing frequency, that the subscription renews automatically until cancelled, and the 30-day money-back guarantee, all before authorization. That matte

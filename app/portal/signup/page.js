@@ -27,7 +27,7 @@ export default async function Signup({ searchParams }) {
               Establish Your <span style={{ color: 'var(--accent-secondary)' }}>Company Office.</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '2rem' }}>
-              Create your secure CEO account, then complete your Company Office setup and 7-day trial.
+              Create your secure CEO account, then establish your Company Office. Backed by a 30-day money-back guarantee.
             </p>
 
             {error && (
@@ -98,7 +98,7 @@ export default async function Signup({ searchParams }) {
             </h2>
 
             <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '1rem', border: '1px solid var(--border-light)', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-secondary)', marginBottom: '0.5rem' }}>$199/month · 7-day trial</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-secondary)', marginBottom: '0.5rem' }}>$199/month · 30-day money-back guarantee</div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
                 Annual billing is $1,990: pay for 10 months and receive 12.
               </p>

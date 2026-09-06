@@ -102,7 +102,7 @@ export default function IncorporateForm({ ceo, product, billing }) {
             Establish your organisation
           </h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>
-            Company Office — ${price}/{billing === 'annual' ? 'yr' : 'mo'}, with a 7-day trial. Tell us about your business so your Executive Assistant and General Manager start with real context.
+            Company Office — ${price}/{billing === 'annual' ? 'yr' : 'mo'}, with a 30-day money-back guarantee. Tell us about your business so your Executive Assistant and General Manager start with real context.
           </p>
 
           {errorMsg && (
