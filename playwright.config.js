@@ -20,6 +20,9 @@ export default defineConfig({
     ['list'],
     ['html', { outputFolder: 'tests/e2e-report', open: 'never' }],
     ['json', { outputFile: 'tests/e2e-report/results.json' }],
+    // A scheduled run on the VPS reports into the same alerting path as the
+    // backend sweep. Inert without a secret, so a local run stays local.
+    ['./tests/e2e/report-to-monitor.js'],
   ],
   use: {
     baseURL: BASE_URL,
