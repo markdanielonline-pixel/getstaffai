@@ -23,7 +23,7 @@ How It Works | AI Employees | Teams | Pricing | About | Sign In
 
 Tell your Executive Assistant what you want done.
 
-Your StaffAi team handles the sales, marketing, administration, customer service, bookkeeping and everyday work behind it.
+Your StaffAi team handles the sales, marketing, administration, customer service and everyday work behind it.
 
 **You run the company. Your staff run the systems.**
 
@@ -347,13 +347,15 @@ Your Customer Service Representative handles routine questions, email and chat i
 
 ### Receptionist
 
-**$199/month**
+**Coming soon — $199/month**
 
 Make sure someone answers.
 
-Your Receptionist handles inbound calls, routine questions, messages, appointment booking, routing and call transfers according to your company's rules.
+Your Receptionist will handle inbound calls, routine questions, messages, appointment booking, routing and call transfers according to your company's rules.
 
-**[Hire Receptionist]**
+Not available yet. Staff AI does not answer telephone calls today, and we will not pretend otherwise. Tell us if you want this and we will let you know the day it opens.
+
+**[Notify me when the Receptionist opens]**
 
 ---
 
@@ -361,17 +363,19 @@ Your Receptionist handles inbound calls, routine questions, messages, appointmen
 
 ### Bookkeeper
 
-**$149/month**
+**Coming soon — $149/month**
 
 Keep the books organized without keeping the bookkeeping on your plate.
 
-Your Bookkeeper handles routine invoices, expenses, transaction categorization, reconciliations, receivables and payables tracking, financial records and routine reporting.
+Your Bookkeeper will handle routine invoices, expenses, transaction categorization, reconciliations, receivables and payables tracking, financial records and routine reporting.
+
+Not available yet. It needs a connected accounting system, which is being built. Tell us if you want this and we will let you know the day it opens.
 
 Your human accountant remains responsible for tax advice, regulated work and professional accounting judgment.
 
 You can give your accountant controlled access when needed.
 
-**[Hire Bookkeeper]**
+**[Notify me when the Bookkeeper opens]**
 
 ---
 
@@ -391,7 +395,6 @@ Updating business records
 Managing follow-up
 Scheduling appointments
 Handling customer conversations
-Answering telephone calls
 Publishing marketing content
 Preparing reports
 Maintaining financial records
@@ -437,11 +440,11 @@ StaffAi works for solo founders and companies that already have employees.
 
 Your AI Lead Generation Specialist can find and qualify opportunities before handing them to a human closer.
 
-Your AI Receptionist can answer routine calls and transfer important callers to your team.
+Your AI Receptionist will answer routine calls and transfer important callers to your team, once it opens. It is not available yet.
 
 Your AI Customer Service Representative can resolve everyday questions and escalate sensitive matters.
 
-Your AI Bookkeeper can maintain routine records while your accountant provides professional judgment.
+Your AI Bookkeeper will maintain routine records while your accountant provides professional judgment, once it opens. It is not available yet.
 
 ### AI where it makes sense.
 
@@ -643,7 +646,7 @@ Then build the workforce you need.
 
 **Administrative Assistant** — $99/month
 
-**Bookkeeper** — $149/month
+**Bookkeeper** — $149/month *(coming soon)*
 
 **Lead Generation Specialist** — $149/month
 
@@ -657,7 +660,7 @@ Then build the workforce you need.
 
 **Customer Service Representative** — $149/month
 
-**Receptionist** — $199/month
+**Receptionist** — $199/month *(coming soon)*
 
 **Sales Team** — $349/month
 
@@ -922,7 +925,7 @@ Choose the staff your company actually needs.
 
 Routine administration, scheduling, records, information management and follow-up.
 
-### Bookkeeper — $149/month
+### Bookkeeper — $149/month *(coming soon)*
 
 Routine bookkeeping, invoices, expenses, reconciliation, receivables/payables tracking and reporting.
 
@@ -950,7 +953,7 @@ Social strategy, content, publishing, engagement, prospect interaction and perfo
 
 Routine customer inquiries, complaints, follow-up, customer records and escalation.
 
-### Receptionist — $199/month
+### Receptionist — $199/month *(coming soon)*
 
 Inbound calls, routine questions, messages, appointments, routing and transfers.
 
