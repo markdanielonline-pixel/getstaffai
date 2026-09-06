@@ -99,3 +99,75 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" https://app.getstaffai.com/api/m
 ```
 
 On the VPS, `/usr/local/bin/staffai-monitor.sh` does the same and records the result.
+
+---
+
+## Update, 2026-09-06: interface monitoring, the engineer, and what broke
+
+### staffai_events.org_id was NOT NULL
+
+Every system-level event was being silently rejected, because no caller checked
+the insert error. The sweep, the interface report and the reliability engineer's
+incidents all failed to persist, which meant change detection found no previous
+row on every run and mailed every time instead of when the picture changed.
+`org_id` is now nullable for system events and all three inserts are checked.
+
+### Interface monitoring
+
+Playwright reports into the same alerting path as the backend sweep, through
+`tests/e2e/report-to-monitor.js` and `POST /api/monitor/ui`. It runs on the VPS,
+because Playwright cannot run on Vercel.
+
+Two things that came out of running it, both of which matter:
+
+**Vercel challenges headless browsers from datacenter addresses.** The account
+is on Hobby, where IP bypass rules are unavailable (`Number of IP bypass rules
+exceeds limit: 0`) and an automation bypass secret cannot be created. So the
+suite gets the Security Checkpoint instead of the site. A challenged run is
+reported as **blocked**, not failed: a run that could not happen and a product
+that is broken must not look the same in an alert. If any check is explicitly
+challenged, the whole run is classified blocked, because the collateral failures
+do not mention the checkpoint - a page that never rendered just looks like a
+missing element.
+
+**Running the suite got the whole address flagged**, which broke the
+five-minute monitor cron from that same host. The synthetic-customer cron is
+therefore **not scheduled**; the script remains at
+`/usr/local/bin/staffai-synthetic-customer.sh` and can be run by hand. Restoring
+a scheduled interface check needs one of: a Vercel Pro plan so the address can
+be allowlisted, or a different address to run it from.
+
+### The heartbeat
+
+Because the VPS cron can be blocked at the edge, `lib/heartbeat.js` runs the
+sweep from inside the application on ordinary traffic, at most once every five
+minutes. The interval is enforced in the database rather than in memory, because
+serverless instances are plural and short-lived. It cannot be blocked by an edge
+rule because it never crosses the edge.
+
+It is not a replacement for an external checker: it cannot tell you the site is
+down, because if the site were down nothing would trigger it. Current cadence is
+therefore the heartbeat on traffic, the daily Vercel cron as a floor, the VPS
+cron whenever the edge lets it through, and Provision's own reconciler every
+five minutes locally.
+
+### The reliability engineer
+
+`lib/reliability/engineer.js`, on `deepseek/deepseek-v4-pro` (verified live on
+OpenRouter at $0.75/M in, $1.50/M out, 1M context).
+
+It runs only when a sweep fails, and only when `RELIABILITY_ENGINEER=on`. It
+ships with `RELIABILITY_ENGINEER_DRY_RUN=on`, so today it diagnoses, proposes
+and writes up without executing.
+
+The model chooses which allowlisted action to take and against which
+organization. It cannot invent an action: one it names that is not on the list
+is refused by code, not by prompt. The list is `redeliver_tasks`,
+`resume_provisioning` and `escalate`. Nothing deletes, deploys, rotates a
+credential, touches billing or DNS, or reaches a customer. Three actions per
+incident, one organization each. Every incident is written to `staffai_events`
+as `reliability.incident` and mailed with the diagnosis, the confidence and what
+was actually done.
+
+To take it out of dry run, set `RELIABILITY_ENGINEER_DRY_RUN=off`. Do that only
+after reading a few incidents and agreeing with what it proposed.
