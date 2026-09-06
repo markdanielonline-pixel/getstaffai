@@ -1,0 +1,8 @@
+{
+  "name": "staffai-premium-local",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {"dev": "vite --host 127.0.0.1", "build": "node build.mjs"},
+  "devDependencies": {"vite": "latest"}
+}

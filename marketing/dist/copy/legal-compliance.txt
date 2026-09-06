@@ -1,0 +1,523 @@
+Effective Date: August 26, 2026 Last Updated: August 26, 2026
+Service: StaffAi Operator: Studio9 LLC Address: 1012 Marquez Place, Santa Fe, NM 87505, USA Legal/Compliance: compliance@getstaffai.com
+These Terms of Service ("Terms") constitute a legally binding agreement between Studio9 LLC, a New Mexico limited liability company doing business as StaffAi ("StaffAi," "we," "us," or "our"), and the business, organization, or other legal entity accepting these Terms ("Customer," "you," or "your").
+These Terms govern access to and use of StaffAi websites, applications, Company Office, AI Employees, communications services, integrations, APIs, associated infrastructure, and related products and services (collectively, the "Services").
+By creating an account, starting a trial, purchasing a Service, clicking an acceptance mechanism, or otherwise using the Services, you agree to these Terms.
+If you accept these Terms on behalf of a company or organization, you represent and warrant that you have authority to bind that entity.
+If you lack such authority, you may not accept these Terms on its behalf.
+StaffAi is offered primarily as a business-to-business service.
+You represent that you are obtaining the Services for legitimate business, professional, commercial, organizational, or entrepreneurial purposes and not primarily for personal, family, or household use.
+You must possess the legal capacity required to enter this agreement under applicable law.
+StaffAi does not impose an independent age restriction except where required by applicable law, payment providers, third-party services, or the nature of a particular Service.
+StaffAi provides AI-powered business services organized through a company and staffing model.
+Customers may establish a Company Office and use AI-powered roles including Executive Assistants, General Managers, Administrative Assistants, Sales Representatives, Marketing personnel, Bookkeepers, Receptionists, Customer Service Representatives, and other roles made available by StaffAi.
+The Services may use artificial intelligence, machine learning, software automation, third-party applications, communications systems, databases, APIs, and other technologies.
+Terms including:
+"AI Employee"
+"employee"
+"staff"
+"hire"
+"fire"
+"onboard"
+"manager"
+"Executive Assistant"
+"General Manager"
+"Receptionist"
+"Bookkeeper"
+"Sales Representative"
+and similar employment or organizational terminology describe the StaffAi product experience and allocation of AI-powered services.
+Unless StaffAi expressly agrees otherwise in a separate written agreement, these terms do not create:
+an employer-employee relationship;
+an agency relationship;
+a partnership;
+a joint venture;
+a fiduciary relationship;
+a professional-client relationship;
+or authority for an AI Employee to legally bind StaffAi or the Customer beyond expressly authorized functionality.
+AI Employees are not natural persons.
+A Company Office is required for active use of StaffAi Employees unless StaffAi expressly provides otherwise.
+Company Office currently includes access to an Executive Assistant, General Manager, StaffAi organizational environment, company knowledge functionality, coordination, approvals, employee management, communications functionality, and other features described on the applicable ordering page.
+Current standard price:
+$199 per month.
+Features may evolve as StaffAi develops, provided changes do not materially deprive a Customer of Services already paid for without appropriate remedy.
+Customers may select an available Executive Assistant persona, currently including:
+Mara, female persona; or
+Kellan, male persona.
+Persona selection concerns voice, presentation, and interaction preferences. StaffAi does not promise materially different professional capabilities solely because of persona selection.
+Artificial intelligence is probabilistic.
+AI-generated or AI-assisted work can contain errors, omissions, incorrect assumptions, hallucinations, outdated information, inappropriate recommendations, or other inaccuracies.
+StaffAi does not warrant that AI output will always be accurate, complete, current, appropriate, or error-free.
+Customers must exercise appropriate business judgment, particularly regarding consequential matters.
+StaffAi is designed to mitigate risk through mechanisms that may include defined responsibilities, permissions, approval requirements, escalation, audit history, and human review.
+These controls reduce risk. They do not eliminate it.
+The Customer remains responsible for its business and for determining whether actions performed through StaffAi are appropriate for its circumstances.
+The Customer is responsible for:
+providing accurate company information;
+maintaining appropriate policies;
+establishing approval boundaries;
+reviewing matters requiring human judgment;
+maintaining legally required professional oversight;
+ensuring lawful use of the Services;
+maintaining necessary licenses and permissions;
+and supervising consequential business decisions.
+Unless expressly stated in a separate written agreement, StaffAi does not provide legal, tax, investment, medical, regulated financial, or other licensed professional advice.
+Information produced by StaffAi in these areas is informational and administrative in nature and is not a substitute for an appropriately qualified professional.
+The StaffAi Bookkeeper may perform routine bookkeeping and financial administration functions.
+The Bookkeeper is not represented as a CPA, licensed accountant, tax adviser, financial adviser, investment adviser, auditor, fiduciary, attorney, or other regulated professional.
+Customers remain responsible for obtaining appropriate professional advice where required.
+StaffAi may facilitate collaboration with the Customer's human accountant or other authorized professional.
+Customers may authorize StaffAi to interact with third-party systems, including email, calendars, CRM systems, accounting platforms, telephone services, social networks, websites, payment services, storage systems, and other business applications.
+By connecting a third-party service, you authorize StaffAi to access and use that service to the extent reasonably necessary to provide the requested functionality.
+You represent that you possess the authority necessary to provide such access.
+Third-party services remain governed by their own agreements and policies.
+StaffAi is not responsible for outages, restrictions, changes, suspensions, data loss, or other failures caused by third-party providers outside StaffAi's reasonable control.
+You must protect account credentials and promptly notify StaffAi of suspected unauthorized access.
+StaffAi may use secure credential-management systems and delegated authentication mechanisms designed to permit employees or services to use authorized systems without unnecessarily exposing raw credentials.
+You may not attempt to obtain, expose, reverse engineer, or misuse credentials, system secrets, or security mechanisms belonging to StaffAi or another Customer.
+StaffAi may perform routine authorized actions without requesting approval for every individual action.
+Customers may establish or receive default permission and approval policies.
+Certain actions may require explicit approval because of their financial, legal, reputational, security, or irreversible nature.
+StaffAi may independently require approval, suspend an action, or refuse execution where it reasonably determines that an action presents unusual risk, may violate law or policy, or falls outside the intended Service.
+Some StaffAi Employees may send email, SMS, social messages, make or receive telephone calls, or otherwise communicate with third parties on the Customer's behalf.
+The Customer is responsible for ensuring that its communications activities comply with applicable laws, including consent, marketing, privacy, calling-time, identification, suppression-list, opt-out, and disclosure requirements.
+For US operations, AI-generated voice calls can fall within the TCPA's artificial/prerecorded voice provisions, including consent and identification requirements. 
+StaffAi may impose additional compliance controls.
+StaffAi may support recording, transcription, summarization, monitoring, or analysis of calls and voice interactions.
+Recording and consent laws differ by jurisdiction.
+The Customer is responsible for determining and obtaining all notices, permissions, and consents legally required for calls initiated, received, or recorded on its behalf.
+StaffAi may provide automated disclosures or consent mechanisms but does not guarantee that a particular configuration satisfies every jurisdiction.
+Customers may not intentionally use StaffAi to record communications unlawfully.
+Customers using StaffAi for commercial email must comply with applicable marketing laws.
+For example, US CAN-SPAM requirements include accurate sender information and subject lines, required disclosures, a valid postal address, and an effective opt-out mechanism. 
+Customers are responsible for the legality of their audiences, claims, offers, lists, and campaigns.
+StaffAi may research publicly available business information, assist with prospect identification, perform outreach, and support sales activity.
+Customers must not use StaffAi for unlawful scraping, harassment, deception, discriminatory targeting, illegal telemarketing, unauthorized access, or communications prohibited by applicable law.
+The Customer remains responsible for claims, pricing, offers, contracts, and commercial representations made on its behalf.
+You may not use StaffAi to:
+violate applicable law;
+defraud or deceive;
+impersonate another person unlawfully;
+facilitate phishing or identity theft;
+distribute malware;
+gain unauthorized access to systems;
+circumvent security controls;
+send unlawful spam;
+conduct unlawful robocalling;
+harass, threaten, or abuse;
+infringe intellectual property rights;
+process unlawfully obtained personal data;
+engage in prohibited discrimination;
+create or distribute unlawful content;
+facilitate human trafficking, exploitation, terrorism, or violent criminal activity;
+or materially interfere with StaffAi infrastructure or other Customers.
+StaffAi may suspend or terminate Services used in violation of these requirements.
+"Customer Content" means information, documents, communications, files, business records, instructions, data, media, and other material submitted to or processed through the Services on the Customer's behalf.
+As between StaffAi and Customer, Customer retains ownership of Customer Content.
+Customer grants StaffAi a limited license to host, copy, process, transmit, transform, and otherwise use Customer Content as necessary to provide, secure, maintain, support, and improve the Customer's Services.
+StaffAi does not use Customer Content to train generalized AI models for unrelated customers or the public without Customer authorization.
+StaffAi may process Customer Content to:
+provide the Customer's Services;
+maintain company-specific memory or personalization;
+improve performance within the Customer's environment;
+detect abuse and security threats;
+troubleshoot;
+evaluate service quality;
+and satisfy legal obligations.
+Third-party AI providers are selected and configured with consideration for business-data protections, but their processing remains subject to applicable agreements between StaffAi and those providers.
+StaffAi's philosophy is that Customer business data belongs to the Customer.
+Subject to applicable law, technical limitations, security requirements, and legitimate retention obligations, Customers may request access, correction, export, or deletion of Customer data.
+Privacy requests may be sent to:
+compliance@getstaffai.com
+Paid subscriptions renew automatically according to the billing interval selected at checkout unless cancelled.
+The Customer authorizes StaffAi and its payment processors to charge the payment method provided for recurring subscription fees, applicable taxes, authorized capacity upgrades, and other charges expressly accepted by the Customer.
+StaffAi may use Stripe and additional payment processors.
+StaffAi currently offers a 7-day free trial with limited usage, where displayed at signup.
+A valid payment method may be required.
+Unless cancelled before the end of the trial, the subscription automatically converts to the paid plan disclosed during signup and the payment method will be charged.
+The price, billing frequency, trial duration, and automatic-conversion terms must be presented before enrollment.
+Subscription cancellation should remain straightforward. Current FTC enforcement continues to focus on informed consent and avoiding obstructive cancellation practices. 
+Monthly subscriptions may be cancelled before the next renewal.
+Unless otherwise stated, cancellation takes effect at the end of the then-current paid billing period, and access continues until that period ends.
+Cancellation prevents future renewals but does not ordinarily generate a prorated refund for unused time.
+Customers should be provided a reasonably straightforward means of cancelling the subscription.
+Where annual billing is offered, Customers may pay for ten months and receive twelve months of service at the applicable monthly-equivalent plan.
+Annual fees are paid in advance unless otherwise stated.
+Annual commitments are subject to the refund terms disclosed at purchase and the 30-day guarantee where applicable.
+Standard professional setup is currently:
+$497 one time.
+StaffAi may waive this fee during promotions.
+A waived setup fee has no cash value and is not refundable.
+If a Customer receives a promotional waiver and subsequently cancels, StaffAi will not retroactively charge the setup fee unless such condition was expressly disclosed before purchase.
+Eligible first-time Customers may request a refund within 30 days of the initial paid Company Office purchase.
+The guarantee is intended to remove reasonable adoption risk, not subsidize abusive or unusually expensive use.
+The guarantee may exclude:
+third-party pass-through charges;
+high-volume telecommunications usage;
+premium media-generation or external-provider charges specifically approved by Customer;
+custom services;
+migration or professional services outside standard setup;
+fraudulent or abusive accounts;
+accounts terminated for policy violations;
+chargebacks or payment fraud;
+and usage materially outside normal trial or business evaluation.
+StaffAi will disclose material exclusions applicable to a purchase before relying on them to deny a refund.
+Approved refunds are returned through the applicable payment processor where practical.
+StaffAi does not promise unlimited usage.
+Plans provide generous capacity for normal business use.
+StaffAi internally monitors usage and operating cost.
+If a Customer develops unusually high calling, messaging, AI generation, browser automation, campaign, storage, or other resource requirements, StaffAi may propose increased capacity or custom pricing.
+StaffAi will endeavor to discuss material capacity-related pricing changes in advance rather than generating surprise usage bills.
+Prices may exclude applicable sales, use, VAT, GST, withholding, or similar taxes.
+Customers are responsible for taxes legally applicable to their purchase except taxes imposed on StaffAi's net income.
+StaffAi and its licensors retain all rights in the Services, software, platform, interfaces, systems, designs, documentation, trademarks, models, configurations, processes, and other proprietary technology, excluding Customer Content.
+These Terms do not transfer ownership of StaffAi intellectual property.
+Subject to applicable law, third-party rights, and these Terms, Customer may use deliverables generated specifically for Customer through the Services for its business purposes.
+Because AI systems can generate similar outputs for different users, StaffAi does not warrant exclusivity or copyrightability of AI-generated material.
+Customer remains responsible for reviewing deliverables before consequential publication or use.
+If you voluntarily provide suggestions regarding StaffAi, you permit StaffAi to use them without restriction or compensation, provided this does not transfer ownership of Customer confidential information.
+Each party may receive confidential information belonging to the other.
+The receiving party will use reasonable measures to protect confidential information and use it only for purposes related to the Services.
+Confidential information does not include information that is publicly available without breach, independently developed, lawfully obtained from another source, or required to be disclosed by law.
+StaffAi seeks to provide reliable Services but does not guarantee uninterrupted availability.
+Services may be affected by maintenance, third-party outages, telecommunications failures, internet failures, cybersecurity events, provider limitations, force majeure events, or other circumstances outside reasonable control.
+Some StaffAi functionality may be designated beta, preview, experimental, early access, or otherwise under development.
+Such features may change, contain defects, or be discontinued.
+Customers should not rely on experimental functionality for mission-critical activities without appropriate safeguards.
+StaffAi may suspend Services where reasonably necessary to:
+protect security;
+prevent fraud;
+stop unlawful activity;
+protect third parties;
+address material nonpayment;
+prevent infrastructure harm;
+comply with law;
+or investigate material violations of these Terms.
+Where reasonably possible, StaffAi will provide notice.
+Either party may terminate according to applicable subscription terms.
+StaffAi may terminate immediately for material unlawful use, serious security abuse, fraud, repeated policy violations, or conduct creating substantial risk.
+Upon termination, active AI Employee permissions and sessions may be revoked.
+Following termination, ordinary Customer data will generally remain available for a 30-day retention period, unless a different period is required by law, security needs, legitimate dispute preservation, financial-record obligations, backup architecture, or another disclosed requirement.
+After the applicable period, StaffAi may delete or anonymize Customer data according to its retention procedures.
+Backup copies may persist temporarily until normal backup rotation removes them.
+Customers should export required information before the retention period expires.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE."
+StaffAi DISCLAIMS IMPLIED WARRANTIES INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND WARRANTIES ARISING FROM COURSE OF DEALING OR USAGE.
+StaffAi DOES NOT GUARANTEE ANY PARTICULAR REVENUE, PROFIT, LEAD VOLUME, SALES RESULT, MARKETING RESULT, COST SAVING, OR BUSINESS OUTCOME.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, NEITHER PARTY WILL BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES, OR FOR LOST PROFITS, REVENUE, GOODWILL, OR BUSINESS OPPORTUNITY ARISING FROM THE SERVICES.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, StaffAi'S AGGREGATE LIABILITY ARISING OUT OF OR RELATING TO THE SERVICES WILL NOT EXCEED THE AMOUNTS PAID OR PAYABLE BY CUSTOMER TO StaffAi DURING THE TWELVE MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM.
+Nothing in these Terms excludes liability that cannot lawfully be excluded.
+Customer will defend, indemnify, and hold harmless Studio9 LLC, its affiliates, officers, employees, contractors, and agents from third-party claims arising from:
+Customer Content;
+Customer's unlawful use of the Services;
+Customer's communications or campaigns;
+Customer's products or services;
+Customer's violation of law;
+Customer's infringement of third-party rights;
+or Customer's breach of these Terms.
+StaffAi will provide reasonable notice and cooperation regarding covered claims.
+These Terms are governed by the laws of the State of New Mexico, USA, without regard to conflict-of-law principles.
+The Federal Arbitration Act governs the interpretation and enforcement of the arbitration provisions below where applicable.
+Except for matters eligible for small claims court and requests for temporary or preliminary injunctive relief concerning intellectual property, unauthorized access, or misuse of confidential information, disputes arising from these Terms or the Services will be resolved through binding individual arbitration rather than a court trial.
+Before commencing arbitration, the complaining party must provide written notice describing the dispute and requested resolution and allow at least 30 days for good-faith informal resolution.
+Unless the parties agree otherwise, arbitration will occur in New Mexico or remotely where permitted.
+The arbitration will be administered by a recognized arbitration provider under commercially appropriate rules agreed upon by the parties or determined under applicable law.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, EACH PARTY AGREES TO BRING CLAIMS ONLY IN ITS INDIVIDUAL CAPACITY.
+NEITHER PARTY MAY PARTICIPATE AS A PLAINTIFF OR CLASS MEMBER IN A CLASS, COLLECTIVE, CONSOLIDATED, REPRESENTATIVE, OR PRIVATE ATTORNEY GENERAL ACTION AGAINST THE OTHER WHERE SUCH WAIVER IS LEGALLY ENFORCEABLE.
+The arbitrator may award relief only to the individual party seeking relief and only to the extent necessary to resolve that party's individual claim.
+WHERE A DISPUTE IS NOT SUBJECT TO ARBITRATION, EACH PARTY WAIVES TRIAL BY JURY TO THE MAXIMUM EXTENT PERMITTED BY LAW.
+StaffAi may update these Terms as the Services, laws, or business evolve.
+Material changes will be communicated through reasonable means.
+Where legally required, StaffAi will obtain renewed consent.
+Continued use after an effective update constitutes acceptance where permitted by law.
+Studio9 LLC d/b/a StaffAi 1012 Marquez Place Santa Fe, NM 87505 USA
+Compliance: compliance@getstaffai.com
+Studio9 LLC d/b/a StaffAi respects the privacy of Customers, users, employees of Customer organizations, prospects, callers, contacts, website visitors, and other individuals whose personal information may be processed through StaffAi.
+This Privacy Policy explains how we collect, use, disclose, protect, retain, and otherwise process personal information.
+Depending on how StaffAi is used, we may process:
+Name Business name Job title Email Telephone number Account credentials Authentication information
+Company website Products/services Pricing Policies Business hours Organizational information Customer-provided knowledge Company documents
+Billing contact Transaction information Subscription information Payment status
+Payment card information may be processed directly by Stripe or other payment processors rather than stored directly by StaffAi.
+Emails Chats Voice messages Telephone calls SMS Social communications Support messages
+Where enabled and lawful:
+Call audio Voice recordings Transcripts Summaries Speaker information Communication metadata
+Information obtained through Customer-authorized systems such as:
+Email Calendar CRM Accounting Social platforms Telephone systems Cloud storage Business applications
+Names Business details Contact information Communication history Lead information Sales records Support records Appointment information
+Invoices Expenses Transactions Reconciliation information Receivables/payables Other bookkeeping records
+IP address Device information Browser information Application logs Authentication events Security events Usage information Cookies and similar technologies
+Instructions Prompts generated internally Employee requests AI outputs Tool actions Approval decisions Performance records Task histories
+We may use information to:
+provide StaffAi;
+establish Company Offices;
+operate AI Employees;
+authenticate users;
+maintain company memory;
+perform requested business tasks;
+communicate with users;
+process payments;
+provide support;
+secure systems;
+detect fraud and abuse;
+monitor performance;
+troubleshoot;
+maintain audit histories;
+comply with law;
+enforce agreements;
+improve reliability;
+and develop StaffAi functionality.
+We do not use Customer Content to train generalized AI models for unrelated customers or the public without Customer authorization.
+Company-specific information may be used to provide and improve that Customer's own StaffAi experience.
+We may disclose information to service providers necessary to operate StaffAi, including providers of:
+cloud infrastructure;
+AI models;
+communications;
+email;
+telephony;
+authentication;
+security;
+secret management;
+analytics;
+customer support;
+payments;
+storage;
+and business integrations.
+Providers receive information only as reasonably necessary for their functions and subject to applicable contractual safeguards.
+StaffAi currently expects to use Stripe and may add other payment processors.
+Payment processors independently process certain payment information under their own privacy terms.
+Information may be transferred in connection with a merger, financing, acquisition, reorganization, sale of assets, bankruptcy, or similar corporate transaction, subject to applicable law.
+We may disclose information where reasonably necessary to:
+comply with law;
+respond to lawful process;
+protect StaffAi or others;
+investigate fraud;
+protect security;
+enforce agreements;
+or establish, exercise, or defend legal claims.
+StaffAi does not intend to operate a business model based on selling Customer personal information.
+If our practices materially change, we will update disclosures and provide legally required rights.
+Depending on jurisdiction, individuals may have rights to:
+access personal information;
+correct inaccurate information;
+delete information;
+obtain a portable copy;
+restrict processing;
+object to certain processing;
+withdraw consent;
+opt out of certain sales, sharing, targeted advertising, or profiling;
+and appeal certain privacy decisions.
+California law, for example, provides covered consumers rights including access, deletion, correction, and opt-out rights where the CCPA applies.  Colorado similarly provides access, correction, deletion, portability, and certain opt-out rights for covered processing. 
+StaffAi will honor applicable rights based on jurisdiction and legal applicability.
+Submit requests to:
+compliance@getstaffai.com
+We may verify identity and authority before completing a request.
+Where information is processed solely on behalf of a Customer, we may direct the requester to that Customer as the relevant data controller/business.
+We retain information for as long as reasonably necessary to:
+provide Services;
+maintain accounts;
+meet contractual commitments;
+protect security;
+resolve disputes;
+comply with law;
+and maintain required financial/business records.
+After account termination, ordinary Customer data is generally scheduled for deletion after 30 days, subject to legal, security, backup, dispute, and financial-record exceptions.
+StaffAi uses administrative, technical, and organizational safeguards designed to protect information.
+Controls may include:
+tenant isolation;
+role-based access;
+authentication controls;
+encrypted communications;
+secret management;
+credential isolation;
+logging;
+monitoring;
+backups;
+least-privilege access;
+approval controls;
+and incident-response procedures.
+No security system can guarantee absolute protection.
+StaffAi initially serves businesses in the United States and Caribbean and expects global availability.
+Information may therefore be processed in countries different from the individual's location.
+Where required, StaffAi will use appropriate contractual or legal mechanisms for international transfers.
+StaffAi is a B2B business service and is not directed toward children.
+We do not knowingly design StaffAi for collection of children's personal information except where legitimately required by a Customer's lawful business operations and supported by appropriate legal safeguards.
+StaffAi may use necessary, functional, analytics, and other cookies or similar technologies as described in the Cookie Policy.
+We may update this Privacy Policy.
+Material changes will be communicated where legally required.
+Studio9 LLC d/b/a StaffAi 1012 Marquez Place Santa Fe, NM 87505 USA
+compliance@getstaffai.com
+Customers may use StaffAi only for lawful business purposes.
+You may not use StaffAi to facilitate:
+fraud;
+phishing;
+credential theft;
+malware;
+unauthorized system access;
+identity theft;
+illegal surveillance;
+harassment;
+threats;
+extortion;
+unlawful discrimination;
+illegal spam;
+unlawful telemarketing;
+deceptive impersonation;
+human trafficking;
+sexual exploitation;
+terrorism;
+violent criminal activity;
+illegal goods or services;
+intellectual-property infringement;
+privacy violations;
+or evasion of lawful restrictions.
+You may not intentionally circumvent StaffAi safety, security, permission, billing, capacity, or compliance controls.
+You may not use AI-generated voice or communications to deceive individuals about material facts, impersonate real individuals without lawful authority, or evade legally required AI disclosures.
+StaffAi may investigate suspected abuse and may restrict, suspend, or terminate access.
+StaffAi uses artificial intelligence and automated systems to perform business tasks.
+AI systems may:
+generate content;
+interpret instructions;
+conduct research;
+classify information;
+communicate;
+recommend actions;
+use business tools;
+coordinate work;
+and execute authorized tasks.
+AI can make mistakes.
+StaffAi therefore combines AI capability with defined responsibilities, access controls, approvals, escalation, monitoring, and human oversight.
+Customers remain responsible for determining the appropriate level of autonomy for their organization and for consequential decisions requiring human or professional judgment.
+StaffAi does not warrant that AI outputs are always accurate, complete, original, or appropriate.
+AI Employees are software-based services, not natural persons or legal employees.
+Eligible Customers receive a seven-day free trial with limited usage.
+A payment method may be required.
+The trial automatically converts to the selected paid subscription unless cancelled before the trial expires.
+The applicable price and renewal interval will be disclosed before enrollment.
+Monthly subscriptions can be cancelled before the next renewal.
+Access ordinarily continues through the current paid billing period.
+Future renewal charges stop after effective cancellation.
+Eligible first-time Company Office Customers may request a refund within 30 days of their initial paid purchase.
+The guarantee may exclude approved third-party pass-through charges, unusually high telecommunications or media-generation usage, custom professional services, abuse, fraud, policy violations, or other exceptional costs disclosed to the Customer.
+Annual plans are prepaid.
+The 30-day guarantee applies to eligible initial annual purchases. After the guarantee period, annual fees are generally non-refundable except where required by law.
+Contact:
+compliance@getstaffai.com
+Include the business name and account email.
+Approved refunds will ordinarily be returned through the original payment processor.
+StaffAi may use cookies and similar technologies to operate and improve its website and applications.
+Used for:
+authentication;
+security;
+sessions;
+preferences;
+billing flows;
+and core functionality.
+These may be required for the Service to function.
+Used to remember choices and improve user experience.
+StaffAi may use privacy-conscious analytics to understand website and product usage.
+If StaffAi later uses advertising or retargeting technologies, appropriate disclosures and consent/opt-out mechanisms will be implemented where required.
+Browser settings may permit you to block or delete cookies.
+Where applicable law requires consent for non-essential cookies, StaffAi will provide appropriate controls.
+StaffAi employees should receive only the information and authority required to perform their jobs.
+Our security architecture is designed around:
+Tenant isolation
+Customer organizations are logically separated.
+Role-based access
+Users and AI Employees receive access according to their responsibilities.
+Least privilege
+Employees should not automatically access systems unrelated to their jobs.
+Credential protection
+Secrets and credentials are managed through controlled infrastructure designed to avoid unnecessary exposure.
+Approvals
+High-risk actions can require explicit authorization.
+Auditability
+Material employee actions can be logged for investigation and accountability.
+Authentication
+StaffAi uses identity and authentication controls to protect accounts.
+Encryption
+Appropriate encryption is used for data transmission and storage where supported.
+Monitoring
+Infrastructure and security events may be monitored for suspicious behavior and operational problems.
+Incident response
+StaffAi maintains processes for identifying, containing, investigating, and responding to security and AI incidents.
+No system is perfectly secure, but StaffAi treats security as an operating requirement rather than a marketing slogan.
+Security concerns can be reported to:
+compliance@getstaffai.com
+StaffAi may enable Customers to communicate through:
+email;
+SMS;
+telephone;
+voice;
+social messaging;
+and other channels.
+Customers must comply with applicable communications laws.
+AI-generated telephone voices may constitute artificial or prerecorded voices under applicable telecommunications laws.
+For US consumer calls, the FCC has expressly determined that AI-generated voices fall within TCPA artificial/prerecorded voice restrictions. 
+Customers must obtain legally required consent before making applicable calls.
+Customers must not use StaffAi to unlawfully conceal the identity of the calling business or materially deceive recipients.
+Customers are responsible for:
+consent;
+do-not-call requirements;
+calling hours;
+suppression lists;
+required disclosures;
+opt-outs;
+and campaign legality.
+Calls may be recorded or transcribed where enabled.
+Because recording-consent rules vary by jurisdiction, Customers must ensure required notice and consent.
+Commercial email campaigns must comply with applicable laws, including CAN-SPAM in the United States where applicable. 
+Customers must obtain any legally required consent for promotional or automated messaging and honor applicable opt-out requests.
+StaffAi may suspend communications functionality where use presents material legal, carrier, platform, or reputational risk.
+This Data Processing Addendum ("DPA") applies where Studio9 LLC processes personal data on behalf of Customer in connection with StaffAi.
+Where Customer determines the purposes and means of processing Customer Personal Data, Customer acts as controller/business and Studio9 LLC acts as processor/service provider, as those terms are defined under applicable privacy law.
+For information StaffAi processes for its own legitimate operational purposes, StaffAi may act independently as controller/business.
+StaffAi processes Customer Personal Data according to:
+the Customer's documented instructions;
+the Terms;
+the applicable order;
+and lawful use of the Services.
+Persons authorized to process Customer Personal Data are subject to appropriate confidentiality obligations.
+StaffAi maintains reasonable technical and organizational safeguards appropriate to the nature of the processing.
+Customer authorizes StaffAi to use subprocessors necessary to provide the Services.
+These may include providers of:
+cloud infrastructure;
+AI inference;
+communications;
+telephony;
+email;
+storage;
+authentication;
+payments;
+monitoring;
+security;
+and integrations.
+StaffAi remains responsible for establishing appropriate contractual protections with subprocessors as required by applicable law.
+Where legally required and reasonably possible, StaffAi will assist Customer with requests from individuals concerning Customer Personal Data.
+StaffAi will notify affected Customers of confirmed personal-data breaches where notification is required by applicable law or contract and will provide reasonably available information necessary for Customer's compliance obligations.
+Upon termination and subject to legal and technical retention requirements, Customer Personal Data will ordinarily enter StaffAi's 30-day post-termination retention process before deletion or anonymization.
+Where legally required, StaffAi will use appropriate safeguards for international transfers of personal information.
+StaffAi will make reasonably necessary information available to demonstrate compliance with applicable processor obligations, subject to confidentiality, security, proportionality, and protection of other Customers.
+Subject matter: Provision of StaffAi business and AI workforce services.
+Duration: Subscription term plus applicable retention period.
+Nature: Collection, storage, organization, retrieval, analysis, generation, communication, automation, transmission, and deletion.
+Purpose: Providing Customer-requested business services.
+Data subjects may include: Customer personnel, prospects, leads, customers, suppliers, contractors, callers, contacts, and other individuals whose data Customer lawfully processes.
+Data may include: identity, contact, business, communication, sales, support, scheduling, financial-business, technical, and other Customer-provided information.
+Information on the StaffAi website is provided for general informational and commercial purposes.
+Descriptions of AI Employees explain intended capabilities and do not guarantee that every integration, action, communication channel, or feature is available in every jurisdiction, plan, industry, or technical configuration.
+Examples of workflows and conversations are illustrative unless expressly identified as actual customer results.
+StaffAi does not guarantee specific revenue, sales, productivity, lead-generation, marketing, staffing-cost, or financial outcomes.
+AI can make mistakes.
+Professional advice should be obtained where appropriate.
+© 2026 Studio9 LLC. All rights reserved.
+StaffAi, its website, application, branding, designs, software, documentation, employee presentation system, text, graphics, and other proprietary materials are protected by applicable intellectual-property laws.
+No material may be reproduced, distributed, reverse engineered, republished, or commercially exploited except as authorized by law or written permission.
+Third-party trademarks belong to their respective owners.
+The footer should expose these links on every public page:
+Terms of Service Privacy Policy Acceptable Use Policy AI Disclosure Refund & Cancellation Policy Cookie Policy Security Data Processing Addendum Communications & Telephony Policy
+And:
+StaffAi is a service of Studio9 LLC.
+1012 Marquez Place, Santa Fe, NM 87505, USA
+compliance@getstaffai.com
+There are three things I would not let Codex silently improvise during implementation.
+First, signup needs an affirmative checkbox accepting the Terms and Privacy Policy, with the accepted document versions, timestamp, user/account, and ideally IP/event evidence recorded. Trial checkout must clearly show $0 today, 7-day trial, exact amount charged afterward, billing frequency, and automatic renewal before authorization. That matte
