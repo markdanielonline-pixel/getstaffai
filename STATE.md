@@ -2921,6 +2921,19 @@ rewritten.
 
 ## Architectural direction from Mark, 2026-09-05
 
+
+## Correction from Mark, 2026-09-06 — supersedes the Lynkwe direction above
+
+Mark has chosen a different path for Lynkwe. It is no longer Staff AI's social
+media manager, and OutReply is no longer being adopted as "the engine behind
+Lynkwe". The paragraph below about Lynkwe is therefore historical; do not act on
+it. OutReply remains the intended social provider **for Staff AI itself**, and
+the token Mark supplied on 2026-09-05 still applies to that.
+
+He has also authorised parking Beacon and deleting whatever Lynkwe holds that
+Staff AI does not need. Nothing has been deleted. Deletion is irreversible and
+the containers hold live customer-facing state, so it is scoped and confirmed
+before anything is removed - see the deletion plan agreed in that session.
 - **Lynkwe is Staff AI's social media manager**, not an unrelated business. Its
   current infrastructure is outdated and will be retired once Staff AI is up;
   **OutReply becomes the engine behind Lynkwe** at that point. Nothing is to be
