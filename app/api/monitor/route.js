@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { runHealthSweep, recordAndAlert } from '@/lib/monitor';
+import { handleIncident } from '@/lib/reliability/engineer';
 
 // The sweep hits several live endpoints, one of which is a real model call.
 export const maxDuration = 120;
@@ -29,9 +30,22 @@ async function handle(req) {
     detail: error?.message || String(error),
   }));
 
+  // A failing sweep goes to the reliability engineer, which diagnoses it and
+  // may apply one of a small set of reversible, organization-scoped fixes. It
+  // runs only on failure, so a healthy system costs nothing, and it is skipped
+  // entirely unless RELIABILITY_ENGINEER is on - an autonomous remediator is
+  // something you switch on deliberately, not something that appears with a
+  // deploy.
+  let incident = null;
+  if (!sweep.ok && process.env.RELIABILITY_ENGINEER === 'on') {
+    incident = await handleIncident(sweep, {
+      dryRun: process.env.RELIABILITY_ENGINEER_DRY_RUN === 'on',
+    }).catch(error => ({ error: error?.message || String(error) }));
+  }
+
   // 503 so an external uptime check treats a failing sweep as an outage without
   // needing to parse the body.
-  return NextResponse.json({ ...sweep, alert }, { status: sweep.ok ? 200 : 503 });
+  return NextResponse.json({ ...sweep, alert, incident }, { status: sweep.ok ? 200 : 503 });
 }
 
 export async function GET(req) {
