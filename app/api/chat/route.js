@@ -7,6 +7,29 @@ import { captureLead } from '@/lib/sales/leads';
 
 export const maxDuration = 30;
 
+// The marketing site is a separate Vercel project on getstaffai.com, so the
+// widget there calls this endpoint cross-origin. Only the two marketing
+// hostnames are allowed; every other origin gets no CORS header and is
+// blocked by the browser, so this does not open the agent up to embedding
+// on arbitrary sites.
+const ALLOWED_ORIGINS = new Set(['https://getstaffai.com', 'https://www.getstaffai.com']);
+
+function corsHeaders(req) {
+  const origin = req.headers.get('origin');
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) return {};
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  };
+}
+
+export async function OPTIONS(req) {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
+}
+
 // This is the PUBLIC, pre-login agent. It is a sales employee, not support.
 // The authenticated equivalent lives at /api/support/agent and knows the
 // customer's organization; the two must not be confused.
@@ -54,7 +77,7 @@ export async function POST(req) {
     return NextResponse.json({
       text: "I can't reach my systems right now. Leave your email at getstaffai.com and the Staff AI team will pick this up directly.",
       degraded: true,
-    });
+    }, { headers: corsHeaders(req) });
   }
 
   try {
@@ -106,7 +129,7 @@ export async function POST(req) {
       },
     });
 
-    return NextResponse.json({ text: result.text, model: `${provider}:${id}` });
+    return NextResponse.json({ text: result.text, model: `${provider}:${id}` }, { headers: corsHeaders(req) });
   } catch (error) {
     const authProblem = isProviderAuthError(error);
     console.error(`[sales-agent] generation failed (provider=${provider}, authProblem=${authProblem}):`, error?.message || error);
@@ -115,6 +138,6 @@ export async function POST(req) {
     return NextResponse.json({
       text: "Something on my side just failed. Sign up at app.getstaffai.com/portal/signup and the Staff AI team will make sure you're looked after.",
       degraded: true,
-    });
+    }, { headers: corsHeaders(req) });
   }
 }
