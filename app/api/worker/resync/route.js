@@ -29,6 +29,18 @@ export async function POST(req) {
   const orgId = body.orgId || new URL(req.url).searchParams.get('orgId');
   if (!orgId) return NextResponse.json({ error: 'orgId is required' }, { status: 400 });
 
+  // A whole-workforce resync is dangerous and is refused without an explicit
+  // acknowledgement. Running one against a live tenant reinstalls every agent
+  // on a single runtime; doing it twice in quick succession left eight agents
+  // in error and the runtime config in a shape the installer could no longer
+  // add agents to. One employee at a time is the safe form, and the only one
+  // that should be used until that failure is understood.
+  if (!body.employeeId && body.confirmWholeWorkforce !== true) {
+    return NextResponse.json({
+      error: 'Refusing to resync a whole workforce. Pass employeeId to sync one employee, or confirmWholeWorkforce: true if you accept that every agent on this tenant reinstalls.',
+    }, { status: 400 });
+  }
+
   try {
     const result = await resyncWorkforce(orgId, { employeeId: body.employeeId || null });
     return NextResponse.json(result, { status: result.failed ? 207 : 200 });

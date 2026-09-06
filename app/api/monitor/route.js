@@ -36,11 +36,25 @@ async function handle(req) {
   // entirely unless RELIABILITY_ENGINEER is on - an autonomous remediator is
   // something you switch on deliberately, not something that appears with a
   // deploy.
+  // The engineer is not awaited into the response. The sweep already spends
+  // real time on a live model call and a Provision round trip per customer,
+  // and adding a diagnosis on top pushed the whole request past its execution
+  // budget, so a failing sweep started returning a platform error instead of
+  // the failure it had just detected. Detection must never be taken down by
+  // the thing that reacts to it.
   let incident = null;
   if (!sweep.ok && process.env.RELIABILITY_ENGINEER === 'on') {
-    incident = await handleIncident(sweep, {
+    const investigation = handleIncident(sweep, {
       dryRun: process.env.RELIABILITY_ENGINEER_DRY_RUN === 'on',
     }).catch(error => ({ error: error?.message || String(error) }));
+
+    // Give it a bounded slice of the remaining budget rather than the whole of
+    // it. Whatever it finishes is reported here; whatever it does not is still
+    // written to staffai_events as a reliability.incident when it lands.
+    incident = await Promise.race([
+      investigation,
+      new Promise(resolve => setTimeout(() => resolve({ started: true, note: 'still running; read staffai_events for the outcome' }), 25_000)),
+    ]);
   }
 
   // 503 so an external uptime check treats a failing sweep as an outage without
