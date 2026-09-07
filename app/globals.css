@@ -1853,6 +1853,9 @@ h1, h2, h3, h4, h5, h6 {
   --border-light: rgba(255, 255, 255, 0.14);
   --bg-primary: rgba(255, 255, 255, 0.06);
   --bg-secondary: rgba(255, 255, 255, 0.04);
+  /* The accent is tuned for a light page and goes muddy on this panel, which
+   * left "Add another company" and the billing link barely legible. */
+  --accent-color: #7fa9ff;
   color: var(--text-primary);
 }
 .portal-sidebar a { color: var(--text-secondary); }
