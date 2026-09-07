@@ -30,6 +30,13 @@ export default function WorkforceRoster({ employees, roles, canHire, hireAction,
   const sellable = roles.filter(role => role.status !== 'coming_soon');
   const comingSoon = roles.filter(role => role.status === 'coming_soon');
   const [roleKey, setRoleKey] = useState(sellable[0]?.key || '');
+  // Which employee the CEO is being asked to confirm dismissing, plus the
+  // reason they typed. Dismissal used to fire on a single click: the runtime
+  // was torn down and the employee marked alumni with nothing in between, and
+  // it cannot be undone. Re-hiring the same role builds a new employee with a
+  // new identity, not the one that was removed.
+  const [confirming, setConfirming] = useState(null);
+  const [reason, setReason] = useState('');
 
   const current = employees.filter(e => e.status !== 'alumni');
   const alumni = employees.filter(e => e.status === 'alumni');
@@ -56,7 +63,10 @@ export default function WorkforceRoster({ employees, roles, canHire, hireAction,
   function dismiss(employee) {
     const formData = new FormData();
     formData.set('employeeId', employee.id);
+    if (reason.trim()) formData.set('reason', reason.trim());
     run(dismissAction, formData, `${employee.name} has been dismissed and their runtime removed.`);
+    setConfirming(null);
+    setReason('');
   }
 
   return (
@@ -138,10 +148,50 @@ export default function WorkforceRoster({ employees, roles, canHire, hireAction,
                       <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                         Included in your Company Office and cannot be dismissed.
                       </p>
+                    ) : confirming === employee.id ? (
+                      <div style={{ border: '1px solid #ef4444', borderRadius: '0.5rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.06)' }}>
+                        <p style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                          Dismiss {employee.name}?
+                        </p>
+                        <p style={{ margin: '0 0 0.9rem', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          This deletes their runtime and cannot be undone. Their past work and
+                          conversations are kept, but hiring the role again creates a new
+                          employee rather than bringing this one back.
+                        </p>
+                        <label htmlFor={`reason-${employee.id}`} style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                          Reason (optional, kept on their record)
+                        </label>
+                        <input
+                          id={`reason-${employee.id}`}
+                          type="text"
+                          value={reason}
+                          onChange={(e) => setReason(e.target.value)}
+                          placeholder="No longer needed"
+                          style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem', marginBottom: '0.9rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.35rem', fontSize: '0.9rem' }}
+                        />
+                        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => dismiss(employee)}
+                            disabled={pending}
+                            style={{ padding: '0.55rem 1rem', background: '#ef4444', border: '1px solid #ef4444', color: '#ffffff', borderRadius: '0.3rem', fontWeight: 'bold', cursor: pending ? 'default' : 'pointer' }}
+                          >
+                            {pending ? 'Dismissing...' : `Yes, dismiss ${employee.name}`}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setConfirming(null); setReason(''); }}
+                            disabled={pending}
+                            style={{ padding: '0.55rem 1rem', background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.3rem', cursor: pending ? 'default' : 'pointer' }}
+                          >
+                            Keep them
+                          </button>
+                        </div>
+                      </div>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => dismiss(employee)}
+                        onClick={() => { setConfirming(employee.id); setReason(''); }}
                         disabled={pending}
                         style={{ padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: 'var(--text-primary)', borderRadius: '0.3rem', cursor: pending ? 'default' : 'pointer' }}
                       >
