@@ -21,7 +21,9 @@ export async function signUp(selectedBilling, formData) {
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${origin}/auth/callback`,
+      // Must be a page, not the server callback route: the confirmation link
+      // returns the session in a URL fragment, which no server route can read.
+      emailRedirectTo: `${origin}/auth/finish?next=${encodeURIComponent('/portal/incorporate')}`,
     },
   })
 

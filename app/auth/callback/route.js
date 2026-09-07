@@ -21,5 +21,19 @@ export async function GET(request) {
     }
   }
 
-  return NextResponse.redirect(`${siteUrl}/portal/login?error=auth_callback_failed`)
+  // No code, or the exchange failed. Do not dead-end here.
+  //
+  // Supabase's verify endpoint hands the session back in a URL fragment, which
+  // is never transmitted to a server, so this route genuinely cannot see it and
+  // used to answer auth_callback_failed. That is what every signup confirmation
+  // hit: a new customer confirmed their address and was bounced to login with an
+  // error code. The PKCE exchange also fails whenever the mail is opened on a
+  // different device from the one that signed up, which is the normal case.
+  //
+  // Redirect to the client page that can read a fragment. A redirect to a target
+  // with no fragment of its own preserves the original one, so links already
+  // sitting in inboxes keep working.
+  const handoff = new URL(`${siteUrl}/auth/finish`);
+  handoff.searchParams.set('next', next);
+  return NextResponse.redirect(handoff.toString());
 }
