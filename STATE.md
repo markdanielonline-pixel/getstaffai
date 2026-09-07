@@ -5,6 +5,36 @@ This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
 
+## Current as of 2026-09-07 (read this before the sections below)
+
+The authoritative as-built description is now `docs/STAFFAI-AS-BUILT-2026-09-05.md`.
+Where the older sections in this file disagree with it, that document wins.
+
+Live and verified since then:
+
+- Pinned OpenClaw runtime proven on a genuinely fresh tenant. The install script's
+  `flock` child shell no longer loses the pin.
+- Eight sellable roles. Bookkeeper and Receptionist are marked coming soon on the
+  site, and the sales agent will not sell a role the product refuses to hire.
+- Free trial removed everywhere, including terms. Paid from day one behind a
+  30-day money-back guarantee.
+- AI sales agent live on getstaffai.com; first production lead captured.
+- Monitoring sweeps every five minutes off ordinary traffic, plus a daily Vercel
+  cron. The VPS cron is gone: that address is flagged by Vercel's checkpoint and
+  the account is on Hobby, so it cannot be allowlisted.
+- Reliability engineer (DeepSeek V4 Pro) live on a three-action allowlist.
+- Delegation certified CEO -> EA -> GM against a real Provision task. The
+  GM -> specialist leg is not yet proven.
+- Public problem reporter on every marketing page and in the product, feeding the
+  monitor as a warning and sending a delayed thank-you off the heartbeat.
+
+Known open, not blockers to sell:
+
+- Three stranded organizations (Staff AI, MDV Group, Launch Verification Co) plus
+  six old Acme Corp test tenants. Re-provisioning them needs the founder's word.
+- Direct employee chat still present; the operating model says it goes.
+- Onboarding rebuild, PWA install and push, recurring work, approval queue.
+
 ## Architecture: preserve these boundaries
 
 CEO/customer -> Staff AI web/PWA -> Staff AI control plane -> EA/GM orchestration
