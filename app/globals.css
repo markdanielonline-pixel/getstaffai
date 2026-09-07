@@ -1837,7 +1837,7 @@ h1, h2, h3, h4, h5, h6 {
   .bundle-banner .bundle-discount-num { font-size: 3.5rem; }
 }
 
-/* Portal sidebar: a dark surface inside a light theme.
+/* Portal dark surfaces (sidebar and top bar) inside a light theme.
  *
  * The sidebar paints itself near black but every child asked for
  * var(--text-primary), which in this theme is near black ink. Dark text on a
@@ -1847,7 +1847,7 @@ h1, h2, h3, h4, h5, h6 {
  * Rather than hardcode a colour into each inline style, the tokens are
  * redefined for this subtree. Anything rendered inside the sidebar now inherits
  * contrast that suits the surface it is actually sitting on. */
-.portal-sidebar {
+.portal-sidebar, .portal-darkbar {
   --text-primary: #f5f7fa;
   --text-secondary: #b6c0cf;
   --border-light: rgba(255, 255, 255, 0.14);
@@ -1858,8 +1858,8 @@ h1, h2, h3, h4, h5, h6 {
   --accent-color: #7fa9ff;
   color: var(--text-primary);
 }
-.portal-sidebar a { color: var(--text-secondary); }
-.portal-sidebar a:hover { color: var(--text-primary); }
+.portal-sidebar a, .portal-darkbar a { color: var(--text-secondary); }
+.portal-sidebar a:hover, .portal-darkbar a:hover { color: var(--text-primary); }
 /* Native form controls do not inherit reliably, so they are set explicitly.
  * The option list is painted by the operating system and needs its own dark
  * pair or it renders white-on-white in some browsers. */

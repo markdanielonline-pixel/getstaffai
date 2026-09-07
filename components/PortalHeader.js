@@ -8,7 +8,7 @@ export default function PortalHeader({ title = "Dashboard" }) {
   const name = identity?.name || 'Your account';
   const planLabel = identity?.planLabel || 'No active plan';
   return (
-    <header style={{
+    <header className="portal-darkbar" style={{
       height: '80px',
       position: 'fixed',
       top: 0,
