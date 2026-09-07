@@ -52,10 +52,15 @@ CEO/customer -> Staff AI web/PWA -> Staff AI control plane -> EA/GM orchestratio
   and orchestration metadata.
 - Provision Core is the workforce execution engine, not the SaaS control plane.
 - Frappe + ERPNext is the Business OS, with isolated tenant sites/databases.
-- Qwen 3.8 Flash is the architectural default customer-facing workforce model;
-  GLM-5.3 is the internal engineering/maintenance model. Code alignment remains
-  incomplete. OpenRouter is the initial upstream gateway; Staff AI remains
-  model/provider agnostic.
+- Models, as actually configured. Qwen 3.8 Flash is the customer-facing workforce
+  default. The Executive Assistant and General Manager run on GPT-5 Nano. The
+  reliability engineer, which is the only thing that diagnoses and repairs, runs
+  on DeepSeek V4 Pro by the founder's explicit and repeated instruction; treat
+  that as settled and do not substitute another model for repair work. The
+  per-tenant Provision dispatcher runs on GLM-4.7, which is ProvisionCore's own
+  hardcoded default rather than a Staff AI choice: it routes and never repairs,
+  so it is deliberately left alone. OpenRouter is the upstream gateway and Staff
+  AI remains model and provider agnostic.
 - OutReply is provisional, pending final API/integration confirmation.
 - Do not restart broad architecture reconciliation or redesign these boundaries
   without a concrete architectural contradiction.
