@@ -23,10 +23,17 @@ Live and verified since then:
   cron. The VPS cron is gone: that address is flagged by Vercel's checkpoint and
   the account is on Hobby, so it cannot be allowlisted.
 - Reliability engineer (DeepSeek V4 Pro) live on a three-action allowlist.
-- Delegation certified CEO -> EA -> GM against a real Provision task. The
-  GM -> specialist leg is not yet proven.
+- Delegation certified end to end against real Provision tasks: CEO -> EA -> GM
+  -> specialist, with delivered work product.
 - Public problem reporter on every marketing page and in the product, feeding the
   monitor as a warning and sending a delayed thank-you off the heartbeat.
+
+- Delegation certified end to end on 2026-09-07: CEO -> EA -> GM -> specialist,
+  with real work product. Provision task `01m1wt67k6bfc032qhq4g6asws`, assigned
+  to the Lead Generation Specialist, `delegated_by` the General Manager.
+- `fetch failed` on a task was never a provider fault. It is what gets recorded
+  when the runtime gateway is down mid-run. Cause fixed; the change that stops it
+  being stored as a task's answer is committed but NOT yet on the VPS.
 
 Known open, not blockers to sell:
 
