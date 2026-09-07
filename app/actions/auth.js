@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { issuePasswordReset } from '@/lib/password-reset'
 
 export async function signUp(selectedBilling, formData) {
   const supabase = await createClient()
@@ -94,38 +95,19 @@ export async function getCEO() {
 }
 
 
-// The recovery link is delivered by Supabase, so redirectTo has to be a URL the
-// project's allow-list actually accepts; anything else is silently replaced with
-// the Site URL and the token never reaches the reset page.
+// The reset email is sent by us through Resend, not by Supabase's built-in
+// mailer. Supabase would send it from noreply@mail.app.supabase.io, on a shared
+// domain we do not control, for the single most security-sensitive message the
+// product sends. See lib/password-reset.js for why the link shape differs too.
 //
-// This deliberately makes exactly one call. An earlier version probed the
+// This makes exactly one call to Supabase. An earlier version probed the
 // configuration with generateLink first, which cost an email-rate-limit slot,
 // got the real send refused with 429, and still told the customer a link was on
 // its way. A send failure is now reported as a send failure.
 //
-// resetPasswordForEmail does not distinguish unknown addresses, so the success
-// message stays neutral on its own and cannot leak which addresses have accounts.
+// The reply never reveals whether an address has an account.
 export async function requestPasswordReset(email) {
-  const target = String(email || '').trim();
-  if (!target) return { ok: false, message: 'Enter your email address above, then select Forgot password.' };
-
   const requestHeaders = await headers();
   const origin = requestHeaders.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://app.getstaffai.com';
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(target, {
-    redirectTo: `${origin}/portal/reset-password`,
-  });
-
-  if (error) {
-    console.error('[auth.reset] resetPasswordForEmail failed:', error.status, error.message);
-    return {
-      ok: false,
-      message: error.status === 429
-        ? 'Too many reset requests just now. Please wait a minute and try again.'
-        : 'We could not send a reset link just now. Please try again shortly.',
-    };
-  }
-
-  return { ok: true, message: 'If that address has an account, a password reset link is on its way.' };
+  return issuePasswordReset(email, { origin });
 }
