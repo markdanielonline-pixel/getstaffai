@@ -77,6 +77,13 @@ Live and verified since then:
   when the runtime gateway is down mid-run. Cause fixed; the change that stops it
   being stored as a task's answer is committed but NOT yet on the VPS.
 
+- Password reset email is sent by Staff AI through Resend, not by Supabase's
+  built-in mailer, and the link points at `/auth/confirm?token_hash=...` so the
+  token is verified server side. This is deliberate: Supabase's own link carries
+  the token in a URL fragment, which cannot survive a reset requested on one
+  device and opened on another. Do not switch this back to
+  `resetPasswordForEmail` without solving that.
+
 Known open, not blockers to sell:
 
 - Three stranded organizations (Staff AI, MDV Group, Launch Verification Co) plus
