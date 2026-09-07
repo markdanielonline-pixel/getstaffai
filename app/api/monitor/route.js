@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { runHealthSweep, recordAndAlert } from '@/lib/monitor';
+import { sendPendingAcknowledgements } from '@/lib/reports';
 import { handleIncident } from '@/lib/reliability/engineer';
 
 // The sweep hits several live endpoints, one of which is a real model call.
@@ -21,6 +22,17 @@ async function handle(req) {
   if (!authorized(req)) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
+
+  // Thank-yous ride the sweep, because the sweep is the only thing on this
+  // deployment that reliably runs every few minutes. There is a heartbeat
+  // module that was meant to carry them off ordinary traffic; nothing ever
+  // imported it, so the delayed acknowledgements had no runner at all and two
+  // reports sat past their send time. This is where the schedule actually is.
+  //
+  // It runs before the checks and its failure can never reach them: somebody
+  // waiting on a thank-you can wait, an outage cannot.
+  const acknowledgements = await sendPendingAcknowledgements()
+    .catch(error => ({ sent: 0, error: error?.message || String(error) }));
 
   const sweep = await runHealthSweep();
   // Alerting must never be able to suppress the result. If Resend is the thing
@@ -59,7 +71,7 @@ async function handle(req) {
 
   // 503 so an external uptime check treats a failing sweep as an outage without
   // needing to parse the body.
-  return NextResponse.json({ ...sweep, alert, incident }, { status: sweep.ok ? 200 : 503 });
+  return NextResponse.json({ ...sweep, alert, incident, acknowledgements }, { status: sweep.ok ? 200 : 503 });
 }
 
 export async function GET(req) {
