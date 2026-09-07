@@ -1,5 +1,7 @@
 'use client';
 
+import { entitlementLabel } from '@/lib/entitlement';
+
 import { useState, useTransition } from 'react';
 import { updateEmail, updatePassword, updateProfile } from '@/app/actions/account';
 
@@ -66,14 +68,19 @@ export default function AccountSettingsForm({ user, ceo, subscription }) {
           <h2>Plan and invoices</h2>
           <p>Manage plan changes, cancellation, payment method, invoices, and billing address through Stripe.</p>
         </div>
+        {/* Only what is actually true. This used to fall back to the CEO
+            record's stale intelligence_level and status, so an account with no
+            subscription at all displayed "Executive" and "Active", and a
+            customer whose subscription had been cancelled would still have been
+            told it was active on the billing screen. */}
         <div className="settings-summary">
           <div>
             <span>Current level</span>
-            <strong>{subscription?.intelligence_level || ceo?.intelligence_level || 'Launch'}</strong>
+            <strong>{entitlementLabel(ceo, subscription?.intelligence_level)}</strong>
           </div>
           <div>
             <span>Status</span>
-            <strong>{subscription?.status || ceo?.status || 'active'}</strong>
+            <strong>{subscription?.status || (ceo?.is_founder ? 'Founder access' : 'No subscription')}</strong>
           </div>
         </div>
         <StatusMessage state={billingState} />
