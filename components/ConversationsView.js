@@ -200,7 +200,7 @@ export default function ConversationsView({ ceo, conversations, activeConversati
         </div>
 
         <div style={{ padding: '1.2rem 2rem', borderTop: '1px solid var(--border-light)' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingRight: '5rem' }}>
             <textarea
               value={input}
               onChange={e => setInput(e.target.value)}
