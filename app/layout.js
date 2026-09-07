@@ -29,6 +29,9 @@ export default function RootLayout({ children }) {
       <body className={`${playfair.variable} ${jakarta.variable} ${inter.variable}`}>
         {children}
         <AIChatWidget />
+        {/* Same reporter the marketing site carries, so a problem found inside
+            the product reaches the same place as one found on the way in. */}
+        <script defer src="/staffai-report.js" />
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {
