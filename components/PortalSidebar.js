@@ -17,7 +17,7 @@ export default function PortalSidebar({ organizations = [], activeOrgId = null, 
   ];
 
   return (
-    <aside style={{
+    <aside className="portal-sidebar" style={{
       width: '280px',
       height: '100vh',
       position: 'fixed',
