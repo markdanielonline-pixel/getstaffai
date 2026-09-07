@@ -7,6 +7,48 @@ below. Remediation is NOT complete and rollout remains PAUSED.
 
 ## Current as of 2026-09-07 (read this before the sections below)
 
+### Password recovery production correction, 2026-09-07
+
+Mark's first post-launch recovery attempt exposed two P0/P1 defects. A recovery
+email requested on the laptop and opened on mobile failed with
+`auth_callback_failed` / Supabase `otp_expired`; the login/reset presentation
+also overflowed on a narrow viewport. Root cause was the SSR PKCE recovery link:
+its verifier existed only in the browser that requested the email, so a different
+device could not exchange the code. Supabase Auth was also still using its
+built-in sender (`Supabase Auth <noreply@mail.app.supabase.io>`), not Staff AI's
+verified mail domain.
+
+Corrected and deployed:
+
+- Supabase project `tthoguhefuqnahellnrg` recovery template now uses the
+  documented token-hash flow and sends customers to
+  `/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/portal/reset-password`.
+  Site URL is `https://app.getstaffai.com`; the allowed redirect is
+  `https://app.getstaffai.com/**`.
+- App reset requests now specify `/portal/reset-password` as their return target.
+- Login and reset pages use a responsive one-column mobile layout with no
+  horizontal overflow; the opaque callback error is translated into a useful
+  recovery instruction.
+- Commit `cdb4c0d` deployed to Vercel production as
+  `dpl_ZFtCf7gCBBKXrPuxnXKQKevqjtBM`, aliased to `https://app.getstaffai.com`.
+- Local lint passed with one pre-existing warning; production and local builds
+  passed. A 390x844 live check proved `scrollWidth === clientWidth === 390` on
+  both login/error and reset pages.
+- A fresh real reset email reached `markdanielonline@gmail.com` with subject
+  `Reset your Staff AI password` and a token-hash link. Opening it in a separate
+  browser tab successfully established the recovery session and displayed the
+  real two-field reset form. The tab is intentionally left open for Mark to set
+  the new password; Codex did not choose or submit a password.
+
+Still open: custom SMTP remains disabled, so the verified functional email still
+shows the Supabase sender. Mark was asked for the narrowly required approval to
+transfer the existing Staff AI Resend SMTP credential from secured deployment
+configuration into this Supabase project without displaying or rotating it.
+Exact next action: after approval, configure Supabase Auth SMTP as
+`StaffAI <support@getstaffai.com>` via Resend, send one new recovery email, verify
+sender/domain and the token-hash destination, then have Mark set the password in
+the already-open reset tab and verify returning login.
+
 The authoritative as-built description is now `docs/STAFFAI-AS-BUILT-2026-09-05.md`.
 Where the older sections in this file disagree with it, that document wins.
 
