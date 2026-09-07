@@ -53,15 +53,8 @@ export default function ResetPassword() {
   return (
     <>
       <Header />
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.1), transparent 50%)',
-        padding: '5rem 1rem 2rem 1rem'
-      }}>
-        <div className="glass-panel" style={{ width: '100%', maxWidth: '450px', padding: '3.5rem', background: 'var(--bg-secondary)', borderTop: '3px solid var(--accent-color)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)' }}>
+      <main className="auth-page">
+        <div className="glass-panel auth-panel auth-reset-panel">
           <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '0.5rem', color: 'var(--text-primary)', textAlign: 'center' }}>
             Reset Password
           </h1>
@@ -114,7 +107,7 @@ export default function ResetPassword() {
             </button>
           </form>
         </div>
-      </div>
+      </main>
     </>
   );
 }

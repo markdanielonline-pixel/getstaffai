@@ -10,17 +10,10 @@ export default async function Login({ searchParams }) {
   return (
     <>
       <Header />
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.1), transparent 50%)',
-        padding: '5rem 1rem 2rem 1rem'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 400px) minmax(300px, 450px)', gap: '4rem', alignItems: 'center', maxWidth: '1000px' }}>
+      <main className="auth-page">
+        <div className="auth-layout">
 
-          <div style={{ padding: '2rem' }}>
+          <div className="auth-intro">
             <h1 style={{ fontSize: '3rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
               Welcome back.
             </h1>
@@ -35,7 +28,7 @@ export default async function Login({ searchParams }) {
             </ul>
           </div>
 
-          <div className="glass-panel" style={{ padding: '3.5rem', background: 'var(--bg-secondary)', borderTop: '3px solid var(--accent-color)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)' }}>
+          <div className="glass-panel auth-panel">
             {notice && (
               <div style={{ padding: '1rem', background: 'rgba(59,130,246,0.12)', border: '1px solid #3b82f6', color: 'var(--text-primary)', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                 {decodeURIComponent(notice)}
@@ -44,7 +37,9 @@ export default async function Login({ searchParams }) {
 
             {error && (
               <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: 'var(--text-primary)', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                {decodeURIComponent(error)}
+                {error === 'auth_callback_failed'
+                  ? 'This sign-in or reset link is invalid or has expired. Request a new password reset link below.'
+                  : decodeURIComponent(error)}
               </div>
             )}
 
@@ -58,7 +53,7 @@ export default async function Login({ searchParams }) {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }
