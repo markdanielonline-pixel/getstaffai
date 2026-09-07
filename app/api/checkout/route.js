@@ -50,6 +50,21 @@ export async function POST(req) {
     if (existingSubscription.data) {
       return NextResponse.json({ error: 'Your Company Office already has a subscription. Manage it from Billing.' }, { status: 409 });
     }
+    // An organization that already has staff is a live company, and opening
+    // checkout must not rewrite its identity. This block used to overwrite the
+    // name, industry and business description unconditionally, before any money
+    // changed hands, so simply starting a checkout and abandoning it renamed the
+    // customer's company and replaced the description their AI staff work from.
+    // Verified the hard way: a checkout test renamed a live tenant that had
+    // eight employees on it.
+    let organizationIsEstablished = false;
+    if (orgId) {
+      const staffed = await admin.from('employees')
+        .select('id', { count: 'exact', head: true })
+        .eq('org_id', orgId)
+        .neq('status', 'alumni');
+      organizationIsEstablished = (staffed.count ?? 0) > 0;
+    }
     if (!orgId) {
       const orgResult = await admin.from('organizations').insert({
         name: companyName.trim(),
@@ -59,7 +74,7 @@ export async function POST(req) {
       }).select('id').single();
       if (orgResult.error) throw new Error(`Unable to create organization: ${orgResult.error.message}`);
       orgId = orgResult.data.id;
-    } else {
+    } else if (!organizationIsEstablished) {
       const orgResult = await admin.from('organizations').update({
         name: companyName.trim(),
         industry: industry || null,
@@ -68,16 +83,24 @@ export async function POST(req) {
       if (orgResult.error) throw new Error(`Unable to update organization: ${orgResult.error.message}`);
     }
 
-    const ceoUpdate = await admin.from('ceos').update({
-        org_id: orgId,
-        company_name: companyName,
-        industry,
-        business_description: businessDescription,
-        country,
-        company_values: companyValues,
-        culture_tone: cultureTone,
-        preferred_channel: preferredChannel || 'app',
-      }).eq('id', user.id);
+    // Same rule for the CEO record. For an established company only the active
+    // organization is set; the identity their workforce already carries is left
+    // alone. Those details are editable in Settings, which is the place that is
+    // supposed to change them.
+    const ceoUpdate = await admin.from('ceos').update(
+      organizationIsEstablished
+        ? { org_id: orgId }
+        : {
+            org_id: orgId,
+            company_name: companyName,
+            industry,
+            business_description: businessDescription,
+            country,
+            company_values: companyValues,
+            culture_tone: cultureTone,
+            preferred_channel: preferredChannel || 'app',
+          }
+    ).eq('id', user.id);
     if (ceoUpdate.error) throw new Error(`Unable to save incorporation details: ${ceoUpdate.error.message}`);
 
     const envVar = priceEnvVar(productKey, billing);
