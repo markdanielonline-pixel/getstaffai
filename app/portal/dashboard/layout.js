@@ -48,8 +48,15 @@ export default async function DashboardLayout({ children }) {
           switchOrganizationAction={switchOrganizationAction}
           createOrganizationAction={createOrganizationAction}
         />
+        {/* The sidebar is position:fixed, so it occupies no space in this flex
+            row. Combining flex:1 with a 280px left margin therefore gave this
+            element the full viewport width AND pushed it right by the sidebar,
+            leaving every portal page exactly 280px wider than the window. The
+            Send button in the EA conversation ended up past the right edge,
+            unreachable. Width is now what is actually left over. */}
         <div style={{
-          flex: 1,
+          width: 'calc(100% - 280px)',
+          minWidth: 0,
           marginLeft: '280px',
           paddingRight: '0',
           background: 'radial-gradient(circle at top right, rgba(139,92,246,0.05), transparent 40%)',

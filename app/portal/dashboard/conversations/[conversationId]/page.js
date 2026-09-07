@@ -52,7 +52,10 @@ export default async function ConversationPage({ params }) {
     <>
       <PortalHeader title="Conversations & Transcripts" />
       <main style={{ paddingTop: '80px', height: '100vh', display: 'flex' }}>
-        <div style={{ flex: 1, marginLeft: '280px' }}>
+        {/* No sidebar offset here: the dashboard layout already applies it.
+            Applying it twice pushed this screen 280px past the window and put
+            the Send button out of reach. */}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <ConversationsView
             ceo={ceo}
             conversations={conversations ?? []}

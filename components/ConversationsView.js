@@ -200,14 +200,14 @@ export default function ConversationsView({ ceo, conversations, activeConversati
         </div>
 
         <div style={{ padding: '1.2rem 2rem', borderTop: '1px solid var(--border-light)' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingRight: '5rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingRight: '5rem', maxWidth: '100%', boxSizing: 'border-box' }}>
             <textarea
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={`Message ${employee?.name ?? ''}…`}
               rows={1}
-              style={{ flex: 1, padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none', resize: 'none' }}
+              style={{ flex: 1, minWidth: 0, padding: '1rem', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', borderRadius: '0.5rem', outline: 'none', resize: 'none' }}
             />
             <button
               onClick={sendMessage}
