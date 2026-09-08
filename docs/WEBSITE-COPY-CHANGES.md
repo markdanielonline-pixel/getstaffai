@@ -132,3 +132,33 @@ positioning of selling results rather than technology:
 
 The second is a good honesty note for an early-stage site and could sit on the
 about or roadmap page as is.
+
+---
+
+## 8. URGENT — two scripts are missing from the live site
+
+**Not copy. This is a live outage on the revenue path.**
+
+The marketing site was rebuilt on 7 September and the new build does not include
+two scripts that were on the previous one. Both currently return 404:
+
+- `staffai-agent.js` — the AI sales agent. This is what captured the first
+  production lead. It is not on any page right now.
+- `staffai-report.js` — the "Report a problem" widget.
+
+**Fix:** copy both files from `StaffAi/marketing/` into the new site's public
+folder, then add these two lines before the closing `</body>` tag on every page:
+
+```html
+<script src="/staffai-agent.js" defer></script>
+<script src="/staffai-report.js" defer></script>
+```
+
+Nothing else needs to change. Both scripts are self-contained, insert their own
+markup, and take no configuration. The agent sits bottom-right, the reporter
+bottom-left, deliberately so they do not overlap.
+
+**How to confirm it worked:** load the homepage and check that a chat bubble
+appears bottom-right and a "Report a problem" control bottom-left. The system
+health check also watches for this and will stop reporting `marketingSite` and
+`salesAgentScript` as failing.

@@ -5,6 +5,83 @@ This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
 
+## Audit of 2026-09-07 into 09-08: read this before touching anything
+
+A full walk-the-journey audit was run against production. The method matters as
+much as the findings: everything below was established by using the product as a
+customer, not by reading the code. Component checks had previously reported the
+system healthy while three of the first four customer journeys were impassable.
+
+Full write-up, every claim labelled Verified / Traced / Not proven:
+`docs/staffai-system-audit.html` (also published as an artifact).
+Marketing copy consequences: `docs/website-copy-brief.html`.
+
+Thirteen defects found. Fixed and deployed:
+
+- Signup confirmation was broken. Nobody could create an account. The link went
+  to a server route that cannot read a URL fragment. Now `/auth/finish`.
+- Password reset had the same fault, plus reset mail came from Supabase's shared
+  domain. Staff AI now generates and sends it through Resend from its own domain.
+- All 24 Stripe price IDs were empty strings in production, so checkout answered
+  "This plan is not currently available" for every product. This is why zero
+  subscriptions had ever existed. Wired to the real prices.
+- Hiring charged nothing at all. Every specialist beyond the Company Office was
+  free. Seats are now prorated Stripe subscription items, charged before the
+  runtime is built and reversed if the hire then fails.
+- The portal was 280px wider than the window on every page (sidebar offset
+  applied twice), which put the Send button in the EA conversation off-screen.
+  The customer could not message their assistant at all.
+- Sidebar and header were dark ink on a near-black ground.
+- Opening checkout overwrote an existing company's name and description before
+  any payment. An established organization is now left alone.
+- Dismissal destroyed an employee in one click with no confirmation.
+- The billing screen invented a plan for accounts with no subscription.
+- Billing period dates were written as null on every subscription: Stripe moved
+  current_period_* onto the subscription item in a newer API version.
+- seat_billing_records silently rejected every insert (vestigial NOT NULL enum
+  columns from an older pricing model).
+
+Verified end to end on a real subscription, using a single-use 100% off coupon
+so no card was needed:
+
+  paid signup -> webhook -> CEO activated -> workforce provisioned -> ready
+  hire   -> Stripe items $199 + $99 + $149 = $447/mo, ledger row written
+  dismiss -> item removed, $348/mo, ledger closed, employee alumni
+  payment reminder -> billing_notices row, second sweep sent no duplicate
+
+Built to the founder's specification: `lib/billing/lifecycle.js` sends a
+reminder 3 days before payment and on the day, a notice the day after a failure,
+a warning before interruption, suspension after 3 days, and a monthly way back
+for months. Cancellation confirms with the real end date. Notices are keyed by
+customer, kind and period so the schedule cannot double-send.
+
+The one-employee-per-role unique index was dropped by founder decision. A client
+may hire as many of a role as they want; each is a separately billed seat.
+
+STILL NOT PROVEN, do not state as fact:
+
+- Upgrade, downgrade and cancellation webhooks. Read, never run.
+- A customer whose card fails keeps full access: entitlement reads ceos.status
+  and a failed payment only marks the subscription.
+- A customer who cancels keeps a running workforce; nothing tears it down.
+- Multi-user access within one company.
+- Any load beyond a handful of tenants on one shared host.
+
+OPEN AND TIME-SENSITIVE:
+
+- The marketing site was rebuilt by Antigravity on 2026-09-07 and dropped
+  `staffai-agent.js` and `staffai-report.js`. Both 404. The AI sales agent is
+  therefore not on getstaffai.com and inbound leads are not being captured. Do
+  not redeploy the old site over it; the two script tags need adding to the new
+  build. See `docs/website-copy-brief.html`.
+- A disposable billing test tenant exists (Billing Audit Co, ceo
+  markdanielphd+staffai-billingtest@gmail.com) with a live $0 subscription and a
+  running container. Kept deliberately so upgrade/downgrade/cancel can be
+  verified. Tear it down when that is done.
+- Direct employee chat is still present; the operating model says it goes.
+- Signup confirmation email still sends from Supabase's shared domain.
+
+
 ## Current as of 2026-09-07 (read this before the sections below)
 
 ### Password recovery production correction, 2026-09-07

@@ -1,0 +1,144 @@
+<title>Staff AI Site Brief</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --ground: #F6F7F9;
+    --panel: #FFFFFF;
+    --ink: #12161C;
+    --ink-soft: #4E5866;
+    --ink-faint: #7B8593;
+    --rule: #DCE1E8;
+    --rule-soft: #E9EDF2;
+    --accent: #1D5AA0;
+    --accent-soft: #EAF1F9;
+    --alarm: #9C2B36;
+    --alarm-soft: #F9E9EA;
+    --good: #17714F;
+    --good-soft: #E6F2ED;
+    --shadow: 0 1px 2px rgba(18,22,28,.05), 0 8px 24px -16px rgba(18,22,28,.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0E1116; --panel: #151A21; --ink: #E8ECF2; --ink-soft: #A3ADBB;
+      --ink-faint: #79838F; --rule: #262E38; --rule-soft: #1D242C;
+      --accent: #6BA6E8; --accent-soft: #16222F;
+      --alarm: #E0808B; --alarm-soft: #2A1518;
+      --good: #57C79A; --good-soft: #10241D;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0E1116; --panel: #151A21; --ink: #E8ECF2; --ink-soft: #A3ADBB;
+    --ink-faint: #79838F; --rule: #262E38; --rule-soft: #1D242C;
+    --accent: #6BA6E8; --accent-soft: #16222F;
+    --alarm: #E0808B; --alarm-soft: #2A1518;
+    --good: #57C79A; --good-soft: #10241D;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.62; margin: 0; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  h1, h2, h3, .ui { font-family: Archivo, "Helvetica Neue", Arial, sans-serif; }
+  h1 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); line-height: 1.1; font-weight: 700; letter-spacing: -.02em; margin: 0 0 .6rem; text-wrap: balance; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 3rem 0 .3rem; padding-top: 1.4rem; border-top: 2px solid var(--ink); text-wrap: balance; }
+  h2 .n { color: var(--ink-faint); font-family: "JetBrains Mono", monospace; font-size: .8rem; margin-right: .6rem; font-weight: 400; }
+  h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); font-weight: 600; margin: 1.5rem 0 .4rem; }
+  p { margin: 0 0 .9rem; }
+  ul { margin: .3rem 0 1rem; padding-left: 1.2rem; }
+  li { margin-bottom: .4rem; }
+  code { font-family: "JetBrains Mono", monospace; font-size: .84em; background: var(--rule-soft); padding: .1rem .3rem; border-radius: 3px; }
+  pre { background: var(--panel); border: 1px solid var(--rule); padding: .9rem 1.1rem; overflow-x: auto; font-family: "JetBrains Mono", monospace; font-size: .8rem; line-height: 1.6; margin: .8rem 0 1.2rem; }
+  pre code { background: none; padding: 0; }
+  blockquote { margin: .8rem 0 1.2rem; padding: .9rem 1.2rem; background: var(--accent-soft); border-left: 3px solid var(--accent); font-size: .95rem; }
+  blockquote p:last-child { margin-bottom: 0; }
+  blockquote strong { font-family: Archivo, sans-serif; font-size: .9rem; }
+  header.top { padding: 3.2rem 0 1.8rem; border-bottom: 2px solid var(--ink); margin-bottom: 1rem; }
+  .eyebrow { font-family: Archivo, sans-serif; font-size: .72rem; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); font-weight: 600; margin: 0 0 .9rem; }
+  .lede { font-size: 1.1rem; color: var(--ink-soft); margin: 0; }
+  .alarm { background: var(--alarm-soft); border: 1px solid var(--alarm); border-left: 4px solid var(--alarm); padding: 1.2rem 1.4rem; margin: 2rem 0; box-shadow: var(--shadow); }
+  .alarm h2 { margin: 0 0 .5rem; padding: 0; border: 0; color: var(--alarm); font-size: 1.15rem; }
+  .alarm p:last-child { margin-bottom: 0; }
+  .tag { display: inline-block; font-family: Archivo, sans-serif; font-size: .66rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; padding: .18rem .45rem; border-radius: 3px; background: var(--good-soft); color: var(--good); margin-left: .5rem; vertical-align: middle; }
+  .tag.now { background: var(--alarm-soft); color: var(--alarm); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Staff AI &middot; for Antigravity</p>
+    <h1>Site Brief</h1>
+    <p class="lede">What changed in the product that the website now needs to say. Marketing copy only, except the first item, which is an outage.</p>
+  </header>
+
+  <div class="alarm">
+    <h2>Do this first: two scripts are missing<span class="tag now">Live issue</span></h2>
+    <p>The site rebuild on 7 September dropped two scripts. Both return 404 right now, which means <strong>the AI sales agent is not on the site at all</strong>. That is the widget that captured the first production lead, so inbound leads are not being captured.</p>
+    <p>Copy <code>staffai-agent.js</code> and <code>staffai-report.js</code> from <code>StaffAi/marketing/</code> into the new site's public folder, then add these before <code>&lt;/body&gt;</code> on every page:</p>
+    <pre><code>&lt;script src="/staffai-agent.js" defer&gt;&lt;/script&gt;
+&lt;script src="/staffai-report.js" defer&gt;&lt;/script&gt;</code></pre>
+    <p>No configuration. Both insert their own markup. The agent sits bottom right, the reporter bottom left, so they do not collide. To confirm: load the homepage and look for a chat bubble bottom right and a "Report a problem" control bottom left.</p>
+  </div>
+
+  <h2><span class="n">01</span>Clients can hire more than one of a role</h2>
+  <p>The one-per-role limit is gone. A client can hire three Sales Representatives, two Lead Generation Specialists, as many as the work needs. Each is a separately billed seat at the listed monthly price.</p>
+  <h3>Where to change it</h3>
+  <ul>
+    <li><strong>Pricing.</strong> Make clear the price is per employee, per month, and that you can hire several. Suggested: <em>"$249 per month, per Sales Representative. Hire as many as the work needs."</em></li>
+    <li><strong>Employees / talent pool.</strong> Sell headcount, not features. They are staffing a company, so they add people.</li>
+    <li><strong>How it works.</strong> If it implies a fixed team, say the team grows when you hire and shrinks when you dismiss, and billing follows.</li>
+  </ul>
+  <p>Do not publish a capacity number yet. See section 05.</p>
+
+  <h2><span class="n">02</span>The payment policy is real now, so say it</h2>
+  <p>All of this is live and automatic as of today. Stating it removes a purchase objection.</p>
+  <ul>
+    <li>Reminder <strong>three days before</strong> payment is due</li>
+    <li>Reminder <strong>on the day</strong></li>
+    <li>If payment fails, a notice <strong>the next day</strong></li>
+    <li>The workforce <strong>keeps running for three days</strong> after a failure</li>
+    <li>A warning <strong>before</strong> anything is interrupted</li>
+    <li>Then the team <strong>pauses. It is never deleted.</strong> One payment restores it exactly</li>
+    <li>On cancellation, the team <strong>works until the end of the paid period</strong></li>
+  </ul>
+  <h3>Suggested FAQ entries</h3>
+  <blockquote>
+    <p><strong>What happens if my payment fails?</strong></p>
+    <p>We tell you the day after, and nothing changes for three days. Your team keeps working. If it still has not gone through, your employees pause. They are never deleted, and they pick up exactly where they left off the moment payment goes through.</p>
+  </blockquote>
+  <blockquote>
+    <p><strong>What if I cancel?</strong></p>
+    <p>Your team keeps working until the end of the period you have already paid for. No early cut-off, and nothing is deleted.</p>
+  </blockquote>
+  <p>Put these on pricing, FAQ, terms and the refund page.</p>
+
+  <h2><span class="n">03</span>Remove every trace of the free trial</h2>
+  <p>The trial no longer exists in the product. Paid from day one, sold on the 30-day guarantee.</p>
+  <p>Search for and remove: <em>7 day trial, free trial, try free, no credit card required, start free.</em></p>
+  <p>Replace with the guarantee: <em>"30 days. If it does not earn its keep, you get your money back."</em></p>
+
+  <h2><span class="n">04</span>Two roles cannot be bought yet</h2>
+  <p><strong>Bookkeeper</strong> and <strong>Receptionist</strong> are marked coming soon in the product and cannot be hired. The site must not sell them: give both a "Notify me" path rather than a price and a buy button.</p>
+
+  <h2><span class="n">05</span>Capacity numbers: not yet<span class="tag">Deliberate</span></h2>
+  <p>You asked for average usage per agent so a client can judge how many they need. I am not going to invent one. No customer has run enough volume to measure it, and a number nobody trusts is worse than no number.</p>
+  <h3>Publish this instead</h3>
+  <blockquote>
+    <p><strong>How many do I need?</strong></p>
+    <p>Start with one. Your General Manager will tell you when the work is backing up, and you can add another the same day.</p>
+  </blockquote>
+  <p>That is honest and it sells better than a figure. The real number needs two to four weeks of live usage. The data is already being recorded, so it is a query when the time comes, not new work.</p>
+
+  <h2><span class="n">06</span>Email now comes from your own domain</h2>
+  <p>Password resets, payment reminders and problem-report replies all send from <code>getstaffai.com</code>. If any page tells people which sender to expect or to whitelist an address, it should say that.</p>
+  <p>One exception, and it is engineering rather than copy: the signup confirmation still comes from a shared Supabase address. On my list.</p>
+
+  <h2><span class="n">07</span>Two lines worth stealing</h2>
+  <p>Both are from the product itself and both fit selling results rather than technology.</p>
+  <blockquote>
+    <p>This deletes their runtime and cannot be undone. Their past work and conversations are kept, but hiring the role again creates a new employee rather than bringing this one back.</p>
+  </blockquote>
+  <blockquote>
+    <p>We are early, and the people who tell us what is broken are the reason this gets better.</p>
+  </blockquote>
+  <p>The second would sit well on the about or roadmap page as it is. It is an honest note from an early-stage company, and it reads as confidence rather than apology.</p>
+</div>
