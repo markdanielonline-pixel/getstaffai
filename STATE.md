@@ -4,6 +4,53 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## OpenRouter Phase A COMPLETE, 2026-09-08 (provisioning key installed by Mark)
+
+Provisioning key installed as OPENROUTER_PROVISIONING_API_KEY. All verifications
+below are from the authoritative OpenRouter API and last-4 comparisons (earlier
+sha reads in-session were corrupted by shell whitespace handling; ignore those).
+
+- Every tenant migrated: 7 teams now hold an isolated, attributable, capped key
+  named Provision-<teamid>, each with a $10 limit. Verified on the OpenRouter
+  account (7 Provision-* keys, all limit=10).
+- No tenant retains the shared credential: each active runtime container's
+  OPENROUTER_API_KEY last-4 matches its OWN team's managed key and NONE matches
+  the shared key. Confirmed for the three active tenants (proof, billing-audit,
+  certification).
+- Tenant A cannot use Tenant B's credential: distinct keys per container, and
+  revoking tenant A's key (disposable test) dropped A to HTTP 401 while B stayed
+  HTTP 200; restoring A recovered it to 200. B never affected.
+- Shared uncapped key DELETED from the account (HTTP 200 on delete). Any
+  historically-exfiltrated copy is now dead. Account now holds only capped keys.
+- App key rotated: the app (Provision container AND the Vercel Next.js app) used
+  the shared key. Minted StaffAi-app-20260908 (limit $100), updated both, and
+  deleted the old shared key. NOTE: deleting the shared key briefly broke the
+  Vercel sales agent (it read the same key); fixed by updating Vercel
+  OPENROUTER_API_KEY to the new app key and redeploying. Sales agent restored.
+- Fail-closed VERIFIED: with the provisioning config absent, a new team gets no
+  managed key and no shared-key fallback (fallback code removed in createTeam).
+- Per-team cap default $10 (grounded: ~$3.57/mo whole-platform usage). The $10
+  limit is a hard OpenRouter key credit cap; whether it resets monthly is still
+  to be confirmed (if it does not, an active tenant would exhaust it over months
+  and a Provision-side monthly reset is needed).
+- 7/7 health checks pass.
+
+INFRA FIX made during this work: the app container mounts the compose project
+dir via `.:/var/www/html`. A `docker compose up` from the release snapshot dir
+(provision-release-cfc5248) had switched the mount to that STALE snapshot,
+which lacked delegation support AND all recent code. Pinned the app volume to
+`/root/provision-core` (the maintained git checkout) in the release
+docker-compose.yml so the app serves the correct code and future recreations
+stay correct. Backup: docker-compose.yml.bak-mountfix.
+
+STILL GATED on Mark:
+- Stripe Beacon2 (...Ch8M, fingerprint 662894227d2bbcaf) still authenticates
+  (HTTP 200) - pending the dashboard roll. After Mark rolls it: prove the old
+  key fails and Staff AI production Stripe (StaffAi_Stripe ...muSs /
+  StaffAi-Sep26 ...8SYi) still works.
+- Confirm OpenRouter auto-topup is OFF (blast-radius bound).
+- OpenRouter per-team limit monthly-reset behaviour to confirm.
+
 ## Security round 3b, 2026-09-08 — Resend revoked; two items gated on Mark's dashboard
 
 ### Item 2 (Resend): COMPLETE and proven.
