@@ -4,6 +4,35 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## Security round 3b, 2026-09-08 — Resend revoked; two items gated on Mark's dashboard
+
+### Item 2 (Resend): COMPLETE and proven.
+- Both Beacon-account Resend keys (beacon-rotated-20260831, Prospects) deleted
+  with Mark's explicit authorization. Account now has zero keys.
+- Compromised credential (fingerprint sha256/16 736112ca48b7a3dd) proven dead:
+  read endpoint returns "API key is invalid"; the send capability that was
+  exposed returns HTTP 401. It returned 200 before deletion.
+- Staff AI email is on a separate account (getstaffai.com) and was proven
+  sending independently. Unaffected. Beacon is parked and needs a fresh key on
+  unpark.
+
+### OpenRouter cap decision (Mark asked to reconsider $25).
+- Whole-platform OpenRouter spend across 8 orgs under heavy testing: ~$3.57/mo.
+  Real per-tenant use is low single digits. Launch default lowered to $10/mo,
+  deployed and confirmed (config returns 10). Env override OPENROUTER_PER_TEAM_LIMIT.
+- CAVEAT to verify during activation: the cap must reset monthly, or an active
+  tenant exhausts a lifetime cap mid-subscription. Confirm OpenRouter key limit
+  reset semantics when the provisioning key is available; if it does not reset,
+  add a monthly reset in Provision or raise the cap.
+
+### STILL GATED on Mark (not done as of this pass):
+- OpenRouter provisioning key: still empty. Blocks all remaining Phase A
+  (migrate tenants, verify isolation, per-tenant limit test, A-cannot-use-B,
+  revoke shared key + prove it fails, real agent task, disposable-tenant
+  revoke/restore, fail-closed verification, 7/7).
+- Stripe compromised key: still authenticates (HTTP 200), not yet revoked.
+  After Mark revokes: prove old key fails, prove Staff AI production Stripe works.
+
 ## Security round 3, 2026-09-08 — items 1, 2, 3 (partial; two blocked on dashboard)
 
 ### FUTURE SECURITY-CONTROL REQUIREMENT (applies everywhere)
