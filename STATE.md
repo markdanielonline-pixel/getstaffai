@@ -4,6 +4,62 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## Security round 2, 2026-09-08 — items 1, 2, 3
+
+### Item 3 (Docker/UFW bypass): FIXED, tested from the internet, survives restart.
+- Proved the bypass: a throwaway container on :9999 answered HTTP 200 from the
+  public internet though UFW allows only 22/80/443.
+- Root cause: Docker DNATs a published port to the container port before the
+  FORWARD chain, so matching post-DNAT dport is wrong (a container on :80 makes
+  every published port look like :80). First attempt allowed it for exactly this
+  reason.
+- Fix: /usr/local/sbin/docker-ingress-policy.sh installs a DOCKER-USER policy
+  matching the ORIGINAL destination port via conntrack --ctorigdstport; only 80
+  and 443 are authorised for public ingress, all else on eth0 is dropped.
+  userland-proxy disabled in /etc/docker/daemon.json. Persistence via a systemd
+  unit (docker-ingress-policy.service, PartOf=docker.service) that re-applies on
+  every docker (re)start.
+- After fix: :9999 from the internet = HTTP 000 (blocked); 80/443 still serve;
+  tenant/app networking intact.
+- Two controlled Docker restarts performed. After both: 10/10 containers up,
+  ingress policy auto-re-applied, DB network isolation SURVIVED (database on
+  control-plane only), tenant->DB still EAI_AGAIN, agents reach the app by
+  hostname (200), all seven health checks pass.
+
+### Item 2 (Formbricks-era credentials): INVENTORIED and proven, revocation needs Mark.
+- Formbricks is fully stopped (all containers exited). The live proxy holds no
+  secrets. formbricks_db network has no members.
+- But the stopped Formbricks container ran with, and thereby exposed, two LIVE
+  shared-account credentials that are STILL ACTIVE (both tested, HTTP 200):
+    * a live Stripe SECRET key on the shared account acct_1JCwmm... (Beacon/
+      Lynkwe/DRM/Cal.com/Staff AI). It is a DIFFERENT key than Staff AI
+      production uses, so revoking it will not break Staff AI.
+    * a live Resend API key on the caribbeacon.com account (shared with Staff
+      AI email).
+- Neither is used by any running container: orphaned, so revocation is clean
+  with no rollback needed.
+- I cannot revoke either myself: Stripe key management is dashboard-only (no API
+  to delete a key), and the Resend account has exactly two keys
+  (beacon-rotated-20260831, Prospects) that cannot be disambiguated against the
+  exposed value from the API — removing the wrong one breaks live Beacon/Staff
+  AI email. These require Mark in the provider dashboards.
+- Also exposed but Formbricks-internal (only a concern if reused, no evidence of
+  reuse): ENCRYPTION_KEY, NEXTAUTH_SECRET, OIDC_CLIENT_SECRET, CRON_SECRET,
+  HUB_API_KEY, CUBEJS_API_SECRET, and the Formbricks Postgres DATABASE_URL.
+
+### Item 1 (OpenRouter): architecture found, immediate cap needs Mark.
+- Confirmed: OPENROUTER_PROVISIONING_API_KEY is EMPTY, so Provision fell back to
+  putting the shared raw platform key in every tenant. The per-team key
+  machinery ALREADY EXISTS (ProvisionApiKeyJob + OpenRouterKeyService.createKey/
+  deleteKey) and only activates when a provisioning key is set. createKey mints
+  a revocable per-team key but sets NO limit today.
+- Account has ~$1.60 credit left ($20 granted, $18.40 used). Blast radius is
+  currently small UNLESS auto-topup is on (Mark must confirm/disable).
+- Immediate account-level spend cap and provisioning-key setup are OpenRouter
+  dashboard actions Mark controls; I cannot set them from here.
+- Architecture recommendation is written separately for Mark's review; not
+  implemented (per instruction).
+
 ## Security hardening pass, 2026-09-08 (attacked from a real tenant, not inspected)
 
 Attacker was the disposable billing-audit tenant runtime (172.24.0.6). Targets
