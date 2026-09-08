@@ -20,9 +20,13 @@ capped keys (Phase A complete and verified); Stripe compromised key rotated and
 proven dead with production unaffected.
 
 Remaining minor security notes (not blockers):
-- Confirm OpenRouter auto-topup is OFF (bounds blast radius).
-- Confirm the $10 per-team OpenRouter cap resets monthly; if not, add a
-  Provision-side monthly reset so an active tenant is not cut off mid-cycle.
+- OpenRouter auto-topup is OFF (confirmed by Mark). This is the hard financial
+  ceiling: nothing can spend beyond the loaded balance. SETTLED.
+- The $10 per-team cap is an abuse ceiling, NOT a monthly budget, so it does not
+  need a monthly reset. It only stops one leaked tenant key from draining the
+  whole balance. At ~$3.57/mo whole-platform usage, a single tenant reaching $10
+  is many months away, would be a visible signal, and is a 5-second cap bump if
+  it ever happens. DECISION: leave as-is, build no reset. SETTLED.
 - Three stranded orphan runtime containers (servers with no team) had the old
   shared key and now hold a dead credential; clean them up when convenient.
 - Phase B (tenant -> Staff AI model gateway -> provider) remains the documented
