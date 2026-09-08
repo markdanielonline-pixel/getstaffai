@@ -4,6 +4,30 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## Stripe credential rotation CLOSED, 2026-09-08
+
+- Compromised Beacon2 key (fingerprint 662894227d2bbcaf, ...Ch8M) rotated by Mark
+  with immediate expiry. Verified dead: GET /v1/account and GET /v1/balance both
+  return HTTP 401. Any historical copy is now non-functional.
+- Staff AI production Stripe integration verified operational and independent:
+  its key (fingerprint bf8d5900e856cab8) is a DIFFERENT key, authenticates
+  (HTTP 200), created a live checkout session (HTTP 200), and the existing paid
+  audit subscription reads active with 2 line items.
+
+All three security round-3 credential items are now closed: Resend keys deleted
+and proven dead; OpenRouter shared key revoked with all tenants on isolated
+capped keys (Phase A complete and verified); Stripe compromised key rotated and
+proven dead with production unaffected.
+
+Remaining minor security notes (not blockers):
+- Confirm OpenRouter auto-topup is OFF (bounds blast radius).
+- Confirm the $10 per-team OpenRouter cap resets monthly; if not, add a
+  Provision-side monthly reset so an active tenant is not cut off mid-cycle.
+- Three stranded orphan runtime containers (servers with no team) had the old
+  shared key and now hold a dead credential; clean them up when convenient.
+- Phase B (tenant -> Staff AI model gateway -> provider) remains the documented
+  post-launch target; do not build during security work.
+
 ## OpenRouter Phase A COMPLETE, 2026-09-08 (provisioning key installed by Mark)
 
 Provisioning key installed as OPENROUTER_PROVISIONING_API_KEY. All verifications
