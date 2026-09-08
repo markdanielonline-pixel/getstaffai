@@ -4,6 +4,47 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## Security status, verified on the host 2026-09-08
+
+Checked directly on 158.220.123.254 rather than recalled. Against the earlier
+forensic list:
+
+RESOLVED and re-verified:
+- Exposed services: only 22, 80 and 443 listen publicly. The ~20 exposed
+  services are gone. Nginx Proxy Manager's admin UI is bound to 127.0.0.1:81.
+- `/tmp/sms_listener.py`: process not running, nothing listening on 8080. The
+  file still sits in /tmp and should be deleted.
+- noVNC orphan runtime: no vnc containers exist. The pinned runtime binds
+  127.0.0.1:6080 only.
+- Only one container publishes ports at all (the proxy).
+
+FIXED TONIGHT, and this was the most serious issue in the system:
+- Every per-tenant agent container shared the `provision_default` network with
+  the Provision database. Proved reachable: a runtime container opened a TCP
+  socket to the database on 3306. Those containers run customer agents that
+  execute shell and read web pages, so this was a live cross-tenant path to
+  every other customer's data and agent tokens.
+- The database is now on `provision_control-plane` only, with a `database`
+  network alias so the app still resolves it. Verified after the change: app
+  reads the database (30 agents), tenant gets EAI_AGAIN for both database and
+  redis, tenant can still reach the Provision API (200), and all seven health
+  checks pass.
+- Persisted in `/root/provision-release-cfc5248/compose.production.yml` so a
+  `docker compose up` cannot silently reopen it. Backup at
+  `compose.production.yml.bak-preisolation`. Note this file is deployment-only
+  and is NOT in the ProvisionCore git repo.
+
+STILL OPEN:
+- UFW is inactive. Exposure is currently small because almost nothing binds
+  publicly, but any container that publishes a port becomes internet-facing
+  immediately. A default-deny policy with 22/80/443 allowed is the fix.
+- `provision-app-1` remains on `stack_default` with the proxy. Lower severity
+  (it needs proxy reachability) but worth narrowing.
+- Credential rotation from the earlier incident has NOT been re-verified in this
+  pass. Treat as unresolved until checked.
+- Whether MariaDB would have accepted a connection from a tenant was never
+  tested; reachability alone was treated as the defect.
+
 
 ## Audit of 2026-09-07 into 09-08: read this before touching anything
 
