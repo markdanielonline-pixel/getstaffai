@@ -4,6 +4,67 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## Security round 3, 2026-09-08 — items 1, 2, 3 (partial; two blocked on dashboard)
+
+### FUTURE SECURITY-CONTROL REQUIREMENT (applies everywhere)
+Security-sensitive missing configuration must FAIL CLOSED, never silently fall
+back to a global/shared credential. The OpenRouter shared-key fallback was a
+textbook violation: a missing provisioning key caused the platform key to be
+injected into every tenant. Treat any "if the specific secret is absent, use the
+global one" pattern as a defect.
+
+### Item 3 (OpenRouter Phase A): CODE done and deployed; ACTIVATION blocked on a dashboard key.
+Done and verified in production:
+- Removed the fallback that injected the shared platform OPENROUTER_API_KEY into
+  tenants (StaffAiIntegrationController::createTeam). It now mints an isolated
+  per-team key and FAILS CLOSED if no provisioning key is set.
+- Per-team keys are capped (services.openrouter.per_team_limit, default $25) and
+  attributable/revocable (named Provision-<team id>, deleteKey by hash).
+- Deployed to the live control plane. App healthy, config loads ($25), existing
+  tenants untouched (still hold their key), all seven health checks pass.
+Blocked on Mark (OpenRouter dashboard):
+- OPENROUTER_PROVISIONING_API_KEY must be created and set. Until then, no per-team
+  key can be minted, so: migrate existing tenants, verify each got an isolated
+  key, establish the actual limit/blast radius, prove Tenant A cannot use Tenant
+  B's key, run a real agent task on the isolated credential, and rotate+revoke the
+  old shared runtime key (then prove it fails from a tenant) all remain pending.
+- Also confirm OpenRouter auto-topup is OFF or set an account spend cap (the
+  ~$1.60 remaining credit only bounds the blast radius if auto-topup is off).
+
+### Item 2 (Formbricks Resend credential): characterised; Staff AI proven safe; revocation needs a confirmation.
+- KEY CLARIFICATION: the compromised Resend key is on the caribbeacon.com account,
+  which is BEACON's, not Staff AI's. Staff AI sends from getstaffai.com on a
+  SEPARATE Resend account, so a Resend key cannot cross accounts. The compromise
+  does NOT touch Staff AI email.
+- Proven: a real Staff AI transactional email sent and was accepted by Staff AI's
+  own Resend account (bug-report thank-you, acknowledged_at set). Staff AI email
+  path is operational and independent.
+- The exposed key could NOT be identified unambiguously (its value does not map to
+  a key id via the API). The Beacon account has exactly two keys:
+  beacon-rotated-20260831 and Prospects. Both active. beacon-portal is parked
+  (Vercel live=false, last deploy April), so revoking both breaks nothing live.
+- Revocation is the one remaining action and needs Mark's explicit confirmation:
+  the remove-api-key tool mandates it, and it is an irreversible deletion on a
+  shared (parked) account. Once confirmed, delete BOTH Beacon keys, then prove the
+  compromised value (prefix re_SN4Kr) returns 401, and Beacon gets a fresh key on
+  unpark.
+
+### Item 1 (Formbricks Stripe credential): blocked on dashboard revocation.
+- The exposed live Stripe secret key (shared account acct_1JCwmm...) still returns
+  HTTP 200 — not yet revoked. Stripe has no API to delete a key; Mark must roll it
+  in the Stripe dashboard.
+- After Mark revokes: I authenticate with the old exposed key and prove it fails,
+  then verify Staff AI's legitimate Stripe production path still works.
+
+### Phase B (target architecture, DO NOT BUILD YET — post-launch hardening)
+Tenant runtime -> authenticated Staff AI model gateway (holds the upstream provider
+credential) -> OpenRouter. No provider secret ever enters an untrusted tenant; the
+tenant carries only a per-tenant gateway token that the gateway validates, caps,
+rate-limits, model-allowlists and logs. OpenClaw already supports a custom
+provider baseUrl, so migration is: stand up the gateway, point tenants' baseUrl at
+it, issue per-tenant gateway tokens, drop the per-tenant OpenRouter keys. Build
+only if Phase A proves inadequate.
+
 ## Security round 2, 2026-09-08 — items 1, 2, 3
 
 ### Item 3 (Docker/UFW bypass): FIXED, tested from the internet, survives restart.
