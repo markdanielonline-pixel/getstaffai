@@ -61,6 +61,27 @@ async function resolveBillingContext(event, supabaseAdmin) {
   return ceo?.org_id ? { ceoId: ceo.id, orgId: ceo.org_id } : null;
 }
 
+/**
+ * When the current billing period starts and ends.
+ *
+ * Stripe moved current_period_start and current_period_end off the subscription
+ * and onto its items in a recent API version, and the SDK here pins a version
+ * where they are gone from the top level. Reading only the old location wrote
+ * null for both dates on every subscription, which is invisible until something
+ * needs to know when the next payment is due. Payment reminders need exactly
+ * that. Verified against a live subscription: Stripe held the dates, the
+ * database held nulls.
+ */
+function billingPeriodOf(subscription) {
+  const item = subscription?.items?.data?.[0];
+  const start = subscription?.current_period_start ?? item?.current_period_start ?? null;
+  const end = subscription?.current_period_end ?? item?.current_period_end ?? null;
+  return {
+    start: start ? new Date(start * 1000).toISOString() : null,
+    end: end ? new Date(end * 1000).toISOString() : null,
+  };
+}
+
 export async function POST(req) {
   const supabaseAdmin = getSupabaseAdmin();
   const body = await req.text();
@@ -150,8 +171,8 @@ export async function POST(req) {
           billing_period: billingPeriod,
           status: subscriptionStatus,
           access_fee_cents: subscription.items.data[0]?.price?.unit_amount ?? 0,
-          current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
-          current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+          current_period_start: billingPeriodOf(subscription).start,
+          current_period_end: billingPeriodOf(subscription).end,
         }, { onConflict: 'stripe_subscription_id' }), 'Synchronize subscription after checkout');
 
         assertSupabase(await supabaseAdmin.from('wallets').upsert(
@@ -166,7 +187,12 @@ export async function POST(req) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         assertSupabase(await supabaseAdmin.from('ceos').update({ status: 'dissolved' }).eq('id', ceoId), 'Dissolve CEO after cancellation');
-        assertSupabase(await supabaseAdmin.from('subscriptions').update({ status: 'cancelled', cancelled_at: new Date().toISOString() }).eq('stripe_subscription_id', subscription.id), 'Cancel subscription');
+        assertSupabase(await supabaseAdmin.from('subscriptions').update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancel_at_period_end: true,
+          current_period_end: billingPeriodOf(subscription).end,
+        }).eq('stripe_subscription_id', subscription.id), 'Cancel subscription');
         break;
       }
 
@@ -177,8 +203,8 @@ export async function POST(req) {
           : (subscription.status === 'canceled' ? 'cancelled' : 'past_due');
         assertSupabase(await supabaseAdmin.from('subscriptions').update({
           status,
-          current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
-          current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+          current_period_start: billingPeriodOf(subscription).start,
+          current_period_end: billingPeriodOf(subscription).end,
           cancelled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
         }).eq('stripe_subscription_id', subscription.id), 'Synchronize subscription update');
         break;
@@ -188,7 +214,12 @@ export async function POST(req) {
         const invoice = event.data.object;
         const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
         if (!subId) break;
-        assertSupabase(await supabaseAdmin.from('subscriptions').update({ status: 'active' }).eq('stripe_subscription_id', subId), 'Mark subscription active');
+        // Clearing past_due_since matters as much as the status: it is what the
+        // grace period counts from, and a customer who pays should not carry a
+        // stale clock into their next cycle.
+        assertSupabase(await supabaseAdmin.from('subscriptions')
+          .update({ status: 'active', past_due_since: null, access_suspended_at: null })
+          .eq('stripe_subscription_id', subId), 'Mark subscription active');
         break;
       }
 
@@ -196,7 +227,14 @@ export async function POST(req) {
         const invoice = event.data.object;
         const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
         if (!subId) break;
-        assertSupabase(await supabaseAdmin.from('subscriptions').update({ status: 'past_due' }).eq('stripe_subscription_id', subId), 'Mark subscription past due');
+        // Stamped only on the first failure, so retries do not keep pushing the
+        // grace period forward and a customer never gets an endless reprieve.
+        const existing = await supabaseAdmin.from('subscriptions')
+          .select('past_due_since').eq('stripe_subscription_id', subId).maybeSingle();
+        assertSupabase(await supabaseAdmin.from('subscriptions').update({
+          status: 'past_due',
+          past_due_since: existing.data?.past_due_since || new Date().toISOString(),
+        }).eq('stripe_subscription_id', subId), 'Mark subscription past due');
         break;
       }
     }

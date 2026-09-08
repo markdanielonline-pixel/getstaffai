@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { runHealthSweep, recordAndAlert } from '@/lib/monitor';
 import { sendPendingAcknowledgements } from '@/lib/reports';
+import { runBillingLifecycle } from '@/lib/billing/lifecycle';
 import { handleIncident } from '@/lib/reliability/engineer';
 
 // The sweep hits several live endpoints, one of which is a real model call.
@@ -33,6 +34,12 @@ async function handle(req) {
   // waiting on a thank-you can wait, an outage cannot.
   const acknowledgements = await sendPendingAcknowledgements()
     .catch(error => ({ sent: 0, error: error?.message || String(error) }));
+
+  // Payment reminders, overdue notices and cancellation confirmations. Safe to
+  // run on every sweep: each notice is recorded per customer, kind and billing
+  // period, so nothing is ever sent twice and a missed run catches up.
+  const billing = await runBillingLifecycle()
+    .catch(error => ({ checked: 0, sent: [], error: error?.message || String(error) }));
 
   const sweep = await runHealthSweep();
   // Alerting must never be able to suppress the result. If Resend is the thing
@@ -71,7 +78,7 @@ async function handle(req) {
 
   // 503 so an external uptime check treats a failing sweep as an outage without
   // needing to parse the body.
-  return NextResponse.json({ ...sweep, alert, incident, acknowledgements }, { status: sweep.ok ? 200 : 503 });
+  return NextResponse.json({ ...sweep, alert, incident, acknowledgements, billing }, { status: sweep.ok ? 200 : 503 });
 }
 
 export async function GET(req) {
