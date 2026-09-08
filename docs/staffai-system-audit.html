@@ -1,0 +1,655 @@
+<title>Staff AI Operating Record</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --ground: #F6F7F9;
+    --panel: #FFFFFF;
+    --ink: #12161C;
+    --ink-soft: #4E5866;
+    --ink-faint: #7B8593;
+    --rule: #DCE1E8;
+    --rule-soft: #E9EDF2;
+    --accent: #1D5AA0;
+    --accent-soft: #EAF1F9;
+    --verified: #17714F;
+    --verified-soft: #E6F2ED;
+    --traced: #8A5A0B;
+    --traced-soft: #F8F0E2;
+    --unverified: #9C2B36;
+    --unverified-soft: #F9E9EA;
+    --shadow: 0 1px 2px rgba(18,22,28,.05), 0 8px 24px -16px rgba(18,22,28,.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0E1116;
+      --panel: #151A21;
+      --ink: #E8ECF2;
+      --ink-soft: #A3ADBB;
+      --ink-faint: #79838F;
+      --rule: #262E38;
+      --rule-soft: #1D242C;
+      --accent: #6BA6E8;
+      --accent-soft: #16222F;
+      --verified: #57C79A;
+      --verified-soft: #10241D;
+      --traced: #D8A44E;
+      --traced-soft: #241C0F;
+      --unverified: #E0808B;
+      --unverified-soft: #2A1518;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0E1116;
+    --panel: #151A21;
+    --ink: #E8ECF2;
+    --ink-soft: #A3ADBB;
+    --ink-faint: #79838F;
+    --rule: #262E38;
+    --rule-soft: #1D242C;
+    --accent: #6BA6E8;
+    --accent-soft: #16222F;
+    --verified: #57C79A;
+    --verified-soft: #10241D;
+    --traced: #D8A44E;
+    --traced-soft: #241C0F;
+    --unverified: #E0808B;
+    --unverified-soft: #2A1518;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+  .layout { display: grid; grid-template-columns: 210px minmax(0,1fr); gap: 3.5rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: minmax(0,1fr); gap: 2rem; } nav.toc { position: static !important; } }
+
+  h1, h2, h3, h4, .ui { font-family: Archivo, "Helvetica Neue", Arial, sans-serif; }
+  h1 { font-size: clamp(2rem, 4.5vw, 2.9rem); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; margin: 0 0 .6rem; text-wrap: balance; }
+  h2 { font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; margin: 3.5rem 0 .35rem; padding-top: 1.6rem; border-top: 2px solid var(--ink); text-wrap: balance; }
+  h3 { font-size: 1.06rem; font-weight: 600; margin: 2.2rem 0 .5rem; letter-spacing: -.005em; }
+  h4 { font-size: .82rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); margin: 1.6rem 0 .5rem; }
+  p { margin: 0 0 1rem; max-width: 68ch; }
+  a { color: var(--accent); }
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .84em; }
+
+  header.masthead { padding: 3.5rem 0 2rem; border-bottom: 2px solid var(--ink); margin-bottom: 2.5rem; }
+  .eyebrow { font-family: Archivo, sans-serif; font-size: .74rem; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); font-weight: 600; margin: 0 0 1rem; }
+  .standfirst { font-size: 1.15rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.6rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 1.6rem; font-family: Archivo, sans-serif; font-size: .8rem; color: var(--ink-faint); }
+  .meta b { display: block; color: var(--ink); font-weight: 600; font-size: .92rem; font-variant-numeric: tabular-nums; }
+
+  nav.toc { position: sticky; top: 1.5rem; font-family: Archivo, sans-serif; font-size: .82rem; line-height: 1.45; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
+  nav.toc a { color: var(--ink-soft); text-decoration: none; display: block; }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); }
+  nav.toc .num { color: var(--ink-faint); font-variant-numeric: tabular-nums; margin-right: .45rem; }
+
+  .chip { display: inline-flex; align-items: center; gap: .35rem; font-family: Archivo, sans-serif; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; padding: .2rem .5rem; border-radius: 3px; white-space: nowrap; }
+  .v { background: var(--verified-soft); color: var(--verified); }
+  .t { background: var(--traced-soft); color: var(--traced); }
+  .u { background: var(--unverified-soft); color: var(--unverified); }
+
+  .steps { list-style: none; margin: .8rem 0 1.4rem; padding: 0; counter-reset: s; }
+  .steps > li { counter-increment: s; display: grid; grid-template-columns: 1.9rem minmax(0,1fr); gap: .9rem; padding: .6rem 0; border-bottom: 1px solid var(--rule-soft); }
+  .steps > li:last-child { border-bottom: 0; }
+  .steps > li::before { content: counter(s); font-family: "JetBrains Mono", monospace; font-size: .78rem; color: var(--ink-faint); padding-top: .18rem; font-variant-numeric: tabular-nums; }
+  .steps .what { margin: 0; max-width: 62ch; }
+  .steps .where { font-family: "JetBrains Mono", monospace; font-size: .74rem; color: var(--ink-faint); display: block; margin-top: .2rem; word-break: break-word; }
+
+  .finding { display: grid; grid-template-columns: 4px minmax(0,1fr); gap: 1rem; padding: 0 0 1.1rem; margin-bottom: 1.1rem; border-bottom: 1px solid var(--rule-soft); }
+  .finding .stripe { border-radius: 2px; }
+  .finding.sev-critical .stripe { background: var(--unverified); }
+  .finding.sev-major .stripe { background: var(--traced); }
+  .finding.sev-open .stripe { background: var(--accent); }
+  .finding h4 { margin: 0 0 .3rem; text-transform: none; letter-spacing: 0; font-size: .98rem; color: var(--ink); }
+  .finding p { margin: 0 0 .4rem; font-size: .94rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; margin: .8rem 0 1.4rem; }
+  .scroll { overflow-x: auto; }
+  th { font-family: Archivo, sans-serif; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); text-align: left; font-weight: 600; padding: .5rem .8rem .5rem 0; border-bottom: 1.5px solid var(--rule); white-space: nowrap; }
+  td { padding: .6rem .8rem .6rem 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  td.mono { font-size: .78rem; }
+
+  .callout { background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--accent); padding: 1.1rem 1.3rem; margin: 1.4rem 0; box-shadow: var(--shadow); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { border-left-color: var(--unverified); }
+
+  pre { background: var(--panel); border: 1px solid var(--rule); padding: .9rem 1.1rem; overflow-x: auto; font-family: "JetBrains Mono", monospace; font-size: .78rem; line-height: 1.55; margin: .8rem 0 1.4rem; }
+
+  .kv { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0 2rem; margin: 1rem 0 1.6rem; }
+  @media (max-width: 640px) { .kv { grid-template-columns: minmax(0,1fr); } }
+  .kv div { display: flex; justify-content: space-between; gap: 1rem; padding: .42rem 0; border-bottom: 1px solid var(--rule-soft); font-size: .88rem; }
+  .kv span { color: var(--ink-soft); }
+  .kv b { font-family: "JetBrains Mono", monospace; font-size: .8rem; font-weight: 400; text-align: right; }
+
+  figure.diagram { margin: 1.6rem 0 2rem; background: var(--panel); border: 1px solid var(--rule); padding: 1.4rem 1rem; box-shadow: var(--shadow); }
+  figure.diagram .scroll { overflow-x: auto; }
+  figcaption { font-family: Archivo, sans-serif; font-size: .78rem; color: var(--ink-faint); margin-top: .9rem; text-align: center; }
+  svg text { font-family: Archivo, sans-serif; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">Studio9 &middot; Staff AI</p>
+    <h1>Staff AI Operating Record</h1>
+    <p class="standfirst">What the system does at every step, how each claim was established, and what is still unproven. Written to be interrogated, not admired.</p>
+    <div class="meta">
+      <div>Compiled<b>7 September 2026</b></div>
+      <div>Method<b>Walked, not read</b></div>
+      <div>Defects found<b>13</b></div>
+      <div>Fixed &amp; deployed<b>11</b></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Contents">
+      <ol>
+        <li><a href="#read"><span class="num">01</span>How to read this</a></li>
+        <li><a href="#findings"><span class="num">02</span>Findings</a></li>
+        <li><a href="#map"><span class="num">03</span>System map</a></li>
+        <li><a href="#signup"><span class="num">04</span>Signing up</a></li>
+        <li><a href="#reset"><span class="num">05</span>Password reset</a></li>
+        <li><a href="#buy"><span class="num">06</span>Buying</a></li>
+        <li><a href="#provision"><span class="num">07</span>Provisioning</a></li>
+        <li><a href="#ea"><span class="num">08</span>Talking to the EA</a></li>
+        <li><a href="#delegation"><span class="num">09</span>Delegation</a></li>
+        <li><a href="#hire"><span class="num">10</span>Hiring</a></li>
+        <li><a href="#dismiss"><span class="num">11</span>Dismissal</a></li>
+        <li><a href="#billing"><span class="num">12</span>Billing changes</a></li>
+        <li><a href="#email"><span class="num">13</span>Every email</a></li>
+        <li><a href="#watch"><span class="num">14</span>Monitoring</a></li>
+        <li><a href="#models"><span class="num">15</span>Models</a></li>
+        <li><a href="#data"><span class="num">16</span>Data</a></li>
+        <li><a href="#dead"><span class="num">17</span>Dead code</a></li>
+        <li><a href="#unverified"><span class="num">18</span>Not proven</a></li>
+        <li><a href="#decisions"><span class="num">19</span>Your decisions</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <section id="read">
+        <h2>01 &middot; How to read this</h2>
+        <p>Every claim carries a label saying how it was established. The labels are the point of the document. A page of confident prose is exactly what cannot be trusted; a page that marks its own weak spots can be.</p>
+        <p><span class="chip v">Verified</span> means it was executed against production and observed. A database row, an API response, a screenshot, a log line. If an investor's developer challenges it, there is evidence.</p>
+        <p><span class="chip t">Traced</span> means the code path was read end to end and can be cited, but was not run. Honest, and weaker. Most things labelled this way are true; the point is that nobody has proved it.</p>
+        <p><span class="chip u">Not proven</span> means it could not be established, usually because it needs a real card, a real customer, or a service not yet connected. Do not repeat these as fact.</p>
+        <div class="callout">
+          <p><strong>Why the labels exist.</strong> On 7 September the product was described as ready to launch on the strength of component checks: the runtime was pinned, the agents were active, delegation worked. All of that was true. Then the first attempt to use the product as a customer found the password reset broken, then signup, then checkout, then the ability to message an assistant. Components were healthy; the journeys were impassable. Everything below was therefore established by walking the journey, not by reading the parts.</p>
+        </div>
+      </section>
+
+      <section id="findings">
+        <h2>02 &middot; Findings</h2>
+        <p>Thirteen defects, found across roughly a dozen paths. Eleven are fixed and deployed; two are decisions rather than bugs. Severity is by commercial consequence, not by how hard it was to fix.</p>
+
+        <h4>Fixed and verified</h4>
+
+        <div class="finding sev-critical">
+          <div class="stripe"></div>
+          <div>
+            <h4>Nobody could create an account <span class="chip v">Verified</span></h4>
+            <p>Confirmation emails pointed at a server route that looks for a <code>?code=</code> parameter. Supabase returns the session in the URL fragment instead, which is never transmitted to a server. Every new customer who clicked confirm landed on <code class="mono">/portal/login?error=auth_callback_failed</code>.</p>
+            <p><em>Fixed:</em> a client page at <code>/auth/finish</code> now consumes either shape. Proved by creating a throwaway account and following a real confirmation link to a signed-in onboarding screen.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-critical">
+          <div class="stripe"></div>
+          <div>
+            <h4>Nobody could buy anything <span class="chip v">Verified</span></h4>
+            <p>All 24 Stripe price identifiers were empty strings in production, so checkout answered <em>&ldquo;This plan is not currently available&rdquo;</em> for every product and period. The only populated prices belonged to a retired tier structure. This is why the subscriptions table and the entire Stripe account held zero subscriptions.</p>
+            <p><em>Fixed:</em> all 24 wired to their existing Stripe prices, which already matched the catalogue to the cent. Proved by generating a live checkout session, <code class="mono">cs_live_b1EHFsp7&hellip;</code></p>
+          </div>
+        </div>
+
+        <div class="finding sev-critical">
+          <div class="stripe"></div>
+          <div>
+            <h4>Every employee after the first two was free <span class="chip v">Verified</span></h4>
+            <p>Hiring recorded a seat fee, displayed a monthly price beside the button, and made no Stripe call whatsoever. Stripe was touched in exactly three files and hiring was not one of them. A customer paying $199 could staff an entire company at no additional charge.</p>
+            <p><em>Fixed:</em> a seat is now a prorated line on the customer's subscription, charged before the runtime is built, refunded if the hire then fails.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-critical">
+          <div class="stripe"></div>
+          <div>
+            <h4>The customer could not message their assistant <span class="chip v">Verified</span></h4>
+            <p>The dashboard applied the 280px sidebar offset twice, so the conversation screen ran 560px past the window and the Send button sat off-screen. Where it was reachable, the support chat bubble covered it. Confirmed from the page itself: <code class="mono">elementFromPoint</code> at the button's centre returned a different button.</p>
+            <p><em>Fixed:</em> both offsets corrected. Proved with a real mouse click that landed a message in the database and drew a reply from Sophia.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>Password reset could not complete <span class="chip v">Verified</span></h4>
+            <p>Same fragment-versus-code fault, plus a reset page that rendered a complete, believable password form whether or not the link had signed you in. Reset mail also came from <code class="mono">noreply@mail.app.supabase.io</code>.</p>
+            <p><em>Fixed:</em> reset mail is now generated and sent by Staff AI through Resend from its own domain, and the link verifies server-side so it survives being opened on a different device from the one that requested it.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>Starting a checkout rewrote a live company <span class="chip v">Verified</span></h4>
+            <p>Checkout wrote its form values over the organisation name, industry and business description before any payment. Abandoning checkout left the changes in place. Found by doing it: a test renamed a tenant with eight working employees and replaced the description its staff work from.</p>
+            <p><em>Fixed:</em> an organisation with staff is treated as established; checkout sets the active organisation and nothing else.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>Dismissal destroyed an employee in one click <span class="chip v">Verified</span></h4>
+            <p>No confirmation, no warning, no undo. The runtime is decommissioned and the employee marked alumni; hiring the role again builds a different person. Found because you clicked it to learn what it meant.</p>
+            <p><em>Fixed:</em> a confirmation step that names the person, states plainly that it cannot be undone, and takes an optional reason.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>A failed hire could charge and deliver nothing <span class="chip v">Verified</span></h4>
+            <p>Introduced by the seat-billing fix and caught in the same session. The charge precedes provisioning deliberately, but nothing reversed it if provisioning then failed.</p>
+            <p><em>Fixed:</em> creation is wrapped; a failure reverses the charge and records whether the reversal succeeded.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>The navigation was unreadable <span class="chip v">Verified</span></h4>
+            <p>Sidebar and header paint themselves near-black then asked the light theme for its text colour, which is near-black ink.</p>
+            <p><em>Fixed:</em> dark surfaces define their own text tokens. Found the header by grep rather than waiting for you to report it.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>The dashboard denied a working workforce <span class="chip v">Verified</span></h4>
+            <p>Readiness depends on one record, <code class="mono">initial-workforce:v1</code>, which was stuck in <code>running</code> though its contents were complete and both agents verified active. The banner also re-triggered provisioning every sixty seconds against a healthy tenant.</p>
+            <p><em>Fixed:</em> record corrected; the screen now reports the truth.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-major">
+          <div class="stripe"></div>
+          <div>
+            <h4>Billing screen showed a plan that did not exist <span class="chip v">Verified</span></h4>
+            <p>Level and status fell back to stale fields, so an account that has never bought anything displayed <em>Executive</em> and <em>Active</em>. A cancelled customer would have been told they were active in the one place they would check.</p>
+            <p><em>Fixed:</em> both read from entitlement, the same source the sidebar uses.</p>
+          </div>
+        </div>
+
+        <h4>Open &mdash; decisions, not defects</h4>
+
+        <div class="finding sev-open">
+          <div class="stripe"></div>
+          <div>
+            <h4>One employee per role, per company <span class="chip v">Verified</span></h4>
+            <p>A unique index on organisation, owner and role means a company cannot hire two Sales Representatives. Whether Staff AI sells multiple seats of the same role is a pricing decision. Until it is made, the error is at least stated in plain language rather than as a Postgres constraint name.</p>
+          </div>
+        </div>
+
+        <div class="finding sev-open">
+          <div class="stripe"></div>
+          <div>
+            <h4>Direct employee chat still present <span class="chip v">Verified</span></h4>
+            <p>The operating model says the CEO speaks only to the Executive Assistant. The Conversations screen still lists every employee as a separate thread. You have already asked for this to go; it has not been done.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="map">
+        <h2>03 &middot; System map</h2>
+        <p>Five moving parts. The web application is the only one a customer touches.</p>
+
+        <figure class="diagram">
+          <div class="scroll">
+            <svg viewBox="0 0 860 330" width="860" height="330" role="img" aria-label="Architecture: browser to Next.js application, which talks to Supabase, Stripe, Resend and Provision Core, which runs per-tenant OpenClaw containers calling OpenRouter.">
+              <defs>
+                <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                  <path d="M0,0 L9,4.5 L0,9 z" fill="var(--ink-faint)"/>
+                </marker>
+              </defs>
+              <rect x="14" y="130" width="120" height="58" rx="3" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="74" y="155" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">Customer</text>
+              <text x="74" y="172" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">browser</text>
+
+              <rect x="182" y="118" width="146" height="82" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="255" y="146" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">Staff AI app</text>
+              <text x="255" y="163" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">Next.js on Vercel</text>
+              <text x="255" y="179" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">app.getstaffai.com</text>
+
+              <rect x="380" y="18" width="132" height="52" rx="3" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.5"/>
+              <text x="446" y="40" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Supabase</text>
+              <text x="446" y="56" text-anchor="middle" font-size="10" fill="var(--ink-faint)">auth &amp; database</text>
+
+              <rect x="380" y="82" width="132" height="52" rx="3" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.5"/>
+              <text x="446" y="104" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Stripe</text>
+              <text x="446" y="120" text-anchor="middle" font-size="10" fill="var(--ink-faint)">live mode</text>
+
+              <rect x="380" y="146" width="132" height="52" rx="3" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.5"/>
+              <text x="446" y="168" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Resend</text>
+              <text x="446" y="184" text-anchor="middle" font-size="10" fill="var(--ink-faint)">outbound email</text>
+
+              <rect x="380" y="222" width="132" height="66" rx="3" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="446" y="246" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Provision Core</text>
+              <text x="446" y="262" text-anchor="middle" font-size="10" fill="var(--ink-faint)">Laravel, VPS</text>
+              <text x="446" y="277" text-anchor="middle" font-size="10" fill="var(--ink-faint)">158.220.123.254</text>
+
+              <rect x="576" y="212" width="150" height="86" rx="3" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="651" y="238" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Runtime container</text>
+              <text x="651" y="255" text-anchor="middle" font-size="10" fill="var(--ink-faint)">one per tenant</text>
+              <text x="651" y="270" text-anchor="middle" font-size="10" fill="var(--ink-faint)">OpenClaw 2026.7.1-2</text>
+              <text x="651" y="285" text-anchor="middle" font-size="10" fill="var(--ink-faint)">agents live here</text>
+
+              <rect x="762" y="130" width="84" height="58" rx="3" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.5"/>
+              <text x="804" y="153" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Models</text>
+              <text x="804" y="169" text-anchor="middle" font-size="10" fill="var(--ink-faint)">OpenRouter</text>
+
+              <line x1="134" y1="159" x2="176" y2="159" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+              <line x1="328" y1="145" x2="374" y2="60" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+              <line x1="328" y1="152" x2="374" y2="112" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+              <line x1="328" y1="166" x2="374" y2="172" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+              <line x1="328" y1="180" x2="374" y2="248" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+              <line x1="512" y1="255" x2="570" y2="255" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+              <line x1="726" y1="240" x2="790" y2="192" stroke="var(--ink-faint)" stroke-width="1.4" marker-end="url(#ar)"/>
+            </svg>
+          </div>
+          <figcaption>The customer touches only the application. Everything to the right is infrastructure they never see.</figcaption>
+        </figure>
+
+        <div class="kv">
+          <div><span>Application</span><b>Next.js / Vercel</b></div>
+          <div><span>Database &amp; auth</span><b>Supabase</b></div>
+          <div><span>Workforce engine</span><b>Provision Core</b></div>
+          <div><span>Agent runtime</span><b>OpenClaw, Docker</b></div>
+          <div><span>Payments</span><b>Stripe live</b></div>
+          <div><span>Email</span><b>Resend</b></div>
+        </div>
+        <p><span class="chip v">Verified</span> All six reached and exercised during this audit.</p>
+      </section>
+
+      <section id="signup">
+        <h2>04 &middot; Signing up</h2>
+        <ol class="steps">
+          <li><p class="what">Visitor submits name, email and password on the signup page.<span class="where">app/portal/signup</span></p></li>
+          <li><p class="what">A Supabase auth user is created. If the address already exists, Supabase returns an obfuscated user with no identities rather than an error; the app detects this and redirects to sign-in instead of promising an email that will never arrive.<span class="where">app/actions/auth.js &middot; signUp</span></p></li>
+          <li><p class="what">A CEO record is created by a database trigger, then the name is written to it.<span class="where">trigger handle_new_user &rarr; ceos</span></p></li>
+          <li><p class="what">Supabase sends the confirmation email. <strong>This one still comes from Supabase's own address</strong>, not your domain. Only password reset was moved to Resend.<span class="where">noreply@mail.app.supabase.io</span></p></li>
+          <li><p class="what">Clicking the link verifies the token and lands on a client page that reads the session out of the URL fragment and signs the person in.<span class="where">app/auth/finish</span></p></li>
+          <li><p class="what">They arrive at onboarding, signed in.<span class="where">/portal/incorporate</span></p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> Steps 1 to 6, by creating two throwaway accounts and following real confirmation links, before and after the fix. Both accounts deleted afterwards.</p>
+        <div class="callout warn">
+          <p><strong>Open:</strong> the signup confirmation email still comes from Supabase's shared domain. It works, but it is the first email a paying customer receives and it does not carry your name. Moving it to Resend is the same work already done for password reset.</p>
+        </div>
+      </section>
+
+      <section id="reset">
+        <h2>05 &middot; Password reset</h2>
+        <ol class="steps">
+          <li><p class="what">Customer enters an address and selects Forgot password.<span class="where">app/portal/login</span></p></li>
+          <li><p class="what">Staff AI asks Supabase for a recovery token, then composes and sends the email itself through Resend, from its own domain. Supabase's mailer is not used.<span class="where">lib/password-reset.js &middot; lib/auth-email.js</span></p></li>
+          <li><p class="what">The reply is identical whether or not the address has an account, so the form cannot be used to discover customers.</p></li>
+          <li><p class="what">The link verifies server-side and sets a session cookie, which is why it works when requested on a laptop and opened on a phone.<span class="where">app/auth/confirm</span></p></li>
+          <li><p class="what">The reset page confirms a session exists before showing a password form. A link that signed nobody in says so and offers to send another.<span class="where">app/portal/reset-password</span></p></li>
+          <li><p class="what">The token is stripped from the address bar once used.</p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> End to end on the live site, including the cross-device case that originally caused the lockout.</p>
+      </section>
+
+      <section id="buy">
+        <h2>06 &middot; Buying</h2>
+        <ol class="steps">
+          <li><p class="what">Onboarding collects company name, industry, description, country and tone.<span class="where">/portal/incorporate</span></p></li>
+          <li><p class="what">Checkout accepts the Company Office only. Individual roles are not sold here; they are hired later from inside the product.<span class="where">app/api/checkout</span></p></li>
+          <li><p class="what">An existing active, trialing or past-due subscription is refused with a message pointing at Billing.</p></li>
+          <li><p class="what">If the customer has no organisation one is created. If they have one <em>with staff on it</em>, its identity is left alone.</p></li>
+          <li><p class="what">A Stripe customer is created or reused, then a subscription-mode Checkout session. <strong>No trial.</strong> Paid from day one, sold on the 30-day guarantee.</p></li>
+          <li><p class="what">The customer is sent to Stripe to pay.</p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> Steps 1 to 6 produce a live Stripe session. <span class="chip u">Not proven</span> Everything past the payment form. No card has ever been entered, so no subscription has ever existed.</p>
+
+        <h3>What happens when payment succeeds</h3>
+        <ol class="steps">
+          <li><p class="what">Stripe calls the webhook. The event is stored before it is acted on, so a replay cannot double-process.<span class="where">app/api/webhooks/stripe</span></p></li>
+          <li><p class="what">The CEO is marked active with their plan level and subscription id.</p></li>
+          <li><p class="what">A subscription row and an empty wallet are created.</p></li>
+          <li><p class="what">Initial workforce provisioning begins: the Executive Assistant and General Manager.</p></li>
+        </ol>
+        <p><span class="chip t">Traced</span> Read end to end and citable. Never executed, because it requires a real payment.</p>
+      </section>
+
+      <section id="provision">
+        <h2>07 &middot; Provisioning a workforce</h2>
+        <ol class="steps">
+          <li><p class="what">A durable operation record is opened so an interrupted run resumes rather than restarting.<span class="where">provisioning_operations &middot; initial-workforce:v1</span></p></li>
+          <li><p class="what">Provision Core creates a team and a dedicated Docker container for the tenant.<span class="where">provision-runtime-&lt;serverId&gt;</span></p></li>
+          <li><p class="what">A dispatcher agent is installed, then the Executive Assistant, then the General Manager. Each install restarts the tenant's gateway.</p></li>
+          <li><p class="what">Each employee receives a written brief for its role, generated from the company's own name and description.<span class="where">lib/roles/playbooks.js</span></p></li>
+          <li><p class="what">Readiness is confirmed by checking the live team, both agents, and that they sit on the same server, with a short confirm window so a gateway restart is not mistaken for failure.</p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> Eight agents on the proof tenant, all active, confirmed both in the database and on the host itself.</p>
+        <div class="callout">
+          <p><strong>Worth knowing.</strong> All tenants currently share one virtual machine. Every customer's agents run in their own container on that machine, isolated from one another, but a failure of that host is a failure for everyone. This is a capacity question, not a defect.</p>
+        </div>
+      </section>
+
+      <section id="ea">
+        <h2>08 &middot; Talking to the Executive Assistant</h2>
+        <ol class="steps">
+          <li><p class="what">The customer opens Conversations and writes to Sophia, their Executive Assistant.<span class="where">/portal/dashboard/conversations</span></p></li>
+          <li><p class="what">The request is authenticated and the conversation confirmed to belong to that customer, so nobody can post into someone else's thread.<span class="where">app/api/employees/chat</span></p></li>
+          <li><p class="what">The message is recorded immediately, before any work starts.</p></li>
+          <li><p class="what">A task is dispatched to that employee's agent and the request waits for it, up to five minutes.</p></li>
+          <li><p class="what">If the employee is still busy with a previous request, the customer is told rather than queued silently.</p></li>
+          <li><p class="what">The reply is stored and returned. Work that finishes after the request has gone is reconciled and delivered later rather than lost.</p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> A message typed into the live site and sent with a real click reached the database, produced a task, and drew a written reply.</p>
+      </section>
+
+      <section id="delegation">
+        <h2>09 &middot; Delegation</h2>
+        <p>The chain the product is sold on: you speak only to the Executive Assistant, who hands work to the General Manager, who assigns a specialist.</p>
+        <figure class="diagram">
+          <div class="scroll">
+            <svg viewBox="0 0 800 132" width="800" height="132" role="img" aria-label="CEO to Executive Assistant to General Manager to specialist, with work returning back along the chain.">
+              <defs>
+                <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                  <path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/>
+                </marker>
+              </defs>
+              <rect x="10" y="30" width="150" height="52" rx="3" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="85" y="52" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">You</text>
+              <text x="85" y="69" text-anchor="middle" font-size="10" fill="var(--ink-faint)">the only human</text>
+
+              <rect x="212" y="30" width="150" height="52" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="287" y="52" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">Sophia</text>
+              <text x="287" y="69" text-anchor="middle" font-size="10" fill="var(--ink-faint)">Executive Assistant</text>
+
+              <rect x="414" y="30" width="150" height="52" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+              <text x="489" y="52" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">Marcus</text>
+              <text x="489" y="69" text-anchor="middle" font-size="10" fill="var(--ink-faint)">General Manager</text>
+
+              <rect x="616" y="30" width="170" height="52" rx="3" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="701" y="52" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">Specialist</text>
+              <text x="701" y="69" text-anchor="middle" font-size="10" fill="var(--ink-faint)">does the work</text>
+
+              <line x1="160" y1="56" x2="206" y2="56" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar2)"/>
+              <line x1="362" y1="56" x2="408" y2="56" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar2)"/>
+              <line x1="564" y1="56" x2="610" y2="56" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar2)"/>
+              <path d="M701 92 L701 112 L85 112 L85 88" fill="none" stroke="var(--ink-faint)" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+              <text x="393" y="126" text-anchor="middle" font-size="10" fill="var(--ink-faint)">finished work returns the same way</text>
+            </svg>
+          </div>
+          <figcaption>Only the Executive Assistant, General Manager and dispatcher may delegate. Specialists cannot pass work on.</figcaption>
+        </figure>
+        <p><span class="chip v">Verified</span> A request produced a real task assigned by the General Manager to the Lead Generation Specialist, who returned five independent Brooklyn plumbing companies, each site opened and confirmed live, with ownership evidence quoted from the companies' own pages.</p>
+        <h4>A defect fixed along the way</h4>
+        <p>Assignment by name used to fall through silently: a name that matched nothing created the task for the manager instead and answered success. The General Manager truthfully reported delegating work it still held. Names repeat in generated workforces, so this was not rare. An unresolvable or ambiguous assignee is now refused with the roster attached. <span class="chip v">Verified</span></p>
+      </section>
+
+      <section id="hire">
+        <h2>10 &middot; Hiring</h2>
+        <ol class="steps">
+          <li><p class="what">The customer picks a role. Roles whose advertised outcome cannot yet be delivered are listed as coming soon and cannot be hired.<span class="where">Bookkeeper, Receptionist</span></p></li>
+          <li><p class="what">The seat is charged first: a prorated line added to the existing subscription. Founder accounts are comped and recorded as such.<span class="where">lib/billing/seats.js</span></p></li>
+          <li><p class="what">Without an active subscription the hire is refused rather than quietly given away.</p></li>
+          <li><p class="what">The employee is created, a runtime agent installed, and a conversation opened so they can be reached.</p></li>
+          <li><p class="what">If anything fails after the charge, the charge is reversed and the outcome recorded either way.</p></li>
+          <li><p class="what">The seat is written to the billing ledger with its fee and Stripe line.</p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> A hire completed on the live site, agent reached active, seat recorded as comped. Duplicate-role refusal verified. <span class="chip u">Not proven</span> The Stripe charge itself, which needs a paying subscription.</p>
+      </section>
+
+      <section id="dismiss">
+        <h2>11 &middot; Dismissal</h2>
+        <ol class="steps">
+          <li><p class="what">Dismiss opens a confirmation naming the person and stating that it cannot be undone.</p></li>
+          <li><p class="what">The Executive Assistant and General Manager cannot be dismissed; they are what the Company Office is.</p></li>
+          <li><p class="what">The runtime agent is decommissioned first, so nobody is marked departed while still answering.</p></li>
+          <li><p class="what">The seat charge is removed. A Stripe failure here does not block the dismissal; it is recorded instead.</p></li>
+          <li><p class="what">The employee becomes alumni with a reason and a departure time. Their conversations and past work remain readable.</p></li>
+        </ol>
+        <p><span class="chip v">Verified</span> Confirmation step and refusal for the founding pair. <span class="chip t">Traced</span> Seat release, which needs a billed seat to exercise.</p>
+        <div class="callout warn">
+          <p><strong>Irreversible.</strong> Hiring the role again creates a new employee with a new identity, not the one removed. This is worth saying in the interface as well as here.</p>
+        </div>
+      </section>
+
+      <section id="billing">
+        <h2>12 &middot; Billing changes</h2>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Event</th><th>What the system does</th><th>Evidence</th></tr></thead>
+            <tbody>
+              <tr><td>Payment succeeds</td><td>Subscription marked active</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Payment fails</td><td>Subscription marked past due. <strong>Access is not restricted.</strong></td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Plan changed</td><td>Status and period dates synchronised</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Subscription cancelled</td><td>CEO marked dissolved, subscription cancelled</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Cancelled &rarr; workforce</td><td><strong>Nothing stops the agents or containers</strong></td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Manage billing</td><td>Opens Stripe's own portal for card, invoices, cancellation</td><td><span class="chip v">Verified</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout warn">
+          <p><strong>Two commercial exposures, both unproven and both worth deciding before you sell.</strong> A customer whose card fails keeps full access, because entitlement reads the CEO record and a failed payment only marks the subscription. And a customer who cancels keeps a running workforce, because nothing in the cancellation path tears anything down &mdash; you would keep paying for their compute indefinitely.</p>
+        </div>
+      </section>
+
+      <section id="email">
+        <h2>13 &middot; Every email the system can send</h2>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Email</th><th>Trigger</th><th>Sender</th><th>Evidence</th></tr></thead>
+            <tbody>
+              <tr><td>Signup confirmation</td><td>Account created</td><td class="mono">Supabase shared domain</td><td><span class="chip v">Verified</span></td></tr>
+              <tr><td>Password reset</td><td>Forgot password</td><td class="mono">getstaffai.com</td><td><span class="chip v">Verified</span></td></tr>
+              <tr><td>Problem-report thank you</td><td>30 min after a report</td><td class="mono">getstaffai.com</td><td><span class="chip v">Verified</span></td></tr>
+              <tr><td>Health alert</td><td>Monitor state changes</td><td class="mono">getstaffai.com</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Incident escalation</td><td>Reliability engineer</td><td class="mono">getstaffai.com</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Support acknowledgement</td><td>Support form</td><td class="mono">getstaffai.com</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Assistant onboarding</td><td>Workforce ready</td><td class="mono">getstaffai.com</td><td><span class="chip t">Traced</span></td></tr>
+              <tr><td>Agent-sent mail</td><td>An employee sends email</td><td class="mono">getstaffai.com</td><td><span class="chip t">Traced</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The sending domain is correctly configured for Resend: signing, sender policy and return path all present and verified in DNS. <span class="chip v">Verified</span></p>
+      </section>
+
+      <section id="watch">
+        <h2>14 &middot; Monitoring</h2>
+        <p>Seven checks run every few minutes: the marketing site, the sales agent script, the sales agent itself with a live model call, the application, the Provision control plane, every customer workforce, and task delivery. Warnings cover stranded workforces, leftover tenants and unread customer reports.</p>
+        <p>A failing sweep is passed to a reliability engineer running on DeepSeek V4 Pro, which may take three actions from a fixed list, scoped to one organisation, and currently runs in dry-run: it proposes and records but does not act. Confirmed by inspection of its recorded incidents. <span class="chip v">Verified</span></p>
+        <p>Customer problem reports arrive through a control on every page, are rate limited, and reach the monitor as evidence. Report text is never treated as instruction to anything that can take action. <span class="chip v">Verified</span></p>
+      </section>
+
+      <section id="models">
+        <h2>15 &middot; Which model does what</h2>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Role</th><th>Model</th><th>Why</th></tr></thead>
+            <tbody>
+              <tr><td>Executive Assistant</td><td class="mono">openai/gpt-5-nano</td><td>The one you speak to</td></tr>
+              <tr><td>General Manager</td><td class="mono">openai/gpt-5-nano</td><td>Plans and delegates</td></tr>
+              <tr><td>Specialists</td><td class="mono">qwen/qwen3.8-flash</td><td>Volume work</td></tr>
+              <tr><td>Reliability engineer</td><td class="mono">deepseek/deepseek-v4-pro</td><td>Repairs, by your instruction</td></tr>
+              <tr><td>Sales agent</td><td class="mono">openai/gpt-5-nano</td><td>Public site</td></tr>
+              <tr><td>Dispatcher</td><td class="mono">z-ai/glm-4.7</td><td>Internal routing only</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><span class="chip v">Verified</span> Against agent configuration and live request logs.</p>
+      </section>
+
+      <section id="data">
+        <h2>16 &middot; Data and isolation</h2>
+        <p>Fifty-one tables, of which roughly half belong to earlier projects sharing the database and hold no rows. Row-level security is enabled on every table. Many carry no policy at all, which in Postgres means no access except through the service role &mdash; restrictive by default rather than permissive.</p>
+        <p>Tenant separation rests on the organisation identifier, and on membership: a customer can only activate an organisation they are recorded as a member of, so a tampered identifier cannot move them into another tenant. <span class="chip t">Traced</span></p>
+        <div class="callout warn">
+          <p><strong>Recommended before investors look:</strong> the shared database holds tables from Beacon, Lynkwe and other projects. Nothing leaks, but it invites a question you would rather not spend the meeting answering.</p>
+        </div>
+      </section>
+
+      <section id="dead">
+        <h2>17 &middot; Code that looks alive and is not</h2>
+        <p>Eleven of fifty-one internal modules are imported by nothing. This matters because anyone reading the repository &mdash; including an investor's engineer &mdash; will assume they run.</p>
+        <pre>lib/agents/lead-gen.js        lib/seed.js
+lib/cost.js                   lib/sophia/first-contact.js
+lib/engine.js                 lib/sophia/system-prompt.js
+lib/heartbeat.js              lib/supabase/middleware.js
+lib/llm/router.js             lib/systeme.js
+lib/training.js</pre>
+        <p>Two carry model names that read like policy and are not. This cost real diagnosis time during the audit: the delayed thank-you emails appeared wired to a heartbeat module that nothing has ever called. <span class="chip v">Verified</span> by building the import graph rather than reading filenames.</p>
+      </section>
+
+      <section id="unverified">
+        <h2>18 &middot; What is not proven</h2>
+        <p>Say none of this as fact. It is the list to hand a technical diligence team so they hear it from you first.</p>
+        <ul>
+          <li>No payment has ever been taken. Zero subscriptions exist on the Stripe account.</li>
+          <li>Upgrade, downgrade, cancellation and failed payment are read but never run.</li>
+          <li>Seat charging for a paying customer is unexercised; only the comped path has run.</li>
+          <li>Cancellation is believed not to stop a workforce. Untested.</li>
+          <li>Past-due access is believed to continue unrestricted. Untested.</li>
+          <li>Voice, telephony and the bookkeeping integrations are not connected.</li>
+          <li>Multi-user access within one company is untested; every account so far is a single owner.</li>
+          <li>No load beyond a handful of tenants on one host has been attempted.</li>
+        </ul>
+        <p>All of it needs one thing: a real card entered once by a person. Everything downstream can then be driven and verified without touching a card again.</p>
+      </section>
+
+      <section id="decisions">
+        <h2>19 &middot; Decisions only you can make</h2>
+        <ol class="steps">
+          <li><p class="what"><strong>Can a company hire two of the same role?</strong> Today it cannot. This is revenue either way, and the answer changes the pricing page.</p></li>
+          <li><p class="what"><strong>What happens when someone stops paying?</strong> Access and workforce both continue. Decide the grace period and what gets switched off, then it can be built.</p></li>
+          <li><p class="what"><strong>Remove direct employee chat?</strong> You have said yes. It is still there.</p></li>
+          <li><p class="what"><strong>Signup email from your domain?</strong> Small work, and it is the first thing a customer sees.</p></li>
+          <li><p class="what"><strong>Separate the database from the other projects?</strong> Not urgent, but it is a diligence question.</p></li>
+          <li><p class="what"><strong>One machine for all customers.</strong> Fine now. Decide the number of tenants at which that stops being fine.</p></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Closing note</h2>
+        <p>The engine is sound. The workforce provisions, the delegation chain runs end to end, and a specialist returned real verified work during this audit. Nothing found tonight was architectural.</p>
+        <p>What was broken was the wiring around it, and it was broken in the places nobody had walked: the front door, the checkout, the reply box. Three of the first four paths tested were impassable. That ratio is the argument for the method rather than for the conclusion.</p>
+        <p>The honest position is that the product now works for the journeys that have been walked, and is unproven for the journeys that have not. Both lists are above, and the second one shortens the moment a card goes in once.</p>
+      </section>
+    </main>
+  </div>
+</div>
