@@ -4,6 +4,61 @@ Updated 2026-08-31 from engineering and live bounded incident-response evidence.
 This is the current handoff, not a new architecture audit. Rewrite current facts
 in place; use Git for history. Production was accessed for the remediation checks
 below. Remediation is NOT complete and rollout remains PAUSED.
+## Security hardening pass, 2026-09-08 (attacked from a real tenant, not inspected)
+
+Attacker was the disposable billing-audit tenant runtime (172.24.0.6). Targets
+were the real Staff AI tenant (172.24.0.4), the control plane, and the host.
+
+TENANT-TO-TENANT ISOLATION: proven, not inferred.
+- Port-scanned Tenant B from Tenant A across 13 ports: all ECONNREFUSED.
+- Read Tenant B's /proc/net/tcp: every LISTEN socket is bound to 127.0.0.1 or
+  Docker DNS (127.0.0.11). Not one listener on 0.0.0.0. The gateway, browser
+  and completion services are localhost-only inside each container.
+- Cross-tenant runtime port still refused after the firewall change.
+
+CONTROL-PLANE ACCESS FROM A TENANT:
+- Provision API on 172.24.0.2:8000 is reachable (agents need it) but enforces
+  auth: 401 on another team's data, 404 on daemon routes, 404 on /.env and logs.
+- The PROVISION_AGENT_TOKEN in every tenant's ~/.openclaw/.env is the literal
+  placeholder "skill-el..." (29 chars, identical across tenants) and the API
+  REJECTS it (401). It grants nothing.
+- No Docker socket mounted in any tenant. No container-escape path there.
+- database and redis: EAI_AGAIN from a tenant (the network fix holds).
+
+CONFIRMED HIGH FINDING, not yet remediated (needs a redeploy window, so left for
+Mark's decision):
+- The OpenRouter and OpenAI API keys sit in every tenant's ~/.openclaw/.env, and
+  the OpenRouter key is the SHARED PLATFORM key (identical hash across all three
+  tenants AND matches provision-core/.env). Authenticated to OpenRouter with the
+  key straight from a tenant: it is live and has NO spend limit (limit: null).
+  A prompt-injected agent can read the file, exfiltrate the key, and run
+  unlimited spend on the platform account. One key for all tenants means it
+  cannot be revoked for one bad tenant without breaking every customer.
+  Remediation: per-tenant scoped keys, or an OpenRouter provisioning key with a
+  hard monthly cap, plus rotation of the current key. Requires redeploying agent
+  runtimes, so it is a scheduled change, not a hot fix.
+
+FIXED AND VERIFIED THIS PASS:
+- /tmp/sms_listener.py deleted (confirmed absent).
+- UFW enabled: default deny incoming, allow outgoing, allow 22/80/443 only.
+  DEFAULT_FORWARD_POLICY=ACCEPT set first so Docker forwarding is not broken.
+  Armed a 10-minute auto-disable failsafe before enabling; verified a FRESH SSH
+  connection worked, then cancelled the failsafe. After enabling: app reads DB
+  (30 agents), agents reach the Provision API (200) and the internet, all seven
+  health checks pass, tenant boundary still holds. UFW persists at boot.
+- Only 22, 80, 443 listen externally.
+
+STILL OPEN:
+- Shared OpenRouter/OpenAI key exposure above (the main one).
+- provision-app-1 remains on stack_default with the proxy; legitimate (needs
+  proxy reachability) but is the widest network it sits on.
+- The openclaw GATEWAY token is also shared across tenants (identical hash). It
+  is used locally by the gateway; lower risk than the model keys but should be
+  per-tenant.
+- Credential rotation from the earlier Formbricks incident and the exposed
+  Stripe key: still NOT re-verified in this pass. Needs the leaked values from
+  the earlier context to test, or rotation on principle.
+
 ## Security status, verified on the host 2026-09-08
 
 Checked directly on 158.220.123.254 rather than recalled. Against the earlier
